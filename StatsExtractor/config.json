@@ -1,0 +1,11 @@
+{
+	"pg_connections":{
+		"admin":{"db":"postgres", "host":"localhost", "port":5432, "user":"postgres", "password":null},
+		"the_localhost":{"db":"jrcstats_test", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"}
+	},
+	"statsinfo": {
+		"schema": "public",
+		"tmp_schema": "tmp",
+		"connection_id":"the_localhost"
+	}
+} 
