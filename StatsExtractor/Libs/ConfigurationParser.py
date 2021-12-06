@@ -41,7 +41,7 @@ class PGOptions:
         return pg.connect(self.getConnectionString(db))
 
     def executeNoTransaction(self, queries, session=None):
-        #try:
+        try:
             if session is None:
                 session = self.getNewSession()
 
@@ -55,13 +55,13 @@ class PGOptions:
 
 
 
-        #except:
-        #    session.rollback()
-        #    print("Unable to execute non-transaction queries. Exiting")
-        #    return 1
+        except:
+            session.rollback()
+            print("Unable to execute non-transaction queries. Exiting")
+            return 1
 
     def executeQueries(self, queries, session=None):
-        #try:
+        try:
             if session is None:
                 session = self.getNewSession()
 
@@ -70,10 +70,10 @@ class PGOptions:
                 cursor.execute(query)
             session.commit()
             return 0
-        #except:
-        #    session.rollback()
-        #    print("Unable to exequte queries. Exiting")
-        #    return 1
+        except:
+            session.rollback()
+            print("Unable to exequte queries. Exiting")
+            return 1
 
     def fetchQueryResult(self, query, session=None):
         try:
@@ -145,8 +145,8 @@ class ConfigurationParser:
         except FileExistsError:
             print("Configuration file does not exists! Exiting.")
             return 1
-        #except:
-        #    print("Unable to parse file! exiting")
+        except:
+            print("Unable to parse file! exiting")
 
 
 

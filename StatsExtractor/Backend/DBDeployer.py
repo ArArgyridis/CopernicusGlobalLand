@@ -25,7 +25,10 @@ class DBDeployer(object):
             "create_date": "{0}-{1}-{2}T{3}:{4}:00",
             "variable": "NDVI",
             "style": "../Styles/BioPar_NDVI300_V2_Global.sld",
-            "description": "NDVI Data @ 300Km"
+            "description": "NDVI Data @ 300Km",
+            "low_value": 0.225,
+            "mid_value": 0.45,
+            "high_value":0.75
          },
         {
             "name": "BioPar_FAPAR300_V1_Global",
@@ -34,7 +37,10 @@ class DBDeployer(object):
             "create_date": "{0}-{1}-{2}T{3}:{4}:00",
             "variable": "FAPAR",
             "style": "../Styles/BioPar_NDVI300_V2_Global.sld",
-            "description": "Fraction of Absorbed Photosynthetically Active Radiation 333m"
+            "description": "Fraction of Absorbed Photosynthetically Active Radiation 333m",
+            "low_value": 0.225,
+            "mid_value": 0.45,
+            "high_value":0.75
         }
     ]
 
@@ -77,8 +83,8 @@ class DBDeployer(object):
 
             values = values[0:-1] + "),"
 
-        query = "INSERT INTO {0}.product(name, pattern, types, create_date, variable, style, description) VALUES {1}"\
-            .format(self._cfg.statsInfo.schema, values[0:-1])
+        query = "INSERT INTO {0}.product(name, pattern, types, create_date, variable, style, description, low_value, " \
+                "mid_value, high_value) VALUES {1}".format(self._cfg.statsInfo.schema, values[0:-1])
         session = self._cfg.pgConnections["admin"].getNewSession(db=self.__createDBOptions.db)
         self._cfg.pgConnections["admin"].executeQueries([query, ], session)
 

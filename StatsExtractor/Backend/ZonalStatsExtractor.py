@@ -13,7 +13,7 @@
 """
 
 from concurrent.futures import ProcessPoolExecutor
-from itertools import repeat
+from datetime import datetime
 from osgeo import gdal, ogr, osr
 import os, multiprocessing,  numpy as np, re
 
@@ -25,7 +25,7 @@ from Libs.Utils import *
 from Libs.Constants import Constants
 
 class GeomProcessor():
-    def __init__(self, ft, dstOSR, inImages, dstResolution, variable="NDVI"):
+    def __init__(self, ft, dstOSR, inImages, dstResolution, variable="NDVI", valueRange=None):
         self.__ft = ft
         self.__rasterFt = None
         self.__rasterExtents = None
@@ -33,6 +33,7 @@ class GeomProcessor():
         self.__srcImages = inImages
         self.__dstResolution = dstResolution
         self.__variable = variable
+        self.__valueRange = valueRange
         self.__pixelToAreaFunc = None
 
     def __del__(self):
@@ -88,14 +89,14 @@ class GeomProcessor():
         memVSource = None
 
 
-    def __extractStats(self, low, sparse, high):
+    def __extractStats(self, low, mid, high):
         out = list(range(len(self.__srcImages)))
         imgIdx = 0
         for image in self.__srcImages:
             inRasterData = gdal.Open(image)
             metaData = inRasterData.GetMetadata()
             tmpLow = reverseValue(metaData, low, self.__variable)
-            tmpSparse = reverseValue(metaData, sparse, self.__variable)
+            tmpSparse = reverseValue(metaData, mid, self.__variable)
             tmpHigh = reverseValue(metaData, high, self.__variable)
             noDataValue = inRasterData.GetRasterBand(1).GetNoDataValue()
 
@@ -137,13 +138,13 @@ class GeomProcessor():
             inRasterData = None
         return out
 
-    def process(self, low=0.225, sparse=0.45, high=0.675):
+    def process(self):
         self.__setPixelToAreaFunc()
         self.__geomRasterizer()
-        return self.__extractStats(low, sparse, high)
+        return self.__extractStats(self.__valueRange["low"], self.__valueRange["mid"], self.__valueRange["high"])
 
 
-def geomProcessor(inImages, poly, variable):
+def geomProcessor(inImages, poly, variable, valueRange):
     inRasterData = gdal.Open(inImages[0])
 
     resolution = inRasterData.GetGeoTransform()[1]
@@ -163,7 +164,7 @@ def geomProcessor(inImages, poly, variable):
     ft.SetGeometry(geom)
     ft.SetFID(poly[0])
 
-    geoProc = GeomProcessor(ft, dstOSR, inImages, resolution, variable)
+    geoProc = GeomProcessor(ft, dstOSR, inImages, resolution, variable, valueRange)
 
     ret = geoProc.process()
 
@@ -225,21 +226,25 @@ class ZonalStatsExtractor():
                 #building netCDF subdatasets by matching the input file with the product pattern
                 for product in Constants.PRODUCT_INFO.keys():
                     xpr = re.compile(Constants.PRODUCT_INFO[product]["PATTERN"])
-                    if xpr.match(os.path.split(image)[1]) is not None:  # product found, preparing to append to DB
+                    chk = os.path.split(image)[1]
+                    if xpr.match(chk) is not None:  # product found, preparing to append to DB
                         if product not in netcdfSubDatasets:
                             netcdfSubDatasets[product] = []
 
-                        netcdfSubDatasets[product].append("""NETCDF:"{0}":{1}"""
+                        examineDate = datetime.strptime(Constants.PRODUCT_INFO[product]["CREATE_DATE"](xpr.findall(chk)[0]),
+                                                                                                       "%Y-%m-%dT%H:%M:%S")
+                        if Constants.PRODUCT_INFO[product]["EXTRACTED_DATES"] is None or examineDate not in \
+                                Constants.PRODUCT_INFO[product]["EXTRACTED_DATES"]:
+                            netcdfSubDatasets[product].append("""NETCDF:"{0}":{1}"""
                                                  .format(image, Constants.PRODUCT_INFO[product]["VARIABLE"]))
-                        if gdal.Open(netcdfSubDatasets[product][-1]) is None:
-                            raise IOError
+                            if gdal.Open(netcdfSubDatasets[product][-1]) is None:
+                                raise IOError
 
             #creating cursor to retrieve polygons from DB
             session = self._config.pgConnections[self._config.statsInfo.connectionId].getNewSession()
             polyQuery = "SELECT id, ST_ASTEXT(geom), ST_SRID(geom) FROM {0}.stratification " \
                         "WHERE stratification_description='{1}'"\
                 .format(self._config.statsInfo.schema, self._stratificationType)
-
             executor = ProcessPoolExecutor(max_workers=nThreads)
             for product in netcdfSubDatasets:
                 res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(polyQuery,
@@ -248,7 +253,8 @@ class ZonalStatsExtractor():
                 if len(netcdfSubDatasets[product]) > 0:
                         threads = [
                             executor.submit(geomProcessor,netcdfSubDatasets[product], poly,
-                                            Constants.PRODUCT_INFO[product]["VARIABLE"]) for poly in res]
+                                            Constants.PRODUCT_INFO[product]["VARIABLE"],
+                                            Constants.PRODUCT_INFO[product]["VALUE_RANGE"] ) for poly in res]
                         for process in threads:
                             result = process.result()
                             if result is not None:
@@ -257,9 +263,8 @@ class ZonalStatsExtractor():
                             self.__storeToDB(values)
                         else:
                             print("No stats were extracted for product: {0}. Exiting".format(product))
-
-
-
+                else:
+                    print("No new images for stats extraction were found for product: {0}. Exiting".format(product))
 
         except FileExistsError:
             print("A specified does not exist. Verify the list of input files")
@@ -267,8 +272,8 @@ class ZonalStatsExtractor():
         except IOError:
             print("The specified variable does not exist.")
             return None
-        except:
-            print("Unable to compute statistics. Existing")
+        #except:
+        #    print("Unable to compute statistics. Existing")
 
 
         return

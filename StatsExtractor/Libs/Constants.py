@@ -24,7 +24,15 @@ class Constants:
             _cfg = ConfigurationParser(cfg)
             _cfg.parse()
             query = """
-            SELECT * FROM {0}.product""".format(_cfg.statsInfo.schema)
+            WITH unique_dates AS(
+                SELECT DISTINCT ps.product_type, ARRAY_AGG(DISTINCT ps.date) dates
+	            FROM {0}.poly_stats ps 
+	            GROUP BY PS.product_type
+            )
+            SELECT DISTINCT p.*, ud.dates
+            FROM {0}.product p 
+            LEFT JOIN unique_dates ud on p.id = ud.product_type
+            """.format(_cfg.statsInfo.schema)
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
             if res != 1:
                 for row in res:
@@ -34,6 +42,13 @@ class Constants:
                     Constants.PRODUCT_INFO[row[1]]["CREATE_DATE"] = lambda ptr: row[4].format(*ptr)
                     Constants.PRODUCT_INFO[row[1]]["VARIABLE"] = row[5]
                     Constants.PRODUCT_INFO[row[1]]["STYLE"] = row[6]
+
+                    Constants.PRODUCT_INFO[row[1]]["VALUE_RANGE"] = {
+                        "low": row[8],
+                        "mid": row[9],
+                        "high": row[10]
+                    }
+                    Constants.PRODUCT_INFO[row[1]]["EXTRACTED_DATES"] = row[11]
 
         except:
             print("Unable to load configuration file!")
