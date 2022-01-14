@@ -11,9 +11,35 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import copy
 import copyreg, re, types
 from Libs.ConfigurationParser import ConfigurationParser
+
+class ProductInfo:
+    def __init__(self, row):
+        self.id = row[0]
+        self.pattern = row[2]
+        self.types = eval(row[3])
+        self._dateptr = row[4]
+        self.variable = row[5]
+        self.style = row[6]
+        self.valueRange = {
+            "low": row[8],
+            "mid": row[9],
+            "high": row[10]
+        }
+        self.novalColorRamp = row[11]
+        self.sparsevalColorRamp = row[12]
+        self.midvalColorRamp = row[13]
+        self.highvalColorRamp = row[14]
+        self.minValue = row[15]
+        self.maxValue = row[16]
+        self.extractedDates = row[17]
+
+    def createDate(self, ptr):
+        return self._dateptr.format(*ptr)
+
+
 
 class Constants:
     PRODUCT_INFO={}
@@ -25,31 +51,22 @@ class Constants:
             _cfg.parse()
             query = """
             WITH unique_dates AS(
-                SELECT DISTINCT ps.product_type, ARRAY_AGG(DISTINCT ps.date) dates
+                SELECT DISTINCT p.id, ARRAY_AGG(DISTINCT pf.date) dates
 	            FROM {0}.poly_stats ps 
-	            GROUP BY PS.product_type
+	            JOIN {0}.product_file pf on ps.product_file_id = pf.id 
+	            JOIN {0}.product p on pf.product_id =p.id
+	            GROUP BY p.id
             )
             SELECT DISTINCT p.*, ud.dates
             FROM {0}.product p 
-            LEFT JOIN unique_dates ud on p.id = ud.product_type
+            LEFT JOIN {0}.product_file pf on p.id = pf.product_id 
+            LEFT JOIN unique_dates ud on p.id = ud.id
             """.format(_cfg.statsInfo.schema)
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
             if res != 1:
                 for row in res:
-                    Constants.PRODUCT_INFO[row[1]] = {}
-                    Constants.PRODUCT_INFO[row[1]]["PATTERN"] = row[2]
-                    Constants.PRODUCT_INFO[row[1]]["TYPES"] = eval(row[3])
-                    Constants.PRODUCT_INFO[row[1]]["CREATE_DATE"] = lambda ptr: row[4].format(*ptr)
-                    Constants.PRODUCT_INFO[row[1]]["VARIABLE"] = row[5]
-                    Constants.PRODUCT_INFO[row[1]]["STYLE"] = row[6]
-
-                    Constants.PRODUCT_INFO[row[1]]["VALUE_RANGE"] = {
-                        "low": row[8],
-                        "mid": row[9],
-                        "high": row[10]
-                    }
-                    Constants.PRODUCT_INFO[row[1]]["EXTRACTED_DATES"] = row[11]
-
+                    key = copy.deepcopy(row[1])
+                    Constants.PRODUCT_INFO[row[1]] = ProductInfo(row)
         except:
             print("Unable to load configuration file!")
             raise RuntimeError
@@ -57,9 +74,9 @@ class Constants:
     @staticmethod
     def getImageProduct(img):
         for product in Constants.PRODUCT_INFO:
-            expr = re.compile(Constants.PRODUCT_INFO[product]["PATTERN"])
+            expr = re.compile(Constants.PRODUCT_INFO[product].pattern)
             if (expr.match(img)):
                 date = expr.findall(img)
-                return [product, Constants.PRODUCT_INFO[product], Constants.PRODUCT_INFO[product]["CREATE_DATE"](date[0])]
+                return [product, Constants.PRODUCT_INFO[product], Constants.PRODUCT_INFO[product].createDate(date[0])]
 
 

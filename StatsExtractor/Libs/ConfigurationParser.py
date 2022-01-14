@@ -14,7 +14,7 @@
 
 import json, os, psycopg2 as pg
 
-class PGOptions:
+class PGOptions(object):
     def __init__(self, db, host, port, user, pwd):
         self.db = db
         self.host = host
@@ -61,19 +61,22 @@ class PGOptions:
             return 1
 
     def executeQueries(self, queries, session=None):
-        try:
+            query = None
+        #try:
             if session is None:
                 session = self.getNewSession()
 
             cursor = session.cursor()
-            for query in queries:
+            for i in range(len(queries)):
+                query = queries[i]
                 cursor.execute(query)
             session.commit()
             return 0
-        except:
-            session.rollback()
-            print("Unable to exequte queries. Exiting")
-            return 1
+        #except:
+        #    session.rollback()
+        #    print(query)
+        #    print("Unable to exequte queries. Exiting")
+        #    return 1
 
     def fetchQueryResult(self, query, session=None):
         try:
@@ -100,18 +103,23 @@ class PGOptions:
 
         except:
             session.rollback()
+            print(query)
             print("Unable to fetch iteratable. Exiting")
             return 1
 
 
-class StatsInfo:
+class StatsInfo(object):
     def __init__(self, schema, tmpSchema, connectionId):
         self.schema = schema
         self.tmpSchema = tmpSchema
         self.connectionId = connectionId
 
+class FileSystem(object):
+    def __init__(self, cfg):
+        self.imageryPath = cfg["imagery_path"]
 
-class ConfigurationParser:
+
+class ConfigurationParser(object):
     def __init__(self, cfgFile):
         self.__cfgFile = cfgFile
         self.pgConnections = {}
@@ -137,10 +145,9 @@ class ConfigurationParser:
             #importing stats info
             self.statsInfo = StatsInfo(configData["statsinfo"]["schema"],
                                        configData["statsinfo"]["tmp_schema"],configData["statsinfo"]["connection_id"])
+            #path-relevant info
+            self.filesystem = FileSystem(configData["filesystem"])
             return 0
-
-
-
 
         except FileExistsError:
             print("Configuration file does not exists! Exiting.")

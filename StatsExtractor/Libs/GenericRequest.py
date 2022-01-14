@@ -21,7 +21,6 @@ class GenericRequest(object):
         self._requestData = requestData
 
     def process(self):
-        request = "undefined"
         status = "200 OK"
         ret = None
         try:

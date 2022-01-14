@@ -61,9 +61,14 @@ class DBImporter:
             for col in cols:
                 metaDataStr += "'{0}',{0},".format(col[0])
 
-            queries = ["DELETE FROM {0}.stratification where stratification_description = '{1}';".format(self.__configuration.statsInfo.schema, self.__descriptor),
-            """ INSERT INTO {0}.stratification (stratification_description, geom, metadata) SELECT '{1}', {2}, json_build_object({3}) FROM {4}.{5}; """\
-                .format(self.__configuration.statsInfo.schema,self.__descriptor,
+            queries = ["DELETE FROM {0}.stratification where description = '{1}';".format(
+                self.__configuration.statsInfo.schema, self.__descriptor),
+            """INSERT INTO {0}.stratification (description) VALUES ('{1}') ON CONFLICT(description) 
+            DO NOTHING;""".format(self.__configuration.statsInfo.schema, self.__descriptor),
+
+            """ INSERT INTO {0}.stratification_geom (stratification_id, geom, geom3857, metadata) SELECT s.id, {2},
+             st_transform({2}, 3857), json_build_object({3}) FROM {4}.{5} JOIN {0}.stratification s 
+             ON s.description= '{1}'; """.format(self.__configuration.statsInfo.schema,self.__descriptor,
                     self.__geomColumn, metaDataStr[0:-1], self.__configuration.statsInfo.tmpSchema, self.__tmpTable),
             """DROP TABLE {0}.{1}""".format(self.__configuration.statsInfo.tmpSchema, self.__tmpTable)
             ]

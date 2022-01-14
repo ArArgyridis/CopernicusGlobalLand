@@ -55,8 +55,20 @@ class AlignToImage:
 
         #compute nearest grid pixel coordinate (image reference system) for both corners
         gridCRSUpperLeft = self.__xyToRowCol(*finalUpperLeft[0:2], gridMetaData["gt"])
-        gridCRSLowerRight = self.__xyToRowCol(*finalLowerRight[0:2], gridMetaData["gt"])
+        #clipping to get image within grid bounds
+        if gridCRSUpperLeft[0] < 0:
+            gridCRSUpperLeft[0] = 0
 
+        if gridCRSUpperLeft[1] < 0:
+            gridCRSUpperLeft[1] = 0
+
+
+        gridCRSLowerRight = self.__xyToRowCol(*finalLowerRight[0:2], gridMetaData["gt"])
+        if gridCRSLowerRight[0] > gridMetaData["dims"]["x"]:
+            gridCRSLowerRight[0] = gridMetaData["dims"]["x"]-1
+
+        if gridCRSLowerRight[1] > gridMetaData["dims"]["y"]:
+            gridCRSLowerRight[1] = gridMetaData["dims"]["y"]-1
         alignedUpperLeft = self.__rowColToXY(*gridCRSUpperLeft, gridMetaData["gt"])
         alignedLowerRight = self.__rowColToXY(*gridCRSLowerRight, gridMetaData["gt"])
 

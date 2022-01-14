@@ -1,0 +1,260 @@
+<template>
+<div class="container-fluid fixed-top">
+	<div class="row">
+		<div id="leftPanel" class="noPadding hiddenBar raise hidden sidenav leftnav" >
+			<LeftPanel v-on:closeSideMenu="toggleLeft()" 
+					v-on:dateChange="updateProducts()"
+					v-on:currentProductChange="updateAll()"
+					v-on:rawWMSChange="updateProductWMSVisibility()" 
+					v-on:stratificationChange="updateStratificationLayerVisibility()"
+					v-on:switchViewMode="toggleCurrentLayersVisibility()"
+					v-on:stratificationDateChange="refreshStratificationInfo()"
+					v-on:stratificationAreaDensityChange="updateStratificationLayerStyle()"
+					v-on:closeLeftPanel="toggleLeft()"
+			/>
+		</div>
+		<div class="noPadding hidden">
+			<MapApp ref="mapApp" 
+			v-on:featureClicked="updateStratificationPolygonInfo($event)"
+			v-on:mapCoordinate="updateRawDataChart($event)"
+			/>
+			<div class="d-flex">
+				<div class="btn position-relative fixed-top burger raise transition d-inline" id="menuButton">
+					<FontAwesomeIcon icon="bars"  size="3x" :style="{ color: '#eaeada' }" v-on:click="toggleLeft()"/>
+				</div>
+			</div>
+			<div class="d-flex logo relative"><img alt="Copernicus LMS" src="../assets/copernicus_land_monitoring.png"></div>
+		</div>		
+		<div id="rightPanel" class="transition noPadding hiddenBar raise hidden sidenav rightnav">
+			<TimeseriesCharts v-bind:polyId=currentStratificationPolygonId ref="chartPanel" v-on:closeTimechartsPanel="closeRightPanel()"
+			/>
+		</div>
+	</div>
+</div>
+</template>
+
+<script> 
+import MapApp from "./MapApp.vue";
+import LeftPanel from "./LeftPanel.vue";
+import TimeseriesCharts from "./TimeseriesCharts.vue";
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faUserSecret, faEye, faBars } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import requests from "../libs/js/requests.js";
+
+library.add(faUserSecret)
+library.add(faEye);
+library.add(faBars);
+
+export default {
+	name: 'MainPage',
+	components: {
+		MapApp,
+		LeftPanel,
+		FontAwesomeIcon,
+		TimeseriesCharts
+	},
+	data() {
+		return {
+			currentStratificationPolygonId: null,
+			showRightPanel: false,
+			activateClickOnMap: false
+		}
+	},
+	methods: {
+		init() {
+			this.updateProducts();
+			//hack to properly resize right panel timechart
+			document.getElementById("rightPanel").addEventListener('transitionend', () => {
+				this.$refs.chartPanel.resizeChart();
+			});
+		},
+		closeRightPanel() {
+			this.setRightPanelVisibility(false);
+			this.currentStratificationPolygonId = null;
+			this.refreshStratificationInfo();
+			this.$refs.mapApp.clearPolygonSelection();
+		},
+		refreshStratificationInfo() {
+			console.log("asdasdasd");
+			this.$refs.chartPanel.updatePolygonTimeseriesChart(this.currentStratificationPolygonId);
+			this.$refs.chartPanel.updateHistogramChart(this.currentStratificationPolygonId);
+			this.updateStratificationLayerStyle();
+		},
+		//hiding right panel
+		setRightPanelVisibility(status) {
+			if(this.showRightPanel != status) {
+				this.togglePanelClasses("rightPanel");
+				this.showRightPanel = status;
+			}
+		},		
+		toggleCurrentLayersVisibility() {
+			if (this.$store.getters.currentStratification != null)
+				this.$refs.mapApp.toggleLayerVisibility(this.$store.getters.currentStratification.layerId);
+				
+			if (this.$store.getters.currentProductWMSLayer != null) 
+				this.$refs.mapApp.toggleLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId);
+			this.setRightPanelVisibility(false);
+			this.$refs.chartPanel.resetAllCharts();
+		},
+		togglePanelClasses(id){
+			document.getElementById(id).classList.toggle("hiddenBar");
+			document.getElementById(id).classList.toggle("shownBar");
+		},		
+		toggleLeft() {
+			this.togglePanelClasses("leftPanel");
+			document.getElementById("menuButton").classList.toggle("offsetButton");
+		},
+		updateProductInfo() {
+			this.$store.commit("clearProducts");
+			requests.fetchProductInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd).then((response)=>{
+				this.$store.commit("setProducts", response.data.data);
+			});
+		},
+		updateStratificationAreaType() {
+			/*
+			this.$refs.mapApp.refreshCurrentStratificationStyle();
+			if (this.currentStratificationPolygonId != null)
+				this.$refs.chartPanel.updatePolygonTimeseriesChart(this.currentStratificationPolygonId);
+			*/
+		},
+		updateStratificationInfo() {
+			this.$refs.mapApp.clearStratifications();
+			requests.fetchStratificationInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.currentProduct.id).then((response)=>{
+				this.$store.commit("setStratifications", response.data.data);
+				this.$refs.mapApp.refreshStratifications();
+			});
+		},		
+		updateStratificationPolygonInfo(evt) {
+			if (evt != null)
+				this.currentStratificationPolygonId = evt.getId();
+			else
+				this.currentStratificationPolygonId = null;
+				
+			this.refreshStratificationInfo();
+		},
+		updateProductWMSVisibility() {
+			this.setRightPanelVisibility(false);
+			this.$refs.mapApp.updateProductWMSVisibility();
+		},
+		updateStratificationLayerStyle(){
+			this.$refs.mapApp.updateStratificationLayerStyle();
+			this.$refs.chartPanel.updatePolygonTimeseriesChart(this.currentStratificationPolygonId);
+		},
+		updateStratificationLayerVisibility() {
+			this.setRightPanelVisibility(false);
+			this.$refs.mapApp.updateStratificationLayerVisibility();
+			/*
+			if (this.currentStratificationPolygonId != null) {
+				this.$refs.chartPanel.updateHistogramChart(this.currentStratificationPolygonId);
+				this.setRightPanelVisibility(true);
+			}
+			*/
+		},
+		updateAll() {
+			this.setRightPanelVisibility(false);
+			this.updateStratificationInfo();
+			this.updateWMSLayers();
+		},
+		updateProducts() {
+			this.setRightPanelVisibility(false);
+			this.$refs.mapApp.clearStratifications();
+			this.$refs.mapApp.clearWMSLayers();
+			this.$refs.chartPanel.resetAllCharts();
+			this.updateProductInfo();
+			if (!this.activateClickOnMap) {
+				this.$refs.mapApp.toggleClickOnMap();
+				this.activateClickOnMap = true;
+			}
+		},
+		updateRawDataChart(evt) {
+			if (this.$store.getters.currentProduct == null) 
+				return;
+			
+			this.$refs.chartPanel.updateRawTimeSeriesChart(evt);
+			this.setRightPanelVisibility(true);
+			
+		},
+		updateWMSLayers() {
+			this.$refs.mapApp.clearWMSLayers();
+			this.$refs.mapApp.updateWMSLayers();
+		},
+		__updatePolygonChartData() {
+			this.$refs.chartPanel.updatePolygonTimeseriesChart(this.currentStratificationPolygonId);
+			this.$refs.chartPanel.updateHistogramChart(this.currentStratificationPolygonId);
+			
+			if (this.currentStratificationPolygonId != null)
+				this.setRightPanelVisibility(true);
+			else
+				this.setRightPanelVisibility(false);		
+		}
+	},
+	mounted() {
+		this.init();
+	}
+}
+
+</script>
+
+
+<style scoped>
+@import "../libs/css/myStyles.css";
+.burger {
+	top: -99.6vh;
+}
+.rightnav {
+	right: 0;
+}
+.leftnav {
+	left: 0;
+}
+
+.sidenav {
+	height: 100%; 
+	width: 0; 
+	position: fixed; 
+	top: 0;   
+	overflow-x: hidden; 
+	transition: 0.5s; 
+}
+
+@media(max-width: 900px) {
+	.shownBar {
+		width: 100%;
+	}
+	
+	.offsetButton {
+		left:100%;
+	}
+	
+	.logo  {
+		justify-content:center;
+		position: fixed;
+		bottom: 0px;
+		width: 100%;
+		height:10%;
+	}
+}
+
+@media(min-width:901px) {
+	.shownBar {
+		width: 500px;
+	}	
+	.offsetButton {
+		left:500px;
+	}	
+	.logo {
+		justify-content:end;
+		position: fixed;
+		bottom: 0px;
+		right: 0px;
+		height:8%;
+	}
+}
+
+.transition {
+	transition:0.5s;
+}
+
+
+</style>

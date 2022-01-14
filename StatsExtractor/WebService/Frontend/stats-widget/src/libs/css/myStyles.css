@@ -1,0 +1,13 @@
+.hiddenBar {
+	width:0px;
+	//overflow: hidden;
+}
+
+.noPadding {
+	padding-right:0px;
+	padding-left:0px;
+}
+
+.raise{
+	z-index:1;
+} 

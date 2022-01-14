@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
+import sys, json
 sys.path.extend(['..']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 
@@ -28,11 +28,18 @@ class DBDeployer(object):
             "description": "NDVI Data @ 300Km",
             "low_value": 0.225,
             "mid_value": 0.45,
-            "high_value":0.75
-         },
+            "high_value":0.75,
+            "noval_colors": json.dumps({"0": [254, 240, 217], "25": [253, 204, 138], "50": [252, 141, 89], "75": [227, 74, 51], "100": [179, 0, 0]}),
+            "sparseval_colors":json.dumps({"0": [247, 252, 245], "25": [201, 234, 194], "50": [123, 199, 124], "75": [42, 146, 75], "100": [0, 68, 27]}),
+            "midval_colors": json.dumps({"0": [247, 252, 245], "25": [201, 234, 194], "50": [123, 199, 124], "75": [42, 146, 75],"100": [0, 68, 27]}),
+            "highval_colors": json.dumps({"0": [247, 252, 245], "25": [201, 234, 194], "50": [123, 199, 124], "75": [42, 146, 75],"100": [0, 68, 27]}),
+            "min_value":0,
+            "max_value":250
+
+        },
         {
             "name": "BioPar_FAPAR300_V1_Global",
-            "pattern": "c_gls_FAPAR300-RT0_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})_GLOBE_PROBAV_V1.0.1.nc",
+            "pattern": "c_gls_FAPAR300-RT(\d+)_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})_GLOBE_(\w+)_(.*?).nc",
             "types": "(int, int, int, int, int,)",
             "create_date": "{0}-{1}-{2}T{3}:{4}:00",
             "variable": "FAPAR",
@@ -40,7 +47,13 @@ class DBDeployer(object):
             "description": "Fraction of Absorbed Photosynthetically Active Radiation 333m",
             "low_value": 0.225,
             "mid_value": 0.45,
-            "high_value":0.75
+            "high_value":0.75,
+            "noval_colors": json.dumps({"0": [254, 240, 217], "25": [253, 204, 138], "50": [252, 141, 89], "75": [227, 74, 51], "100": [179, 0, 0]}), #CAN BE 'NULL'
+            "sparseval_colors":json.dumps({"0": [247, 252, 245], "25": [201, 234, 194], "50": [123, 199, 124], "75": [42, 146, 75], "100": [0, 68, 27]}), #CAN BE 'NULL'
+            "midval_colors": json.dumps({"0": [247, 252, 245], "25": [201, 234, 194], "50": [123, 199, 124], "75": [42, 146, 75],"100": [0, 68, 27]}), #CAN BE 'NULL'
+            "highval_colors": json.dumps({"0": [247, 252, 245], "25": [201, 234, 194], "50": [123, 199, 124], "75": [42, 146, 75],"100": [0, 68, 27]}), #CAN BE 'NULL'
+            "min_value":0,
+            "max_value":238
         }
     ]
 
@@ -84,14 +97,15 @@ class DBDeployer(object):
             values = values[0:-1] + "),"
 
         query = "INSERT INTO {0}.product(name, pattern, types, create_date, variable, style, description, low_value, " \
-                "mid_value, high_value) VALUES {1}".format(self._cfg.statsInfo.schema, values[0:-1])
+                "mid_value, high_value, noval_colors, sparseval_colors, midval_colors, highval_colors, min_prod_value," \
+                "max_prod_value) VALUES {1}".format(self._cfg.statsInfo.schema, values[0:-1])
         session = self._cfg.pgConnections["admin"].getNewSession(db=self.__createDBOptions.db)
         self._cfg.pgConnections["admin"].executeQueries([query, ], session)
 
 
     def __loadSchema(self):
         query = open(self._template).read().format(self._cfg.statsInfo.tmpSchema,
-                                                                    self._cfg.statsInfo.schema, self.__createDBOptions.user)
+                                                   self._cfg.statsInfo.schema, self.__createDBOptions.user)
 
         session = self._cfg.pgConnections["admin"].getNewSession(db=self.__createDBOptions.db)
         self._cfg.pgConnections["admin"].executeQueries([query,], session)
