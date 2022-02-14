@@ -9,6 +9,6 @@
 		"connection_id":"the_localhost"
 	},
 	"filesystem":{
-		"imagery_path": "/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/"
+		"imagery_path": "/home/argyros/Projects/JRCStatsExtractor/ExperimentalData/Imagery/"
 	}
 } 
