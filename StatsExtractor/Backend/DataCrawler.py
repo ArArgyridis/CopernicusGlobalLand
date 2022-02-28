@@ -1,11 +1,11 @@
 import os,paramiko
-from stat import S_ISDIR
+from Libs.ConfigurationParser import ConfigurationParser
 
 class DataCrawler:
-    def __init__(self, hostname="uservm.terrascope.be", username="argyros", password="powertoeua87", port=24247):
+    def __init__(self, cnObj):
         #self._sftCn = pysftp.Connection(hostname, username=username, password=password, port=port)
-        self._sftpCn = paramiko.Transport((hostname, port))
-        self._sftpCn.connect(None, username, password)
+        self._sftpCn = paramiko.Transport((cnObj.host, cnObj.port))
+        self._sftpCn.connect(None, cnObj.userName, cnObj.password)
         self._sftpCn = paramiko.SFTPClient.from_transport(self._sftpCn)
 
     def fetchProduct(self, dir, outDir, product="BioPar_NDVI300_V2_Global"):
@@ -40,6 +40,9 @@ class DataCrawler:
 
 
 
-
-obj = DataCrawler()
-obj.fetchProduct(dir="/home/argyros/Desktop/data/BIOPAR/",outDir ="my_output_dir", product="BioPar_NDVI300_V2_Global")
+cfg = "../active_config.json"
+cfg = ConfigurationParser(cfg)
+cfg.parse()
+obj = DataCrawler(cfg.sftpParams["terrascope.be"])
+obj.fetchProduct(dir="/home/argyros/Desktop/data/BIOPAR/", outDir=cfg.filesystem.imageryPath,
+                 product="BioPar_NDVI300_V2_Global")

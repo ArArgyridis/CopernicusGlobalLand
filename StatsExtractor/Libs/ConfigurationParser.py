@@ -114,10 +114,16 @@ class StatsInfo(object):
         self.tmpSchema = tmpSchema
         self.connectionId = connectionId
 
+class SFTPConnectionParams(object):
+    def __init__(self, host, userName, password, port):
+        self.host = host
+        self.userName = userName
+        self.password = password
+        self.port = port
+
 class FileSystem(object):
     def __init__(self, cfg):
         self.imageryPath = cfg["imagery_path"]
-
 
 class ConfigurationParser(object):
     def __init__(self, cfgFile):
@@ -145,6 +151,16 @@ class ConfigurationParser(object):
             #importing stats info
             self.statsInfo = StatsInfo(configData["statsinfo"]["schema"],
                                        configData["statsinfo"]["tmp_schema"],configData["statsinfo"]["connection_id"])
+            #sftp connections
+            self.sftpParams = {}
+            sPrx = configData["sftp_connections"]
+            for key in sPrx.keys():
+                self.sftpParams[key] = SFTPConnectionParams(
+                    sPrx[key]["host"],
+                    sPrx[key]["user"],
+                    sPrx[key]["password"],
+                    sPrx[key]["port"])
+
             #path-relevant info
             self.filesystem = FileSystem(configData["filesystem"])
             return 0

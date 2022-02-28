@@ -4,7 +4,7 @@
 		"the_localhost":{"db":"jrcstats_test", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"}
 	},
 	"sftp_connections":{
-		"terrascope.be": {"user":"my_user", "password":"my_password", "port":22}
+		"connection_id": {"host":"a_host", "user":"my_user", "password":"my_password", "port":22}
 	},
 	"statsinfo": {
 		"schema": "public",
