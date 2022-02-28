@@ -6,12 +6,14 @@ class DataCrawler:
     def __init__(self, cnObj):
         #self._sftCn = pysftp.Connection(hostname, username=username, password=password, port=port)
         self._sftpCn = paramiko.Transport((cnObj.host, cnObj.port))
+        self._sftpCn.set_keepalive(20)
         self._sftpCn.connect(None, cnObj.userName, cnObj.password)
         self._sftpCn = paramiko.SFTPClient.from_transport(self._sftpCn)
 
     def fetchProduct(self, dir, outDir, product="BioPar_NDVI300_V2_Global"):
-        if not os.path.isdir(outDir):
-            os.makedirs(outDir, exist_ok=True)
+        outProdDir = os.path.join(outDir, product)
+        if not os.path.isdir(outProdDir):
+            os.makedirs(outProdDir, exist_ok=True)
 
         productDir = os.path.join(dir, product)
         years = self._sftpCn.listdir(productDir)
@@ -23,7 +25,7 @@ class DataCrawler:
                 product = self._sftpCn.listdir(dateDir)[0]
                 productDir = os.path.join(dateDir, product)
                 files = self._sftpCn.listdir(productDir)
-                outFileDir = os.path.join(*[outDir,year,date,product])
+                outFileDir = os.path.join(*[outProdDir,year,date,product])
                 if not os.path.isfile(outFileDir):
                     os.makedirs(outFileDir, exist_ok=True)
                 for file in files:
