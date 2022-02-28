@@ -1,4 +1,5 @@
-import os,paramiko
+import os,paramiko,sys
+sys.path.extend(['..']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 
 class DataCrawler:
@@ -42,7 +43,7 @@ class DataCrawler:
 
 cfg = "../active_config.json"
 cfg = ConfigurationParser(cfg)
-cfg.parse()
-obj = DataCrawler(cfg.sftpParams["terrascope.be"])
-obj.fetchProduct(dir="/home/argyros/Desktop/data/BIOPAR/", outDir=cfg.filesystem.imageryPath,
+if cfg.parse() != 1:
+    obj = DataCrawler(cfg.sftpParams["terrascope.be"])
+    obj.fetchProduct(dir="/home/argyros/Desktop/data/BIOPAR/", outDir=cfg.filesystem.imageryPath,
                  product="BioPar_NDVI300_V2_Global")

@@ -170,6 +170,7 @@ class ConfigurationParser(object):
             return 1
         except:
             print("Unable to parse file! exiting")
+            return 1
 
 
 
