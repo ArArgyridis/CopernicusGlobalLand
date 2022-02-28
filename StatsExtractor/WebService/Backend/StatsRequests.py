@@ -6,7 +6,7 @@ from PointValueExtractor import PointValueExtractor
 from osgeo import osr
 
 class StatsRequests(GenericRequest):
-    def __init__(self, cfg="../../../../active_config.json", requestData=None):
+    def __init__(self, cfg="../../active_config.json", requestData=None):
         super().__init__(cfg, ConfigurationParser, requestData)
 
     def __getResponseFromDB(self, query):
