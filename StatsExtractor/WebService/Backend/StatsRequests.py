@@ -25,7 +25,6 @@ class StatsRequests(GenericRequest):
         """.format(self._requestData["options"]["area_type"], self._config.statsInfo.schema, self._requestData["options"]["poly_id"],
                    self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"])
-        print(query)
         return self.__getResponseFromDB(query)
 
     def __fetchProductInfo(self):
@@ -142,12 +141,12 @@ class StatsRequests(GenericRequest):
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
         data = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
-        obj = PointValueExtractor(data[0][1], data[0][0], data[0][3], data[0][4],data[0][5],
+        obj = PointValueExtractor(data[0],
                                   self._requestData["options"]["coordinate"][0], self._requestData["options"]["coordinate"][1],
                                   self._requestData["options"]["epsg"])
 
         res = obj.process()
-        return [ [data[0][2][path], val] for path,val in res]
+        return res
 
     def _processRequest(self):
         ret = None
