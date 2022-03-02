@@ -4,7 +4,6 @@ from Libs.ConfigurationParser import ConfigurationParser
 
 class DataCrawler:
     def __init__(self, cnObj):
-        #self._sftCn = pysftp.Connection(hostname, username=username, password=password, port=port)
         self._sftpCn = paramiko.Transport((cnObj.host, cnObj.port))
         self._sftpCn.set_keepalive(20)
         self._sftpCn.connect(None, cnObj.userName, cnObj.password)
@@ -17,6 +16,8 @@ class DataCrawler:
 
         productDir = os.path.join(dir, product)
         years = self._sftpCn.listdir(productDir)
+        years.remove('2020')
+        years.remove("2021")
         for year in years:
             yearDir = os.path.join(productDir, year)
             dates = self._sftpCn.listdir(yearDir)
@@ -28,20 +29,12 @@ class DataCrawler:
                 outFileDir = os.path.join(*[outProdDir,year,date,product])
                 if not os.path.isfile(outFileDir):
                     os.makedirs(outFileDir, exist_ok=True)
-                for file in files:
-                    remotePath = os.path.join(productDir, file)
-                    localPath = os.path.join(outFileDir, file)
+                for fl in files:
+                    remotePath = os.path.join(productDir, fl)
+                    localPath = os.path.join(outFileDir, fl)
+                    print("Downloading: ", fl)
                     self._sftpCn.get(remotePath, localPath)
-
-
-
-
-
-
-
-
-
-
+                    print("Downloading Finished!")
 
 cfg = "../active_config.json"
 cfg = ConfigurationParser(cfg)

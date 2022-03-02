@@ -130,17 +130,22 @@ class StatsRequests(GenericRequest):
     def __getRawTimeSeriesDataForRegion(self):
         query = """
             SELECT  p.variable, 
-            ARRAY_AGG( '{0}' || rel_file_path ORDER BY date DESC) ,
-            JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date DESC)
+            ARRAY_AGG( '{0}' || rel_file_path ORDER BY date DESC)
+            ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date DESC)
+            ,p.pattern
+            ,p.types
+            ,p.create_date
             FROM {1}.product_file pf 
             JOIN product p on pf.product_id =p.id
-            WHERE DATE between  '{2}' and '{3}' and product_id  = {4}
-            GROUP BY p.variable        
+            WHERE date between  '{2}' and '{3}' and product_id  = {4}
+            GROUP BY p.variable  
+            ORDER BY date      
         """.format(self._config.filesystem.imageryPath,
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
         data = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
-        obj = PointValueExtractor(data[0][1], data[0][0], self._requestData["options"]["coordinate"][0], self._requestData["options"]["coordinate"][1],
+        obj = PointValueExtractor(data[0][1], data[0][0], data[0][3], data[0][4],data[0][5],
+                                  self._requestData["options"]["coordinate"][0], self._requestData["options"]["coordinate"][1],
                                   self._requestData["options"]["epsg"])
 
         res = obj.process()
