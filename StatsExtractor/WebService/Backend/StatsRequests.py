@@ -124,21 +124,20 @@ class StatsRequests(GenericRequest):
             WHERE p.id = {1} AND pf."date" = '{2}' AND ps.poly_id = {3}
         """.format(self._config.statsInfo.schema, self._requestData["options"]["product_id"],
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
-        print(query)
         return self.__getResponseFromDB(query)
 
     def __getRawTimeSeriesDataForRegion(self):
         query = """
             SELECT  p.variable, 
-            ARRAY_AGG( '{0}' || rel_file_path ORDER BY date DESC)
-            ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date DESC)
+            ARRAY_AGG( '{0}' || rel_file_path ORDER BY date ASC)
+            ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date ASC)
             ,p.pattern
             ,p.types
             ,p.create_date
             FROM {1}.product_file pf 
             JOIN product p on pf.product_id =p.id
             WHERE date between  '{2}' and '{3}' and product_id  = {4}
-            GROUP BY p.variable  
+            GROUP BY p.variable, p.pattern,p.types,p.create_date
             ORDER BY date      
         """.format(self._config.filesystem.imageryPath,
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
