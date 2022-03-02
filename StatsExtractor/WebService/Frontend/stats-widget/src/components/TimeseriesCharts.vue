@@ -84,7 +84,8 @@ export default {
 				return this.rawTimeSeries.series[0].data;
 			},
 			set(dt) {
-				this.$refs.rawTimeSeriesChart.chart.series[0].setData(dt, true);
+				this.$refs.rawTimeSeriesChart.chart.series[0].setData(dt[0], true);
+				this.$refs.rawTimeSeriesChart.chart.series[1].setData(dt[1], true);
 				this.$refs.rawTimeSeriesChart.chart.setTitle({text:this.rawTimeSeriesTitle}, true);
 				this.$refs.rawTimeSeriesChart.chart.reflow();
 			}
@@ -150,7 +151,7 @@ export default {
 				title:{
 					text: this.rawTimeSeriesTitle
 				},
-				series: [{data: null}],
+				series: [{data: null},{data: null}],
 				yAxis:{
 					min: 0,
 					max: 0.9,
@@ -172,7 +173,6 @@ export default {
 				legend:{
 					enabled: false
 				}
-				
 			},
 			stratificationHistogram:{
 				credits:{
@@ -239,14 +239,17 @@ export default {
 		updateRawTimeSeriesChart(coordInfo) {
 			requests.getRawTimeSeriesDataForRegion(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.currentProduct.id, coordInfo)
 			.then((response) =>{
-				response.data.data.forEach((pair)=>{
+				response.data.data.raw.forEach((pair)=>{
 					pair[0] = (new Date(pair[0])).getTime();
 				});
-				this.rawTimeSeriesData = response.data.data;
+				response.data.data.filtered.forEach((pair)=>{
+					pair[0] = (new Date(pair[0])).getTime();
+				});
+				this.rawTimeSeriesData = [response.data.data.raw, response.data.data.filtered];
 				this.rawTimeSeries.title.text = this.rawTimeSeriesTitle;
 			})
 			.catch(() =>{
-				this.rawTimeSeriesData = null;
+				this.rawTimeSeriesData = [null, null];
 			});
 		},
 		updatePolygonTimeseriesChart(polyId){
@@ -294,7 +297,7 @@ export default {
 			});
 		},
 		resetAllCharts() {
-			this.rawTimeSeriesData = null;
+			this.rawTimeSeriesData = [null, null];
 			this.timeSeriesStratificationData = null;
 			this.stratificationHistogramData = [null, null];
 		},
