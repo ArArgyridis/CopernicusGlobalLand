@@ -45,11 +45,6 @@ class PointValueExtractor():
             + int(dif >= mn + 1*std and dif <mn + 2*std)*(1)
             + int(dif >= mn + 2*std and dif <mn + 3*std)*(2)
             + int(dif >= mn + 3 * std)*(3))
-            print("OK")
-
-
-
-
 
     def process(self):
         ret = {}

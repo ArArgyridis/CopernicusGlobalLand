@@ -138,7 +138,6 @@ class StatsRequests(GenericRequest):
             JOIN product p on pf.product_id =p.id
             WHERE date between  '{2}' and '{3}' and product_id  = {4}
             GROUP BY p.variable, p.pattern,p.types,p.create_date
-            ORDER BY date      
         """.format(self._config.filesystem.imageryPath,
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
