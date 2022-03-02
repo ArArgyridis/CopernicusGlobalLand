@@ -247,10 +247,13 @@ export default {
 				});
 				this.rawTimeSeriesData = [response.data.data.raw, response.data.data.filtered];
 				this.rawTimeSeries.title.text = this.rawTimeSeriesTitle;
+				this.$refs.rawTimeSeriesChart.chart.hideLoading();
 			})
 			.catch(() =>{
 				this.rawTimeSeriesData = [null, null];
 			});
+			this.$refs.rawTimeSeriesChart.chart.showLoading();
+			
 		},
 		updatePolygonTimeseriesChart(polyId){
 			let currentProduct = this.$store.getters.currentProduct;
