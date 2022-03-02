@@ -1,4 +1,4 @@
-import sys, re, os, numpy as np
+import sys, re, os, numpy as np, pandas as pd
 sys.path.extend(['../../'])
 from osgeo import gdal, osr
 from Libs.Utils import xyToColRow, scaleValue, getListOfFiles
@@ -22,18 +22,23 @@ class PointValueExtractor():
     def __getNETCDFSubdataset(self, img):
         return """NETCDF:"{0}":{1}""".format(img, self._data[0])
 
-    def _movingAverage(self, ret,windowSize = 4):
+    def _movingAverage(self, ret,windowSize = 3):
         if ret is None or ret["raw"] is None:
             return
 
-        window = np.ones(int(windowSize)) / float(windowSize)
-        print(ret)
-
         rawData = [s[1] for s in ret["raw"]]
-        ll = np.convolve(rawData, window, mode='valid')
-        difs = rawData[windowSize - 1::] - ll
-        mn = difs.mean()
-        std = difs.std()
+        ll =pd.Series(rawData).rolling(window=windowSize, min_periods=1).mean()
+        #difs = rawData[windowSize - 1::] - ll
+        difs = list(range(len(rawData)))
+        for k, l, i in zip(rawData, ll, range(len(rawData))):
+            if k is None:
+                difs[i] = np.nan
+            else:
+                difs[i] = k-l
+
+
+        mn = np.nanmean(difs)
+        std = np.nanstd(difs)
         difs = np.round(difs, 3)
         print(mn,std)
         ret["filtered"] = [ [x[0],y] for x,y in zip(ret["raw"][windowSize - 1::],ll)]
