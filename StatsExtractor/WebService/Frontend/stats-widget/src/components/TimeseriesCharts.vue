@@ -251,6 +251,7 @@ export default {
 			})
 			.catch(() =>{
 				this.rawTimeSeriesData = [null, null];
+				this.$refs.rawTimeSeriesChart.chart.hideLoading();
 			});
 			this.$refs.rawTimeSeriesChart.chart.showLoading();
 			
