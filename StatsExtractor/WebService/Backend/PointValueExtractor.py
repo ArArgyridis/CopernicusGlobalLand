@@ -27,20 +27,20 @@ class PointValueExtractor():
             return
 
         rawData = [s[1] for s in ret["raw"]]
-        ll =pd.Series(rawData).rolling(window=windowSize, min_periods=1).mean()
+        averages =pd.Series(rawData).rolling(window=windowSize, min_periods=1).mean()
         #difs = rawData[windowSize - 1::] - ll
         difs = list(range(len(rawData)))
-        for k, l, i in zip(rawData, ll, range(len(rawData))):
+        for k, l, i in zip(rawData, averages, range(len(rawData))):
             if k is None:
                 difs[i] = np.nan
             else:
                 difs[i] = k-l
 
-
         mn = np.nanmean(difs)
         std = np.nanstd(difs)
         difs = np.round(difs, 3)
-        ret["filtered"] = [ [x[0],y] for x,y in zip(ret["raw"],ll)]
+        ret["filtered"] = list(range(len(averages)))
+        ret["filtered"] = [ [x[0], None] if np.isnan(y) else [x[0],y] for x,y in zip(ret["raw"], averages)  ]
         for rawVal, dif in zip(ret["raw"], difs):
             rawVal.append(int(dif < mn-3*std)*(-3)
             + int(dif >= mn - 3*std and dif <mn - 2*std)*(-2)
