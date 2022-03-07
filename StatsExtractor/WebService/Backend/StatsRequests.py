@@ -128,7 +128,6 @@ class StatsRequests(GenericRequest):
     def __getRawTimeSeriesDataForRegion(self):
         query = """
             SELECT  p.variable, 
-            ARRAY_AGG( '{0}' || rel_file_path ORDER BY date ASC)
             ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date ASC)
             ,p.pattern
             ,p.types

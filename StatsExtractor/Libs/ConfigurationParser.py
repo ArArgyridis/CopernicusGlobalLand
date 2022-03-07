@@ -124,6 +124,7 @@ class SFTPConnectionParams(object):
 class FileSystem(object):
     def __init__(self, cfg):
         self.imageryPath = cfg["imagery_path"]
+        self.anomalyProductsPath = cfg["anomaly_products_path"]
 
 class ConfigurationParser(object):
     def __init__(self, cfgFile):
