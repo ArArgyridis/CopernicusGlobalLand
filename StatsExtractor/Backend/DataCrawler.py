@@ -67,7 +67,7 @@ class DataCrawler:
                     #downloading file
                     print("Downloading: ", chk)
                     self._sshCn.open_sftp().get(fl, outFilePath)
-                    self.importProductFromLocalStorage(self, outDir, product)
+                    self.importProductFromLocalStorage(outDir, product)
                     print("Downloading Finished!")
 
     def importProductFromLocalStorage(self, storageDir, product):
