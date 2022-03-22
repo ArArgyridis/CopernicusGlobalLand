@@ -41,6 +41,7 @@ class PGOptions(object):
         return pg.connect(self.getConnectionString(db))
 
     def executeNoTransaction(self, queries, session=None):
+        curQuery = ""
         try:
             if session is None:
                 session = self.getNewSession()
@@ -49,8 +50,8 @@ class PGOptions(object):
             session.set_isolation_level(autocommit)
 
             cursor = session.cursor()
-            for query in queries:
-                cursor.execute(query)
+            for curQuery in queries:
+                cursor.execute(curQuery)
             cursor.close()
 
 
@@ -58,11 +59,12 @@ class PGOptions(object):
         except:
             session.rollback()
             print("Unable to execute non-transaction queries. Exiting")
+            print("Query with issue: ", curQuery)
             return 1
 
     def executeQueries(self, queries, session=None):
-            query = None
-        #try:
+        query = None
+        try:
             if session is None:
                 session = self.getNewSession()
 
@@ -72,11 +74,11 @@ class PGOptions(object):
                 cursor.execute(query)
             session.commit()
             return 0
-        #except:
-        #    session.rollback()
-        #    print(query)
-        #    print("Unable to exequte queries. Exiting")
-        #    return 1
+        except:
+            session.rollback()
+            print(query)
+            print("Unable to exequte queries. Exiting")
+            return 1
 
     def fetchQueryResult(self, query, session=None):
         try:
@@ -89,7 +91,7 @@ class PGOptions(object):
             return res
         except:
             session.rollback()
-            print("Unable to execute query. Exiting")
+            print("Unable to fetch query reqult. Exiting")
             return 1
 
     def getIteratableResult(self, query, session=None):

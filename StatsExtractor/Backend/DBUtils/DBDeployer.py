@@ -27,8 +27,8 @@ class DBDeployer(object):
         if dropDBIfExists:
             self.__creationQueries.append("DROP DATABASE IF EXISTS {0};".format(self.__createDBOptions.db))
         #check if db exists
-        print(self.__createDBOptions.db)
         self.__creationQueries.append("CREATE DATABASE {0};".format(self.__createDBOptions.db))
+
 
     def __createUserIfNotExists(self):
         #check if user exists
@@ -41,9 +41,8 @@ class DBDeployer(object):
                 query += " WITH ENCRYPTED PASSWORD '{0}'".format(self.__createDBOptions.password)
             query +=";"
             self.__creationQueries.append(query)
-
-        self.__creationQueries.append("GRANT ALL PRIVILEGES ON DATABASE {0} to {1};"
-                                      .format(self.__createDBOptions.db, self.__createDBOptions.user))
+            self.__creationQueries.append("GRANT ALL ON DATABASE {0} TO USER {1};".format(self.__createDBOptions.db,
+                                                                                          self.__createDBOptions.user))
 
     def __loadSchema(self):
         cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} < {4}".format(
@@ -53,7 +52,6 @@ class DBDeployer(object):
             self._cfg.pgConnections["admin"].host,
             self._template
         )
-        print(cmd)
         os.system(cmd)
 
     def process(self, dropIfExists=True):
@@ -63,6 +61,15 @@ class DBDeployer(object):
         self.__createUserIfNotExists()
         self._cfg.pgConnections["admin"].executeNoTransaction(self.__creationQueries)
         self.__loadSchema()
+        session = self._cfg.pgConnections["admin"].getNewSession(self.__createDBOptions.db)
+        schemas = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(
+            "SELECT schema_name FROM information_schema.schemata", session)
+        for row in schemas:
+            self._cfg.pgConnections["admin"].executeQueries(
+                ["GRANT ALL ON SCHEMA {0} TO {1}".format(row[0], self.__createDBOptions.user),
+                 "GRANT ALL ON ALL TABLES IN SCHEMA {0} TO {1}".format(row[0], self.__createDBOptions.user),
+                 "GRANT ALL ON ALL SEQUENCES IN SCHEMA {0} TO {1};".format(row[0], self.__createDBOptions.user)
+                 ], session)
 
 
 
