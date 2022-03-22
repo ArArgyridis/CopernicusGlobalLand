@@ -28,11 +28,11 @@ class DataCrawler:
                 WHERE p."name" ='{0}'""".format(product))
 
 
-    def fetchProductFromVITO(self, dir, outDir, product="BioPar_NDVI300_V2_Global"):
+    def fetchProductFromVITO(self, dir, storageDir, product="BioPar_NDVI300_V2_Global"):
         self._sshCn.connect(self._cn.sftpParams["terrascope.be"].host, self._cn.sftpParams["terrascope.be"].port,
                             self._cn.sftpParams["terrascope.be"].userName, self._cn.sftpParams["terrascope.be"].password)
         #product info
-        outProdDir = os.path.join(outDir, product)
+        outProdDir = os.path.join(storageDir, product)
         inProdDir = os.path.join(dir, product)
 
         stdin, stdout, stderr = self._sshCn.exec_command("find {0}".format(os.path.join(dir, product)))
@@ -40,10 +40,11 @@ class DataCrawler:
         print("Files available for product:{0} : {1}".format(product, len(listFiles)))
         for fl in listFiles:
             fl = fl.decode("ascii")
-            for ptr in self._prodInfo:
-                pattern = re.compile(ptr[1])
+            for info in self._prodInfo:
+                pattern = re.compile(info[1])
                 chk = os.path.split(fl)[1]
                 if pattern.fullmatch(chk):
+
                     #check if product exists in DB
                     checkQuery = """
                     SELECT EXISTS (
@@ -52,13 +53,12 @@ class DataCrawler:
                         JOIN product_file_description pfd ON pf.product_description_id = pfd.id
                         JOIN product p ON p.id = pfd.product_id 
                         WHERE pf.rel_file_path LIKE '%{0}'
-                        AND p."name" = '{1}');
-                    """.format(chk, product)
+                        AND p."name" = '{1}');""".format(chk, product)
                     res = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
                     if res[0][0]:
                         continue
                     #download file if not exists in DB
-                    dtInfo = pattern.findall(chk)[0]
+                    dateInfo = pattern.findall(chk)[0]
                     outFilePath = fl.replace(inProdDir, outProdDir)
                     outFileDir = os.path.split(outFilePath)[0]
                     if not os.path.isdir(outFileDir):
@@ -67,25 +67,32 @@ class DataCrawler:
                     #downloading file
                     print("Downloading: ", chk)
                     self._sshCn.open_sftp().get(fl, outFilePath)
-                    self.importProductFromLocalStorage(outDir, product)
+                    self.importProductFromLocalStorage(storageDir, product, ["({0})".format(",".join([str(info[0]),
+                                                                                 "'{0}'".format(os.path.relpath(outFilePath, storageDir)),
+                                                                                 "'{0}'".format(info[3].format(*dateInfo))]))])
                     print("Downloading Finished!")
 
-    def importProductFromLocalStorage(self, storageDir, product):
-        inDir = os.path.join(storageDir, product)
-        files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
+    def importProductFromLocalStorage(self, storageDir, product, dbData=None):
         query = """INSERT INTO product_file(product_description_id, rel_file_path, date) VALUES {0} 
         ON CONFLICT(product_description_id, rel_file_path) DO NOTHING; """
-        dbData = []
-
         execute = False
-        for fl in files:
-            for info in self._prodInfo:
-                pattern = re.compile(info[1])
-                chk = os.path.split(fl)[1]
-                if pattern.fullmatch(chk):
-                    dateInfo = pattern.findall(chk)[0]
-                    dbData.append("({0})".format(",".join([str(info[0]), "'{0}'".format(os.path.relpath(fl, storageDir)), "'{0}'".format(info[3].format(*dateInfo)) ])))
-                    execute = True
+        if dbData is None:
+            dbData = []
+            inDir = os.path.join(storageDir, product)
+            files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
+            for fl in files:
+                for info in self._prodInfo:
+                    pattern = re.compile(info[1])
+                    chk = os.path.split(fl)[1]
+                    if pattern.fullmatch(chk):
+                        dateInfo = pattern.findall(chk)[0]
+                        dbData.append("({0})".format(",".join([str(info[0]), "'{0}'".format(os.path.relpath(fl, storageDir)), "'{0}'".format(info[3].format(*dateInfo)) ])))
+                        execute = True
+        else:
+            execute = True
+
+
+
 
         if execute:
             self._cn.pgConnections[self._cn.statsInfo.connectionId].executeQueries([query.format(",".join(dbData)),])
@@ -105,7 +112,7 @@ if __name__ == "__main__":
     if cfg.parse() != 1:
         for product in products:
             obj = DataCrawler(cfg, product)
-            obj.fetchProductFromVITO(dir=sys.argv[2], outDir=cfg.filesystem.imageryPath,
+            obj.fetchProductFromVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath,
                                      product=product)
             obj.importProductFromLocalStorage(cfg.filesystem.imageryPath, product)
 
