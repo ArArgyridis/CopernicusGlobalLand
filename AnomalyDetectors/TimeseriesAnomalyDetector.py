@@ -14,7 +14,6 @@ def runTimeSeriesMovingAverage(images, products, startRow, endRow, cols):
 
     keys = list(images.keys())
     keys.sort()
-    print("hereee")
     for key in keys:
         tmp = gdal.Open(images[key])
         inDataProxies[key] = gdal.Open(tmp.GetSubDatasets()[0][0])
@@ -76,6 +75,7 @@ class TimeseriesAnomalyDetector:
         cols = band.XSize
         rows = band.YSize
         outData = None
+        #runTimeSeriesMovingAverage(self._images, self._products, 30000, 30200, cols)
 
         prevRow = 0
         step = int(rows/nthreads)
@@ -89,10 +89,8 @@ class TimeseriesAnomalyDetector:
 
         for trd in threads:
             trd.join()
+
         print("End Processing!!")
-
-
-
 
     def process(self):
         #retrieve unprocessed products
@@ -112,7 +110,8 @@ class TimeseriesAnomalyDetector:
             img = res[0][1][dt]
             #destination path
             self._images[dt] = img
-            outImg = img.replace(self._cfg.filesystem.imageryPath, self._cfg.filesystem.anomalyProductsPath)
+            outImg = img.replace(self._cfg.filesystem.imageryPath,
+                                 os.path.join(self._cfg.filesystem.anomalyProductsPath, "TimeSeriesAnomalyDetector"))
             outImg = os.path.splitext(outImg)[0] + ".tif"
             outDir = os.path.split(outImg)[0]
             if not os.path.isdir(outDir):
@@ -130,7 +129,7 @@ class TimeseriesAnomalyDetector:
 
             drv = gdal.GetDriverByName("GTiff")
             outProduct = drv.Create(outImg, xsize=inSubDataset.RasterXSize, ysize=inSubDataset.RasterYSize,
-                    bands=1, eType=gdal.GDT_Byte, options=['COMPRESS=LZW', 'PREDICTOR=2', "BIGTIFF=YES"])
+                    bands=1, eType=gdal.GDT_Byte, options=['COMPRESS=LZW', 'PREDICTOR=3', "BIGTIFF=YES"])
             outProduct.SetProjection(inSubDataset.GetProjection())
             outProduct.SetGeoTransform(inSubDataset.GetGeoTransform())
             outProduct.GetRasterBand(1).SetNoDataValue(255)

@@ -42,8 +42,6 @@ def interpolateColor(areaPerc, palette):
         cls.append(int((high - low) * (areaPerc - keys[mn])/100.0 + low))
     return cls
 
-
-
 class GeomProcessor():
     def __init__(self, ft, dstOSR, inImages, dstResolution, product, cfgObj):
         self.__ft = ft
@@ -69,7 +67,7 @@ class GeomProcessor():
         self.__pixelToAreaFunc = None
 
     def __setPixelToAreaFunc(self):
-        tmpData = gdal.Open(self.__srcImages[0][1])
+        tmpData = gdal.Open(self.__srcImages[0][0])
         sr = osr.SpatialReference()
         sr.ImportFromWkt(tmpData.GetProjection())
         units = sr.GetAttrValue("UNIT")
@@ -88,48 +86,40 @@ class GeomProcessor():
             #cheking which product matches the current image
             xpr = re.compile(Constants.PRODUCT_INFO[self.__product].pattern)
             vals = xpr.findall(os.path.split(dt["image_rel_path"])[1])
-
             date = Constants.PRODUCT_INFO[self.__product].createDate(vals[0])
             dbVals += "({0},{1},'{2}','{3}',{4},{5},{6},{7},'{8}','{9}','{10}','{11}', '{12}'),"\
-                .format(dt["poly_id"], dt["product_id"], dt["image_rel_path"],
+                .format(dt["poly_id"], dt["product_file_id"], dt["image_rel_path"],
                         date, dt["no"], dt["sparse"], dt["mid"],dt["dense"], json.dumps(dt["novalcolor"]),
                         json.dumps(dt["sparsevalcolor"]), json.dumps(dt["midvalcolor"]), json.dumps(dt["highvalcolor"]),
                         json.dumps(dt["histogram"].tolist()))
-
-        query = """WITH tmp_data(poly_id, product_id, rel_file_path, date, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
+        query = """WITH tmp_data(poly_id, product_file_id, rel_file_path, date, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
         noval_color, sparseval_color, midval_color, highval_color, histogram) AS( VALUES {0})
-         ,ins1 AS(
-            INSERT INTO {1}.product_file(product_id, rel_file_path, date)
-            SELECT product_id, rel_file_path, date::timestamp without time zone
-            FROM tmp_data
-            ON CONFLICT(product_id, rel_file_path) DO UPDATE SET date=EXCLUDED.date RETURNING id, product_id, rel_file_path     
-         )
          INSERT INTO {1}.poly_stats(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
          noval_color, sparseval_color, midval_color, highval_color, histogram)
-         SELECT tdt.poly_id, ins1.id, tdt.noval_area_ha, tdt.sparse_area_ha, tdt.mid_area_ha, tdt.dense_area_ha,
+         SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, tdt.noval_area_ha::double precision, 
+         tdt.sparse_area_ha::double precision, tdt.mid_area_ha::double precision, tdt.dense_area_ha::double precision,
          noval_color::jsonb, sparseval_color::jsonb, midval_color::jsonb, highval_color::jsonb, histogram::jsonb
          FROM tmp_data tdt
-         JOIN ins1 ON tdt.product_id = ins1.product_id AND tdt.rel_file_path = ins1.rel_file_path
-         ON CONFLICT(poly_id, product_file_id) DO NOTHING;
-        """.format(dbVals[0:-1], self._config.statsInfo.schema)
+         ON CONFLICT(poly_id, product_file_id) DO NOTHING;""".format(dbVals[0:-1], self._config.statsInfo.schema)
+
         self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([query])
         return
 
     def __geomRasterizer(self):
         #assuming that all input images are aligned on the same grid
 
-        allignedImage = AlignToImage(self.__ft, self.__srcImages[0][1])
+        allignedImage = AlignToImage(self.__ft, self.__srcImages[0])
 
         self.__rasterExtents = allignedImage.process(vector=True)
-        outRasterXSize =  int((self.__rasterExtents[1][0] - self.__rasterExtents[0][0]) / self.__dstResolution)
+        outRasterXSize = int((self.__rasterExtents[1][0] - self.__rasterExtents[0][0]) / self.__dstResolution)
         outRasterYSize = int((self.__rasterExtents[0][1] - self.__rasterExtents[1][1]) / self.__dstResolution)
         drv = gdal.GetDriverByName("MEM")
 
         print("Poly id: {0}, Output image dimensions: ({1},{2})".format(self.__ft.GetFID(),
                                                                         outRasterXSize, outRasterYSize))
 
-        self.__rasterFt = drv.Create("tmp_img_{0}.tif".format(self.__ft.GetFID()),outRasterXSize,outRasterYSize
-                                , 1, gdal.GDT_Byte)
+        self.__rasterFt = drv.Create("tmp_img_{0}.tif".format(self.__ft.GetFID()),outRasterXSize,outRasterYSize,
+                                     1, gdal.GDT_Byte)
         self.__rasterFt.SetProjection(self.__ft.GetGeometryRef().GetSpatialReference().ExportToWkt())
         self.__rasterFt.SetGeoTransform((self.__rasterExtents[0][0], self.__dstResolution, 0, self.__rasterExtents[0][1], 0, -self.__dstResolution))
 
@@ -153,8 +143,8 @@ class GeomProcessor():
     def __extractStats(self, low, mid, high):
         out = list(range(len(self.__srcImages)))
         imgIdx = 0
-        for (rawImage, image) in self.__srcImages:
-            inRasterData = gdal.Open(image)
+        for image in self.__srcImages:
+            inRasterData = gdal.Open(image[0])
             metaData = inRasterData.GetMetadata()
             tmpLow = reverseValue(metaData, low, self.__variable)
             tmpSparse = reverseValue(metaData, mid, self.__variable)
@@ -199,6 +189,21 @@ class GeomProcessor():
 
             #print(noAreaHa, sparseAreaHa, midAreaHa, denseAreaHa)
             sumAreaHa = noAreaHa + sparseAreaHa + midAreaHa + denseAreaHa
+            out[imgIdx] = {
+                "poly_id": id,
+                "product_file_id": self.__srcImages[imgIdx][1],
+                "image_rel_path": os.path.relpath(pathlib.Path(image[0].split(":")[1].replace("\"", "")),
+                                                  self._config.filesystem.imageryPath),
+                "no": "NULL",
+                "sparse": "NULL",
+                "mid": "NULL",
+                "dense": "NULL",
+                "novalcolor": "NULL",
+                "sparsevalcolor": "NULL",
+                "midvalcolor": "NULL",
+                "highvalcolor": "NULL",
+                "histogram": np.zeros(bins)
+            }
             if sumAreaHa == 0:
                 continue
 
@@ -220,8 +225,8 @@ class GeomProcessor():
                                  Constants.PRODUCT_INFO[self.__product].highvalColorRamp)
             out[imgIdx] = {
                 "poly_id": id,
-                "product_id": Constants.PRODUCT_INFO[self.__product].id,
-                "image_rel_path": os.path.relpath(pathlib.Path(rawImage), self._config.filesystem.imageryPath),
+                "product_file_id": self.__srcImages[imgIdx][1],
+                "image_rel_path": os.path.relpath(pathlib.Path(image[0].split(":")[1].replace("\"","")), self._config.filesystem.imageryPath),
                 "no": noAreaHa,
                 "sparse": sparseAreaHa,
                 "mid": midAreaHa,
@@ -231,7 +236,7 @@ class GeomProcessor():
                 "midvalcolor": midValColor,
                 "highvalcolor": highValColor,
                 "histogram": hist
-           }
+            }
             imgIdx += 1
             del inRasterData
             inRasterData = None
@@ -244,7 +249,7 @@ class GeomProcessor():
         self.__storeToDB(data)
 
 def geomProcessor(inImages, poly, productInfo, cfgObj):
-    inRasterData = gdal.Open(inImages[0][1])
+    inRasterData = gdal.Open( inImages[0][0])
 
     resolution = inRasterData.GetGeoTransform()[1]
 
@@ -277,66 +282,38 @@ def geomProcessor(inImages, poly, productInfo, cfgObj):
 
 
 class ZonalStatsExtractor():
-    def __init__(self, inImages, stratificationType, configFile = "../config.json"):
-        self._images = inImages
+    def __init__(self, stratificationType, configFile = "../config.json"):
         self._stratificationType = stratificationType
         self._config = ConfigurationParser(configFile)
 
-
-
-    def process(self, nThreads=multiprocessing.cpu_count()-1):
+    def process(self, nThreads=multiprocessing.cpu_count()-1, products=['BioPar_NDVI300_V2_Global', 'BioPar_FAPAR300_V1_Global']):
         try:
             self._config.parse()
             Constants.load(self._config.getFile())
 
-            #checking input
-            if len(self._images) == 0:
-                print("No images provided. Exiting")
-                return
-
-            netcdfSubDatasets = {}
-            for image in self._images:
-                if not os.path.isfile(image):
-                    raise FileExistsError
-
-                #building netCDF subdatasets by matching the input file with the product pattern
-                for product in Constants.PRODUCT_INFO.keys():
-                    xpr = re.compile(Constants.PRODUCT_INFO[product].pattern)
-                    chk = os.path.split(image)[1]
-                    if xpr.match(chk) is not None:  # product found, preparing to append to DB
-                        if product not in netcdfSubDatasets:
-                            netcdfSubDatasets[product] = []
-
-                        examineDate = datetime.strptime(Constants.PRODUCT_INFO[product].createDate(xpr.findall(chk)[0]),
-                                                                                                       "%Y-%m-%dT%H:%M:%S")
-                        if Constants.PRODUCT_INFO[product].extractedDates is None or examineDate not in \
-                                Constants.PRODUCT_INFO[product].extractedDates:
-                            netcdfSubDatasets[product].append([image, """NETCDF:"{0}":{1}"""
-                                                 .format(image, Constants.PRODUCT_INFO[product].variable)])
-                            if gdal.Open(netcdfSubDatasets[product][-1][1]) is None:
-                                raise IOError
-
-            #creating cursor to retrieve polygons from DB
+            #creating cursor to retrieve polygons and respective images from DB
             session = self._config.pgConnections[self._config.statsInfo.connectionId].getNewSession()
-            polyQuery = "SELECT sg.id, ST_ASTEXT(geom), ST_SRID(geom) FROM {0}.stratification_geom sg " \
-                        "JOIN {0}.stratification s ON s.id = sg.stratification_id  " \
-                        "WHERE description='{1}' "\
-                .format(self._config.statsInfo.schema, self._stratificationType)
+
+            dataQuery = """
+            SELECT sg.id, p."name", ARRAY_AGG(JSON_BUILD_ARRAY(pf.rel_file_path, pf.id)) images, ST_ASTEXT(sg.geom)
+            , ST_SRID(sg.geom) 
+            FROM stratification s 
+            JOIN stratification_geom sg ON s.id = sg.stratification_id 
+            JOIN product p ON p."name" IN ({0})
+            JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.pattern LIKE '%.nc'
+            JOIN product_file pf ON pfd.id = pf.product_description_id 
+            LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id
+            WHERE s.description ='countries' AND ps.id IS NULL 
+            GROUP BY sg.id, p."name" ORDER BY sg.id, p."name" """.format(",".join(["'{0}'".format(prod) for prod in products ]))
+
             executor = ProcessPoolExecutor(max_workers=nThreads)
-            for product in netcdfSubDatasets:
-                res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(polyQuery,
+            res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(dataQuery,
                                                                                                           session)
-                values = []
-                if len(netcdfSubDatasets[product]) > 0:
-                    #for poly in res:
-                    #    geomProcessor(netcdfSubDatasets[product], poly, product, self._config)
 
-                    threads = [
-                        executor.submit(geomProcessor,netcdfSubDatasets[product], poly, product, self._config)
-                        for poly in res]
-
-                else:
-                    print("No new images for stats extraction were found for product: {0}. Exiting".format(product))
+            for row in res:
+                images = [[netCDFSubDataset(os.path.join(self._config.filesystem.imageryPath, img[0]), Constants.PRODUCT_INFO[row[1]].variable),img[1]] for img in row[2]]
+                #geomProcessor(images, [row[0], row[3],row[4]], row[1], self._config)
+                executor.submit(geomProcessor, images, [row[0], row[3],row[4]], row[1], self._config)
 
         except FileExistsError:
             print("A specified does not exist. Verify the list of input files")
@@ -350,29 +327,22 @@ class ZonalStatsExtractor():
 
         return
 
-
-
-
 def main():
-    if len(sys.argv) < 4:
-        print("Usage: python ZonalStatsExtractor.py path_to_images config_file stratification_type")
+
+    if len(sys.argv) < 3:
+        print("Usage: python ZonalStatsExtractor.py config_file stratification_type")
         return 1
 
-    inputImageDir = sys.argv[1]
-    cfg = sys.argv[2]
-    stratificationType = sys.argv[3]
+    cfg = sys.argv[1]
+    stratificationType = sys.argv[2]
 
     #loading constants
     Constants.load(cfg)
 
-    inImages = getListOfFiles(inputImageDir)
-    inImages = [img for img in inImages if img.endswith(".nc")]
-
     #raw data server directory: /home/argyros/Desktop/data/BIOPAR/BioPar_NDVI300_V2_Global/
-    print("Processing: {0} Images".format(len(inImages)))
 
     #requirements:
-    obj = ZonalStatsExtractor(inImages, stratificationType, cfg)
+    obj = ZonalStatsExtractor(stratificationType, cfg)
     obj.process(8)
     print("Finished!")
 

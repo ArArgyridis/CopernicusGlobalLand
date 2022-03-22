@@ -118,5 +118,5 @@ class AlignToImage:
         else:
             datasetMetaData = self.__readVectorMetadata(self.__dataset)
 
-        gridMetaData = self.__readImageryMetadata(self.__grid)
+        gridMetaData = self.__readImageryMetadata(self.__grid[0])
         return self.__computeAlignedGrid(datasetMetaData, gridMetaData)

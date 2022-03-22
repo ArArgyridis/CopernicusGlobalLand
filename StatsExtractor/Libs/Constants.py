@@ -17,7 +17,7 @@ from Libs.ConfigurationParser import ConfigurationParser
 
 class ProductInfo:
     def __init__(self, row):
-        self.id = row[0]
+        self.id = row[1]
         self.pattern = row[2]
         self.types = eval(row[3])
         self._dateptr = row[4]
@@ -34,7 +34,6 @@ class ProductInfo:
         self.highvalColorRamp = row[14]
         self.minValue = row[15]
         self.maxValue = row[16]
-        self.extractedDates = row[17]
 
     def createDate(self, ptr):
         return self._dateptr.format(*ptr)
@@ -50,23 +49,16 @@ class Constants:
             _cfg = ConfigurationParser(cfg)
             _cfg.parse()
             query = """
-            WITH unique_dates AS(
-                SELECT DISTINCT p.id, ARRAY_AGG(DISTINCT pf.date) dates
-	            FROM {0}.poly_stats ps 
-	            JOIN {0}.product_file pf on ps.product_file_id = pf.id 
-	            JOIN {0}.product p on pf.product_id =p.id
-	            GROUP BY p.id
-            )
-            SELECT DISTINCT p.*, ud.dates
+            SELECT p.name, pfd.*
             FROM {0}.product p 
-            LEFT JOIN {0}.product_file pf on p.id = pf.product_id 
-            LEFT JOIN unique_dates ud on p.id = ud.id
-            """.format(_cfg.statsInfo.schema)
+            LEFT JOIN {0}.product_file_description pfd on p.id = pfd.product_id 
+            WHERE pfd.pattern LIKE '%.nc'""".format(_cfg.statsInfo.schema)
+
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
             if res != 1:
                 for row in res:
-                    key = copy.deepcopy(row[1])
-                    Constants.PRODUCT_INFO[row[1]] = ProductInfo(row)
+                    key = copy.deepcopy(row[0])
+                    Constants.PRODUCT_INFO[row[0]] = ProductInfo(row)
         except:
             print("Unable to load configuration file!")
             raise RuntimeError

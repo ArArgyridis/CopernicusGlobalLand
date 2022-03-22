@@ -13,6 +13,7 @@
 	},
 	"filesystem":{
 		"imagery_path": "/home/argyros/Projects/JRCStatsExtractor/ExperimentalData/Imagery/",
-		"anomaly_products_path": "/home/argyros/Projects/JRCStatsExtractor/AnomalyProducts/"
+		"anomaly_products_path": "/home/argyros/Projects/JRCStatsExtractor/AnomalyProducts/",
+		"tmp_path":  "/home/argyros/Projects/JRCStatsExtractor/tmp/"
 	}
 } 

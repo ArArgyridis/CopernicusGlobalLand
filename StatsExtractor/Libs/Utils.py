@@ -40,7 +40,6 @@ def getImageExtent(inImage):
     inData = None
     return bounds
 
-
 def getListOfFiles(dirName):
     # create a list of file and sub directories
     # names in the given directory
@@ -57,6 +56,7 @@ def getListOfFiles(dirName):
             allFiles.append(fullPath)
 
     return allFiles
+
 def pixelsToAreaM2Degrees(pxCount, pixelSize):
     return pxCount*np.power((pixelSize*np.pi/180*6371000),2)
 
@@ -66,14 +66,15 @@ def pixelsToAreaM2Meters(pxCount, pixelSize):
 def scaleValue(metadataDict, value, variable):
     # applying netCDF scaling
     scale = float(metadataDict["{0}#scale_factor".format(variable)])
-    addOffset = float(metadataDict["{0}#add_offset".format(variable)])
+    addOffset = 0
+    if "{0}#add_offset".format(variable) in metadataDict:
+        addOffset = float(metadataDict["{0}#add_offset".format(variable)])
     return scale*value + addOffset
 
 def reverseValue(metadataDict, value, variable):
     scale = float(metadataDict["{0}#scale_factor".format(variable)])
     addOffset = float(metadataDict["{0}#add_offset".format(variable)])
     return int((value - addOffset)/scale)
-
 
 def xyToColRow(X, Y, gt):
     row = int((Y - gt[3] - gt[4] / gt[1] * X + gt[0] * gt[4] / gt[1]) / (gt[5] - (gt[2] * gt[4] / gt[1])))
