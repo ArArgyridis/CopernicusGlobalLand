@@ -75,7 +75,7 @@ class TimeseriesAnomalyDetector:
         cols = band.XSize
         rows = band.YSize
         outData = None
-        #runTimeSeriesMovingAverage(self._images, self._products, 30000, 30200, cols)
+        runTimeSeriesMovingAverage(self._images, self._products, 30000, 30200, cols)
 
         prevRow = 0
         step = int(rows/nthreads)
@@ -94,24 +94,23 @@ class TimeseriesAnomalyDetector:
 
     def process(self):
         #retrieve unprocessed products
-        query = """SELECT p.variable, JSON_OBJECT_AGG( pf.date, '{0}'||pf.rel_file_path), p.pattern, p.TYPES, p.create_date
-            FROM product_file pf 
-            JOIN product p ON pf.product_id = p.id
-            LEFT JOIN output_product op ON pf.id = op.product_file_id 
-            WHERE op.id IS NULL AND pf.product_id = {1}
-            GROUP BY p.variable, p.pattern, p.TYPES, p.create_date""".format(self._cfg.filesystem.imageryPath,self._productId)
+        query = """SELECT pfd.variable, JSON_OBJECT_AGG( pf.date, pf.rel_file_path), pfd.pattern, pfd.TYPES, pfd.create_date
+        FROM product_file pf 
+        JOIN product_file_description pfd ON pf.product_description_id = pfd.id
+        JOIN product p ON pfd.product_id = p.id
+        LEFT JOIN output_product op ON pf.id = op.product_file_id 
+        WHERE p.name != 'BioPar_NDVI_STATS_Global' AND (pfd.variable is not null) AND p.id = {0}
+        GROUP BY pfd.variable, pfd.pattern, pfd.TYPES, pfd.create_date""".format(self._productId)
         res = self._cfg.pgConnections["the_localhost"].fetchQueryResult(query)
         print(res)
         #creating new images for unprocessed products
         exts = ["", ".ovr", ".aux.xml"]
         print("Initializing New Timeseries Anomaly Products")
-
         for dt in res[0][1]:
-            img = res[0][1][dt]
+            img = os.path.join(self._cfg.filesystem.imageryPath, res[0][1][dt])
             #destination path
             self._images[dt] = img
-            outImg = img.replace(self._cfg.filesystem.imageryPath,
-                                 os.path.join(self._cfg.filesystem.anomalyProductsPath, "TimeSeriesAnomalyDetector"))
+            outImg = os.path.join(os.path.join(self._cfg.filesystem.anomalyProductsPath, *["TimeSeriesAnomalyDetector",res[0][1][dt]]))
             outImg = os.path.splitext(outImg)[0] + ".tif"
             outDir = os.path.split(outImg)[0]
             if not os.path.isdir(outDir):
@@ -129,7 +128,7 @@ class TimeseriesAnomalyDetector:
 
             drv = gdal.GetDriverByName("GTiff")
             outProduct = drv.Create(outImg, xsize=inSubDataset.RasterXSize, ysize=inSubDataset.RasterYSize,
-                    bands=1, eType=gdal.GDT_Byte, options=['COMPRESS=LZW', 'PREDICTOR=3', "BIGTIFF=YES"])
+                    bands=1, eType=gdal.GDT_Byte, options=['COMPRESS=LZW', 'PREDICTOR=2', "BIGTIFF=YES"])
             outProduct.SetProjection(inSubDataset.GetProjection())
             outProduct.SetGeoTransform(inSubDataset.GetGeoTransform())
             outProduct.GetRasterBand(1).SetNoDataValue(255)
@@ -142,6 +141,6 @@ class TimeseriesAnomalyDetector:
 
 
 if __name__ == "__main__":
-    cfg = "../StatsExtractor/active_config.json"
+    cfg = "../StatsExtractor/active_config_argyros_desktop.json"
     obj = TimeseriesAnomalyDetector(1, "2019-01-01", "2022-03-11", cfg)
     obj.process()
