@@ -99,7 +99,7 @@ class DataCrawler:
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("usage: python DataCrawler.py config_file remote_server_path")
+        print("usage: python DataCrawler.py config_file remote_server_path (optional) disk_import")
 
 
     cfg = sys.argv[1]
@@ -112,7 +112,9 @@ if __name__ == "__main__":
     if cfg.parse() != 1:
         for product in products:
             obj = DataCrawler(cfg, product)
-            obj.fetchProductFromVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath,
+            if sys.argv[2] == "import_from_Disk":
+                obj.importProductFromLocalStorage(cfg.filesystem.imageryPath, product)
+            else:
+                obj.fetchProductFromVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath,
                                      product=product)
-            obj.importProductFromLocalStorage(cfg.filesystem.imageryPath, product)
 
