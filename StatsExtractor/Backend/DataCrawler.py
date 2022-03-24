@@ -112,7 +112,7 @@ if __name__ == "__main__":
     if cfg.parse() != 1:
         for product in products:
             obj = DataCrawler(cfg, product)
-            if sys.argv[2] == "import_from_Disk":
+            if sys.argv[2] == "disk_import":
                 obj.importProductFromLocalStorage(cfg.filesystem.imageryPath, product)
             else:
                 obj.fetchProductFromVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath,
