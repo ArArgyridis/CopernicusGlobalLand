@@ -143,5 +143,5 @@ class TimeseriesAnomalyDetector:
 
 if __name__ == "__main__":
     cfg = "../StatsExtractor/active_config.json"
-    obj = TimeseriesAnomalyDetector(1, "2019-01-01", "2022-03-01", cfg)
+    obj = TimeseriesAnomalyDetector(1, "2019-01-01", "2022-03-11", cfg)
     obj.process()

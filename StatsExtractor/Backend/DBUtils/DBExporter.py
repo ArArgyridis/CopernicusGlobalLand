@@ -33,7 +33,6 @@ class DBExporter:
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].host,
             out
         )
-        print(cmd)
         os.system(cmd)
 
 
@@ -42,8 +41,6 @@ class DBExporter:
 if __name__ == "__main__":
     cfg = "../../active_config.json"
     cfg = ConfigurationParser(cfg)
-    # product = BioPar_NDVI300_V2_Global
-    product = "BioPar_NDVI_STATS_Global"
     if cfg.parse() != 1:
         obj = DBExporter(cfg)
         obj.process()
