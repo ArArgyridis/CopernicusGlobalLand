@@ -116,12 +116,21 @@ class StatsInfo(object):
         self.tmpSchema = tmpSchema
         self.connectionId = connectionId
 
+class SFTPProxy():
+    def __init__(self, proxy):
+        self.host = proxy["host"]
+        self.user = proxy["user"]
+        self.password = proxy["password"]
+        self.port = proxy["port"]
+
+
 class SFTPConnectionParams(object):
-    def __init__(self, host, userName, password, port):
+    def __init__(self, host, userName, password, port, proxy):
         self.host = host
         self.userName = userName
         self.password = password
         self.port = port
+        self.proxy = SFTPProxy(proxy)
 
 class FileSystem(object):
     def __init__(self, cfg):
@@ -163,7 +172,8 @@ class ConfigurationParser(object):
                     sPrx[key]["host"],
                     sPrx[key]["user"],
                     sPrx[key]["password"],
-                    sPrx[key]["port"])
+                    sPrx[key]["port"],
+                    sPrx[key]["proxy"])
 
             #path-relevant info
             self.filesystem = FileSystem(configData["filesystem"])

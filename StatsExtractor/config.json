@@ -4,7 +4,18 @@
 		"the_localhost":{"db":"jrcstats_test", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"}
 	},
 	"sftp_connections":{
-		"connection_id": {"host":"a_host", "user":"my_user", "password":"my_password", "port":22}
+		"connection_id": {
+			"host":"a_host", 
+			"user":"my_user", 
+			"password":"my_password", 
+			"port":22,
+			"proxy": {
+				"user": "userName",
+				"password": "pass",
+				"host": "url_or_ip",
+				"port": 1111
+			}
+		}
 	},
 	"statsinfo": {
 		"schema": "public",

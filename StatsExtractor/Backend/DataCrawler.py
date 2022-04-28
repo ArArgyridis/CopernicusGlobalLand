@@ -11,14 +11,20 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os,paramiko,sys
+import os,paramiko,re,sys
 sys.path.extend(['..']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
-import re
-
+from Libs.Utils import httpProxyTunnelConnect
 class DataCrawler:
-    def __init__(self, cn, product):
+    def __init__(self, cn, product, useProxy=True):
         self._cn = cn
+        self.sock = None
+        if useProxy:
+            self.sock = httpProxyTunnelConnect(proxy=(self._cn.sftpParams["terrascope.be"].proxy.host,
+                                                      self._cn.sftpParams["terrascope.be"].proxy.port),
+                                     target=(self._cn.sftpParams["terrascope.be"].host,
+                                             self._cn.sftpParams["terrascope.be"].port),timeout=50)
+
         self._sshCn = paramiko.SSHClient()
         self._sshCn.load_system_host_keys()
         self._prodInfo = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(
@@ -29,8 +35,13 @@ class DataCrawler:
 
 
     def fetchProductFromVITO(self, dir, storageDir, product="BioPar_NDVI300_V2_Global"):
-        self._sshCn.connect(self._cn.sftpParams["terrascope.be"].host, self._cn.sftpParams["terrascope.be"].port,
+        if self.sock is None:
+            self._sshCn.connect(self._cn.sftpParams["terrascope.be"].host, self._cn.sftpParams["terrascope.be"].port,
                             self._cn.sftpParams["terrascope.be"].userName, self._cn.sftpParams["terrascope.be"].password)
+        else:
+            self._sshCn.connect(self._cn.sftpParams["terrascope.be"].host, self._cn.sftpParams["terrascope.be"].port,
+                                self._cn.sftpParams["terrascope.be"].userName,
+                                self._cn.sftpParams["terrascope.be"].password, sock=self.sock)
         #product info
         outProdDir = os.path.join(storageDir, product)
         inProdDir = os.path.join(dir, product)
@@ -86,13 +97,12 @@ class DataCrawler:
                     chk = os.path.split(fl)[1]
                     if pattern.fullmatch(chk):
                         dateInfo = pattern.findall(chk)[0]
-                        dbData.append("({0})".format(",".join([str(info[0]), "'{0}'".format(os.path.relpath(fl, storageDir)), "'{0}'".format(info[3].format(*dateInfo)) ])))
+                        dbData.append("({0})".format(",".join([str(info[0]), "'{0}'"
+                                                              .format(os.path.relpath(fl, storageDir)),
+                                                               "'{0}'".format(info[3].format(*dateInfo)) ])))
                         execute = True
         else:
             execute = True
-
-
-
 
         if execute:
             self._cn.pgConnections[self._cn.statsInfo.connectionId].executeQueries([query.format(",".join(dbData)),])
