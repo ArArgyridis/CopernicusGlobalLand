@@ -86,7 +86,7 @@ def httpProxyTunnelConnect(proxy, target, timeout=None):
     sock.settimeout(timeout)
     sock.connect(proxy)
     cmd_connect = "CONNECT %s:%d HTTP/1.1"%target
-    sock.sendall(cmd_connect)
+    sock.sendall(cmd_connect.encode())
     response = []
     sock.settimeout(2)  # quick hack - replace this with something better performing.
     try:
@@ -101,9 +101,9 @@ def httpProxyTunnelConnect(proxy, target, timeout=None):
     except socket.error as se:
         if "timed out" not in se:
             response = [se]
-        response = ''.join(response)
-        if not "200 connection established" in response.lower():
-            raise Exception("Unable to establish HTTP-Tunnel: %s" % repr(response))
+    response = ''.join(response)
+    if not "200 connection established" in response.lower():
+        raise Exception("Unable to establish HTTP-Tunnel: %s" % repr(response))
     return sock
 
 
