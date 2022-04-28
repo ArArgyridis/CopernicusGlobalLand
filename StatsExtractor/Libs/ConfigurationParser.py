@@ -173,7 +173,7 @@ class ConfigurationParser(object):
             print("Configuration file does not exists! Exiting.")
             return 1
         except:
-            print("Unable to parse file! exiting")
+            print("Unable to parse configuration file! exiting")
             return 1
 
 
