@@ -11,19 +11,23 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os,paramiko,re,sys
+import os,paramiko,re,socks,sys
 sys.path.extend(['..']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
-from Libs.Utils import httpProxyTunnelConnect
+
 class DataCrawler:
     def __init__(self, cn, product, useProxy=True):
         self._cn = cn
         self.sock = None
         if useProxy:
-            self.sock = httpProxyTunnelConnect(proxy=(self._cn.sftpParams["terrascope.be"].proxy.host,
-                                                      self._cn.sftpParams["terrascope.be"].proxy.port),
-                                     target=(self._cn.sftpParams["terrascope.be"].host,
-                                             self._cn.sftpParams["terrascope.be"].port),timeout=50)
+            self.sock = socks.socksocket()
+            self.sock.set_proxy(
+                proxy_type=socks.HTTP,
+                addr=self._cn.sftpParams["terrascope.be"].proxy.host,
+                port=self._cn.sftpParams["terrascope.be"].proxy.port
+            )
+
+            self.sock.connect((self._cn.sftpParams["terrascope.be"].host, self._cn.sftpParams["terrascope.be"].port))
 
         self._sshCn = paramiko.SSHClient()
         self._sshCn.load_system_host_keys()
@@ -117,7 +121,7 @@ if __name__ == "__main__":
     products = ["BioPar_NDVI300_V2_Global",
              "BioPar_NDVI_STATS_Global",
              "BioPar_FAPAR300_V1_Global"]
-    
+
     products = ["BioPar_NDVI_STATS_Global","BioPar_NDVI300_V2_Global"]
     if cfg.parse() != 1:
         for product in products:
