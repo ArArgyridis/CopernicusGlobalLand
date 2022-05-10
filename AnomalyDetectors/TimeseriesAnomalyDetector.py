@@ -139,8 +139,16 @@ class TimeseriesAnomalyDetector:
         self._writeOutputs()
 
 
-
-if __name__ == "__main__":
+def main():
+    if len(sys.argv) < 3:
+        print("Usage: python TimeseriesAnomalyDetector.py config_json_file")
+        return
     cfg = "../StatsExtractor/active_config_argyros_desktop.json"
     obj = TimeseriesAnomalyDetector(1, "2019-01-01", "2022-03-11", cfg)
     obj.process()
+
+
+
+
+if __name__ == "__main__":
+    main()
