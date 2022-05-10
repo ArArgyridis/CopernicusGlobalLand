@@ -75,7 +75,7 @@ class TimeseriesAnomalyDetector:
         cols = band.XSize
         rows = band.YSize
         outData = None
-        runTimeSeriesMovingAverage(self._images, self._products, 30000, 31000, cols)
+        #runTimeSeriesMovingAverage(self._images, self._products, 30000, 31000, cols)
 
         prevRow = 0
         step = int(rows/nthreads)
