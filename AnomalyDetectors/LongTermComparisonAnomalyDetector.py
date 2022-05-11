@@ -135,6 +135,7 @@ class LongTermComparisonAnomalyDetector:
         return curDekads
 
     def _computeLongTermMeanStd(self, ):
+        print("Starting computing long term mean")
         if os.path.isfile(self._sessionTMPFolder):
             rmtree(self._sessionTMPFolder)
         os.makedirs(self._sessionTMPFolder, exist_ok=True)
@@ -190,10 +191,13 @@ class LongTermComparisonAnomalyDetector:
 
             for trd in threads:
                 trd.join()
+        print("Long term mean computation finished!")
 
         return ret
 
     def process(self):
+            print("Starting computing anomalies")
+
             #try:
             ltsMean, ltsStd = self._computeLongTermMeanStd()
 
@@ -204,6 +208,7 @@ class LongTermComparisonAnomalyDetector:
                 WHERE pfd.product_id = 1 AND pf."date" BETWEEN '{1}' AND '{2}'
                 AND  pf.rel_file_path LIKE '%.nc';""".\
                 format(self._cfg.filesystem.imageryPath, self._dateStart, self._dateEnd)
+            print("products retrieved")
 
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].getIteratableResult(productQuery)
             mn = gdal.Open(ltsMean)
@@ -215,6 +220,8 @@ class LongTermComparisonAnomalyDetector:
             #warp image to match the coordinates
             #build output file
             products = []
+            print("warping results")
+
             for row in res:
                 tmpProd = os.path.join(self._sessionTMPFolder, row[1].split(self._cfg.filesystem.imageryPath)[1])
                 tmpProd = os.path.splitext(tmpProd)[0] + ".tif"
@@ -224,6 +231,7 @@ class LongTermComparisonAnomalyDetector:
 
                 gdal.Warp(tmpProd, netCDFSubDataset(row[1],row[0]), xRes = np.abs(gt[1]), yRes = np.abs(gt[5]),
                          format = "GTiff", outputBounds =[gt[0],yImageMin,xImageMax,gt[3]])
+
 
             #create output dataset
             outImgPath = os.path.join(self._cfg.filesystem.anomalyProductsPath, "LongTermComparisonAnomalyDetector")
@@ -248,6 +256,7 @@ class LongTermComparisonAnomalyDetector:
             prevRow = 0
             step = int(mn.RasterYSize / self._nThreads)
             threads = []
+            print("starting threading")
             for curRow in range(step, mn.RasterYSize + step - 1, step):
                 #print(prevRow, curRow)
                 threads.append(Process(target=computeAnomaly,
@@ -259,6 +268,7 @@ class LongTermComparisonAnomalyDetector:
                 trd.join()
 
 
+            print("anomalies computation finished!")
 
             #except:
             #    print("An error has occured. Exiting")
