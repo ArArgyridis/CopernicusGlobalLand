@@ -9,7 +9,8 @@ from WebService.Backend.PointValueExtractor import PointValueExtractor
 from multiprocessing import Process
 from shutil import rmtree
 
-def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataValue, variableName):
+def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataValue, variableName="NDVI"):
+    print("computing anomally!!")
     outImgSrc = gdal.Open(outImg, gdal.GA_Update)
     outImgBnd = outImgSrc.GetRasterBand(1)
 
@@ -250,7 +251,7 @@ class LongTermComparisonAnomalyDetector:
             for curRow in range(step, mn.RasterYSize + step - 1, step):
                 #print(prevRow, curRow)
                 threads.append(Process(target=computeAnomaly,
-                                       args=(outImg, products, ltsMean, ltsStd, prevRow, curRow, noDataValue, row[0])))
+                                       args=(outImg, products, ltsMean, ltsStd, prevRow, curRow, noDataValue, res[0][0])))
                 threads[-1].start()
                 prevRow = curRow
 
