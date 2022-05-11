@@ -280,11 +280,12 @@ def main():
     dateEnd = datetime.now()
     relDelta = relativedelta(months=1)
     while (curTime < dateEnd-relDelta):
-        curTime += relDelta
         d1 = curTime.strftime(datePtrn)
         d2 = (curTime+relDelta).strftime(datePtrn)
         obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg)
         obj.process()
+        curTime += relDelta
+
 
 if __name__ == "__main__":
     main()
