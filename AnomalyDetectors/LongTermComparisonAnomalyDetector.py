@@ -1,7 +1,8 @@
 import os,sys, numpy as np, pandas as pd
 sys.path.extend(['../StatsExtractor/'])
 from osgeo import gdal
-from datetime import datetime,  timedelta
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import xyToColRow, netCDFSubDataset, scaleValue
 from WebService.Backend.PointValueExtractor import PointValueExtractor
@@ -267,10 +268,22 @@ class LongTermComparisonAnomalyDetector:
 
 
 def main():
-    cfg = "../StatsExtractor/active_config.json"
-    obj = LongTermComparisonAnomalyDetector(1,"2020-11-01", "2020-11-12", cfg)
-    obj.process()
+    if len(sys.argv) < 2:
+        print("Usage: python LongTermComparisonAnomalyDetector.py config_json_file")
+        return
 
+    cfg = sys.argv[1]
+
+    datePtrn = "%Y-%m-%d"
+    curTime = datetime.strptime("2020-07-01",datePtrn)
+    dateEnd = datetime.now()
+    relDelta = relativedelta(months=1)
+    while (curTime < dateEnd-relDelta):
+        curTime += relDelta
+        d1 = curTime.strftime(datePtrn)
+        d2 = (curTime+relDelta).strftime(datePtrn)
+        obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg)
+        obj.process()
 
 if __name__ == "__main__":
     main()
