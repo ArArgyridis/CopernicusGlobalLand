@@ -4,7 +4,7 @@ from osgeo import gdal
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import xyToColRow
 from WebService.Backend.PointValueExtractor import PointValueExtractor
-from multiprocessing import Process
+from multiprocessing import Process, cpu_count
 
 def runTimeSeriesMovingAverage(images, products, startRow, endRow, cols):
     # creating proxies
@@ -68,7 +68,7 @@ class TimeseriesAnomalyDetector:
         self._images = {}
         self._products = {}
 
-    def _writeOutputs(self, nthreads = 10):
+    def _writeOutputs(self, nthreads = cpu_count() -1):
         key = list(self._products.keys())[0]
         outData = gdal.Open(self._products[key],gdal.GA_Update)
         band = outData.GetRasterBand(1)
@@ -77,10 +77,12 @@ class TimeseriesAnomalyDetector:
         outData = None
         #runTimeSeriesMovingAverage(self._images, self._products, 30000, 31000, cols)
 
-        prevRow = 0
-        step = int(rows/nthreads)
+        step = int(rows/(nthreads-1))
         threads = []
-        for curRow in range(step, rows+step-1, step):
+        for prevRow in range(0, rows-step+1, step):
+            curRow = prevRow + step
+            if curRow > rows:
+                curRow = rows
             print(prevRow, curRow)
             threads.append(Process(target=runTimeSeriesMovingAverage, args=(self._images, self._products, prevRow, curRow, cols )))
             threads[-1].start()

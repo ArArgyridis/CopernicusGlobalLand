@@ -125,7 +125,7 @@ if __name__ == "__main__":
     products = ["BioPar_NDVI_STATS_Global","BioPar_NDVI300_V2_Global"]
     if cfg.parse() != 1:
         for product in products:
-            obj = DataCrawler(cfg, product, True)
+            obj = DataCrawler(cfg, product, False)
             if sys.argv[2] == "disk_import":
                 obj.importProductFromLocalStorage(cfg.filesystem.imageryPath, product)
             else:

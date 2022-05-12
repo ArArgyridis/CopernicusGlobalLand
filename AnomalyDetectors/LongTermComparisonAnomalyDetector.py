@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import xyToColRow, netCDFSubDataset, scaleValue
 from WebService.Backend.PointValueExtractor import PointValueExtractor
-from multiprocessing import Process
+from multiprocessing import Process, cpu_count
 from shutil import rmtree
 
 def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataValue, variableName="NDVI"):
@@ -108,7 +108,7 @@ def computeMean(outImg, imgs, dataPath, startRow, endRow, noDataValue):
 
 
 class LongTermComparisonAnomalyDetector:
-    def __init__(self, productId, dateStart, dateEnd, cfg, nThreads = 1):
+    def __init__(self, productId, dateStart, dateEnd, cfg, nThreads = cpu_count() -1):
         self._productId = productId
         self._dateStart = dateStart
         self._dateEnd = dateEnd
@@ -176,18 +176,21 @@ class LongTermComparisonAnomalyDetector:
 
                 tmpProd = None
 
-            prevRow = 0
-            step = int(rasterYSize / self._nThreads)
+            step = int(rasterYSize / (self._nThreads-1))
             threads = []
             images = [os.path.join(self._cfg.filesystem.imageryPath, k[0]) for k in res]
 
             #computeMean(ret, images, self._cfg.filesystem.imageryPath, 3000, 4000, noDataValue)
+            for prevRow in range(0, rasterYSize - step + 1, step):
+                curRow = prevRow + step
+                if curRow > rasterYSize:
+                    curRow = rasterYSize
+                print(prevRow, curRow)
 
-            for curRow in range(step, rasterYSize + step - 1, step):
                 threads.append(Process(target=computeMean,args=(
                                            ret, images, self._cfg.filesystem.imageryPath, prevRow, curRow, noDataValue)))
                 threads[-1].start()
-                prevRow = curRow
+
 
             for trd in threads:
                 trd.join()
@@ -222,7 +225,9 @@ class LongTermComparisonAnomalyDetector:
             products = []
             print("warping results")
 
+            variable = None
             for row in res:
+                variable = row[0]
                 tmpProd = os.path.join(self._sessionTMPFolder, row[1].split(self._cfg.filesystem.imageryPath)[1])
                 tmpProd = os.path.splitext(tmpProd)[0] + ".tif"
                 tmpDir = os.path.split(tmpProd)[0]
@@ -242,8 +247,7 @@ class LongTermComparisonAnomalyDetector:
             drv = gdal.GetDriverByName("GTiff")
 
             outProduct = drv.Create(outImg, xsize=mn.RasterXSize, ysize=mn.RasterYSize,
-                                    bands=1, eType=gdal.GDT_Float32,
-                                    options=['COMPRESS=LZW', 'PREDICTOR=3', "BIGTIFF=YES"])
+                                    bands=1, eType=gdal.GDT_Float32)
             #,options=['COMPRESS=Deflate', 'PREDICTOR=3', "BIGTIFF=YES"]
 
             outProduct.SetProjection(mn.GetProjection())
@@ -254,13 +258,16 @@ class LongTermComparisonAnomalyDetector:
             #computeAnomaly(outImg, products, ltsMean, ltsStd, 7000,8000, noDataValue, row[0])
 
             prevRow = 0
-            step = int(mn.RasterYSize / self._nThreads)
+            step = int(mn.RasterYSize / (self._nThreads - 1))
             threads = []
             print("starting threading")
-            for curRow in range(step, mn.RasterYSize + step - 1, step):
-                #print(prevRow, curRow)
+            for prevRow in range(0, mn.RasterYSize - step + 1, step):
+                curRow = prevRow + step
+                if curRow > mn.RasterYSize:
+                    curRow = mn.RasterYSize
+                print(prevRow, curRow)
                 threads.append(Process(target=computeAnomaly,
-                                       args=(outImg, products, ltsMean, ltsStd, prevRow, curRow, noDataValue, res[0][0])))
+                                       args=(outImg, products, ltsMean, ltsStd, prevRow, curRow, noDataValue, variable)))
                 threads[-1].start()
                 prevRow = curRow
 
@@ -274,9 +281,6 @@ class LongTermComparisonAnomalyDetector:
             #    print("An error has occured. Exiting")
 
             return 0
-
-
-
 
 def main():
     if len(sys.argv) < 2:
