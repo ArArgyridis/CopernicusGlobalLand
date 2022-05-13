@@ -296,7 +296,7 @@ def main():
     while (curTime < dateEnd-relDelta):
         d1 = curTime.strftime(datePtrn)
         d2 = (curTime+relDelta).strftime(datePtrn)
-        obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg,6)
+        obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg,1)
         obj.process()
         curTime += relDelta
 
