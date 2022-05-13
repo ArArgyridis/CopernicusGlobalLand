@@ -77,11 +77,11 @@ class TimeseriesAnomalyDetector:
         outData = None
         #runTimeSeriesMovingAverage(self._images, self._products, 30000, 31000, cols)
 
-        step = int(rows/(nthreads-1))
+        step = int(rows/nthreads)
         threads = []
         for prevRow in range(0, rows-step+1, step):
             curRow = prevRow + step
-            if curRow > rows:
+            if rows-curRow < step:
                 curRow = rows
             print(prevRow, curRow)
             threads.append(Process(target=runTimeSeriesMovingAverage, args=(self._images, self._products, prevRow, curRow, cols )))

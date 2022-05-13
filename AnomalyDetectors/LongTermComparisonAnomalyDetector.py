@@ -176,14 +176,14 @@ class LongTermComparisonAnomalyDetector:
 
                 tmpProd = None
 
-            step = int(rasterYSize / (self._nThreads-1))
+            step = int(rasterYSize / (self._nThreads))
             threads = []
             images = [os.path.join(self._cfg.filesystem.imageryPath, k[0]) for k in res]
-
+            print(rasterYSize)
             #computeMean(ret, images, self._cfg.filesystem.imageryPath, 3000, 4000, noDataValue)
             for prevRow in range(0, rasterYSize - step + 1, step):
                 curRow = prevRow + step
-                if curRow > rasterYSize:
+                if rasterYSize-curRow < step:
                     curRow = rasterYSize
                 print(prevRow, curRow)
 
@@ -258,12 +258,12 @@ class LongTermComparisonAnomalyDetector:
             #computeAnomaly(outImg, products, ltsMean, ltsStd, 7000,8000, noDataValue, row[0])
 
             prevRow = 0
-            step = int(mn.RasterYSize / (self._nThreads - 1))
+            step = int(mn.RasterYSize /self._nThreads)
             threads = []
             print("starting threading")
             for prevRow in range(0, mn.RasterYSize - step + 1, step):
                 curRow = prevRow + step
-                if curRow > mn.RasterYSize:
+                if mn.RasterYSize - curRow < step:
                     curRow = mn.RasterYSize
                 print(prevRow, curRow)
                 threads.append(Process(target=computeAnomaly,
@@ -296,7 +296,7 @@ def main():
     while (curTime < dateEnd-relDelta):
         d1 = curTime.strftime(datePtrn)
         d2 = (curTime+relDelta).strftime(datePtrn)
-        obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg)
+        obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg,6)
         obj.process()
         curTime += relDelta
 
