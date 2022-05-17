@@ -16,7 +16,7 @@ import os, numpy as np, sys, xml.etree.ElementTree as ET, multiprocessing
 from osgeo import gdal, osr
 from concurrent.futures import ProcessPoolExecutor
 
-from samba.dcerpc.dcerpc import response
+sys.path.extend(['..']) #to properly import modules from other dirs
 
 from Libs.MapServer import MapServer, LayerInfo
 from Libs.Utils import getImageExtent, getListOfFiles, netCDFSubDataset
