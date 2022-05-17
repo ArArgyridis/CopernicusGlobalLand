@@ -45,14 +45,17 @@
 		<div class = "container mt-3" v-if="currentProduct != null">
 			<h4>Select Mode</h4>
 			<div class="row gap-2">
-				<div class="col btn btn-secondary disabled" id="showStratificationButton" v-on:click=showStratificationMenu(true)>
-					Stratified Information
+				<div class="col btn btn-secondary disabled" id="showStratificationButton" v-on:click=showStratificationMenu(0)>
+					Stratification-driven Statistics
 				</div>
-				<div class ="col btn btn-secondary" id="showRawDataButton" v-on:click=showStratificationMenu(false)>
-					Raw Data
-				</div>				
+				<div class ="col btn btn-secondary" id="showRawDataButton" v-on:click=showStratificationMenu(1)>
+					Raw Data Visaulization
+				</div>
+				<div class ="col btn btn-secondary " id="showProductAnomalyButton" v-on:click=showStratificationMenu(2)>
+					Product Anomalies
+				</div>
 			</div>
-			<div class = "mt-3" v-if="viewStratification==true">
+			<div class = "mt-3" v-if="viewStratification==0">
 			
 				<!--STRATIFICATION -->
 				<div>
@@ -79,7 +82,7 @@
 			</div>
 			
 			<!-- WMS RAW DATA LAYER-->
-			<div class= "mt-3" v-if="viewStratification==false">
+			<div class= "mt-3" v-if="viewStratification==1">
 				Current WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductWMSLayer}}</button>
 				<ul id="wmsDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(wms, key) in wmsLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
@@ -220,7 +223,7 @@ export default {
 	data() {
 		return {
 			dateFormat: "dd MMM yyyy",
-			viewStratification: true,
+			viewStratification: 0,
 		}
 	},
 	methods: {
@@ -238,6 +241,7 @@ export default {
 			this.currentProduct = key;
 		},
 		setCurrentStratification(key) {
+			console.log("setting current stratification!!!!", key);
 			this.currentStratification = key;
 		},
 		setStratificationAreaDensity(key) {
@@ -253,14 +257,21 @@ export default {
 		},
 		showStratificationMenu(val) {
 			this.viewStratification = val;
-			document.getElementById("showStratificationButton").classList.toggle("disabled");
-			document.getElementById("showRawDataButton").classList.toggle("disabled");
-			this.$emit("switchViewMode");
+			let ids = ["showStratificationButton","showRawDataButton","showProductAnomalyButton"];
+			
+			//disabling all other buttons
+			for (let i = 0; i < ids.length; i++) {
+				if (val == i)
+					document.getElementById(ids[i]).classList.add("disabled");
+				else
+					document.getElementById(ids[i]).classList.remove("disabled");
+			}
+			this.$emit("switchViewMode", {id:val});
 		}
 	},
 	mounted() {
 		this.init();
-	}	
+	}
 }
 </script>
 

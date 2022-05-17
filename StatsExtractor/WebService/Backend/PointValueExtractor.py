@@ -69,10 +69,12 @@ class PointValueExtractor():
         ret["raw"] = list(range(len(self._data[1])))
         ret["filtered"] = {}
         i = 0
+        issueImg = None
         try:
             transformed = False
-            for img in self._data[2]:
+            for img in self._data[1]:
                 if not os.path.isfile(img):
+                    issueImg  = img
                     raise FileExistsError
 
                 inData = gdal.Open(self.__getNETCDFSubdataset(img))
@@ -97,16 +99,15 @@ class PointValueExtractor():
                 gt = inData.GetGeoTransform()
                 col,row = xyToColRow(self._xCoord, self._yCoord, gt)
                 value = inData.GetRasterBand(1).ReadAsArray(col, row, 1, 1)[0,0]
-                ret["raw"][i] = [self._data[2][img], value]
+                ret["raw"][i] = [self._data[1][img], value]
                 if value == inData.GetRasterBand(1).GetNoDataValue():
                     ret["raw"][i][1] = None
                 #applying netCDF scaling
                 else:
                     ret["raw"][i][1] =  np.round(scaleValue(inData.GetMetadata(), ret["raw"][i][1], self._data[0]), 4)
                 i += 1
-
         except FileExistsError:
-            print("The specified file does not exist")
+            print("The specified file does not exist: ", issueImg )
             ret = None
         except IOError:
             print("The specified variable does not exist")

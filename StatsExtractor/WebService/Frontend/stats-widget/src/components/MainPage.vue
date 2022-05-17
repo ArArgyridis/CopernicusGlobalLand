@@ -20,7 +20,7 @@
 					v-on:currentProductChange="updateAll()"
 					v-on:rawWMSChange="updateProductWMSVisibility()" 
 					v-on:stratificationChange="updateStratificationLayerVisibility()"
-					v-on:switchViewMode="toggleCurrentLayersVisibility()"
+					v-on:switchViewMode="toggleCurrentLayersVisibility($event)"
 					v-on:stratificationDateChange="refreshStratificationInfo()"
 					v-on:stratificationAreaDensityChange="updateStratificationLayerStyle()"
 					v-on:closeLeftPanel="toggleLeft()"
@@ -101,7 +101,31 @@ export default {
 				this.showRightPanel = status;
 			}
 		},		
-		toggleCurrentLayersVisibility() {
+		toggleCurrentLayersVisibility(evt) {
+
+			if(evt.id == 0) {
+				if (this.$store.getters.currentStratification != null)
+					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, true);
+					
+				if (this.$store.getters.currentProductWMSLayer != null) 
+					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, false);
+			}else if (evt.id == 1) {
+				if (this.$store.getters.currentStratification != null)
+					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, false);
+					
+				if (this.$store.getters.currentProductWMSLayer != null) 
+					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, true);
+			}else if (evt.id == 2) {
+				if (this.$store.getters.currentStratification != null)
+					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, false);
+				if (this.$store.getters.currentProductWMSLayer != null) 
+					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, false);
+			}
+			
+			this.setRightPanelVisibility(false);
+			this.$refs.chartPanel.resetAllCharts();
+
+			/*
 			if (this.$store.getters.currentStratification != null)
 				this.$refs.mapApp.toggleLayerVisibility(this.$store.getters.currentStratification.layerId);
 				
@@ -109,6 +133,7 @@ export default {
 				this.$refs.mapApp.toggleLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId);
 			this.setRightPanelVisibility(false);
 			this.$refs.chartPanel.resetAllCharts();
+			*/
 		},
 		togglePanelClasses(id){
 			document.getElementById(id).classList.toggle("hiddenBar");

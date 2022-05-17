@@ -23,7 +23,6 @@ let dateEnd = new Date();
 let dateStart = new Date();
 dateStart.setDate(dateStart.getDate() - 200);
 dateStart = new Date("2020-01-01 00:00:00");
-console.log(dateStart);
 // Create a new store instance.
 const store = createStore({
 	state: {

@@ -93,6 +93,10 @@ export default {
 				this.$refs.map1.setVisibility(strat.layerId, false);
 			});
 		},
+		setLayerVisibility(id, val) {
+			if(id != null)
+				this.$refs.map1.setVisibility(id, val);
+		},
 		updateWMSLayers() {
 			//requested years from users
 			let requestedYears= [];

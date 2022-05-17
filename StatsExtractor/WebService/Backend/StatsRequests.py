@@ -32,10 +32,10 @@ class StatsRequests(GenericRequest):
     def fetchStatsByPolygonAndDateRange(self):
         query = """
         SELECT ARRAY_TO_JSON (ARRAY_AGG(JSON_BUILD_ARRAY( pf.date, ps.{0}) ORDER BY pf.date))
-
         FROM {1}.poly_stats ps 
         JOIN {1}.product_file pf ON ps.product_file_id = pf.id
-        WHERE ps.poly_id = {2} AND pf.product_id ={3} AND pf.date BETWEEN '{4}' AND '{5}'
+        JOIN {1}.product_file_description pfd ON pf.product_description_id = pfd.id
+        WHERE ps.poly_id = {2} AND pfd.product_id ={3} AND pf.date BETWEEN '{4}' AND '{5}'
         """.format(self._requestData["options"]["area_type"], self._config.statsInfo.schema, self._requestData["options"]["poly_id"],
                    self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"])
@@ -44,12 +44,13 @@ class StatsRequests(GenericRequest):
     def __fetchProductInfo(self):
         query = """
         WITH dt AS( 
-        	SELECT distinct p.id, p.name, p.description pdescription, pf."date",  s.description sdescription 
+        	SELECT distinct p.id, p.name, pfd.description pdescription, pf."date",  s.description sdescription 
 	        FROM {0}.poly_stats ps 
 	        JOIN {0}.stratification_geom sg ON ps.poly_id = sg.id
 	        JOIN {0}.stratification s ON sg.stratification_id = s.id
 	        JOIN {0}.product_file pf ON ps.product_file_id = pf.id
-	        JOIN {0}.product p ON pf.product_id = p.id
+                JOIN {0}.product_file_description pfd on pf.product_description_id  = pfd.id
+                JOIN {0}.product p ON pfd.product_id = p.id
 	        WHERE pf."date" between '{1}' and '{2}'
         )
         SELECT  ARRAY_TO_JSON(ARRAY_AGG(JSON_build_object('id', a.id, 'name', a.name, 'description', 
@@ -65,10 +66,10 @@ class StatsRequests(GenericRequest):
 	        GROUP BY a.id, a.name, a.pdescription
         ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
               self._requestData["options"]["dateEnd"])
+        
         return self.__getResponseFromDB(query)
 
     def __fetchStratificationInfo(self):
-        print("heree")
         query = """
         WITH dt as(
 	        SELECT DISTINCT s.*, pf."date", p.name
@@ -76,7 +77,8 @@ class StatsRequests(GenericRequest):
 	        JOIN {0}.stratification_geom sg ON ps.poly_id = sg.id
 	        JOIN {0}.stratification s ON sg.stratification_id = s.id
 	        JOIN {0}.product_file pf ON ps.product_file_id = pf.id
-	        JOIN {0}.product p ON pf.product_id = p.id
+	        join {0}.product_file_description pfd on pf.product_description_id = pfd.id
+	        JOIN {0}.product p ON pfd.product_id = p.id
 	        WHERE pf."date" between '{1}' and '{2}' and p.id = {3}
         )
         SELECT ARRAY_TO_JSON(ARRAY_AGG(
@@ -93,7 +95,7 @@ class StatsRequests(GenericRequest):
 	        GROUP BY a.id, a.description, a.tilelayer_url
         ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
               self._requestData["options"]["dateEnd"], self._requestData["options"]["product_id"])
-        print(query)
+        
         return self.__getResponseFromDB(query)
 
     def __fetchStratificationDataByProductAndDate(self):
@@ -102,7 +104,8 @@ class StatsRequests(GenericRequest):
 	        SELECT poly_id, ps.id stat_id, ps.noval_area_ha+ps.sparse_area_ha+ps.mid_area_ha+ps.dense_area_ha sum_area
 	        FROM  {0}.poly_stats ps 
 	        JOIN  {0}.product_file pf ON ps.product_file_id = pf.id
-	        JOIN  {0}.product p ON pf.product_id = p.id
+	        JOIN  {0}.product_file_description pfd on pf.product_description_id = pfd.id
+	        JOIN  {0}.product p ON pfd.product_id = p.id
 	        JOIN  {0}.stratification_geom sg ON sg.id = ps.poly_id
 	        JOIN  {0}.stratification s ON s.id = sg.stratification_id
         	WHERE pf.date = '{1}' and s.id ={2} and p.id = {3}
@@ -125,35 +128,41 @@ class StatsRequests(GenericRequest):
             ORDER BY poly_id
         )a;""".format(self._config.statsInfo.schema, self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
+        
         return self.__getResponseFromDB(query)
 
     def __histogramDataByProductAndPolygon(self):
         print(self._requestData)
         query = """
-            SELECT JSON_BUILD_OBJECT('histogram', histogram, 'low_value', p.min_prod_value , 'high_value', p.max_prod_value) 
+            SELECT JSON_BUILD_OBJECT('histogram', histogram, 'low_value', pfd.min_prod_value , 'high_value', pfd.max_prod_value) 
             FROM {0}.poly_stats ps 
             JOIN {0}.product_file pf ON ps.product_file_id  = pf.id
-            JOIN {0}.product p ON pf.product_id = p.id
+            JOIN {0}.product_file_description pfd ON pf.product_description_id = pfd.id
+            JOIN {0}.product p ON pfd.product_id = p.id
             WHERE p.id = {1} AND pf."date" = '{2}' AND ps.poly_id = {3}
         """.format(self._config.statsInfo.schema, self._requestData["options"]["product_id"],
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        print(query)
         return self.__getResponseFromDB(query)
 
     def __getRawTimeSeriesDataForRegion(self):
         query = """
-            SELECT  p.variable, 
+            SELECT  pfd.variable
             ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date ASC)
-            ,p.pattern
-            ,p.types
-            ,p.create_date
+            ,pfd.pattern
+            ,pfd.types
+            ,pfd.create_date
             FROM {1}.product_file pf 
-            JOIN product p on pf.product_id =p.id
+            JOIN {1}.product_file_description pfd ON pf.product_description_id = pfd.id
+            JOIN {1}.product p on pfd.product_id =p.id
             WHERE date between  '{2}' and '{3}' and product_id  = {4}
-            GROUP BY p.variable, p.pattern,p.types,p.create_date
+            GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date
+            HAVING pfd.variable != ''
         """.format(self._config.filesystem.imageryPath,
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
         data = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
+        
         obj = PointValueExtractor(data[0],
                                   self._requestData["options"]["coordinate"][0], self._requestData["options"]["coordinate"][1],
                                   self._requestData["options"]["epsg"])
