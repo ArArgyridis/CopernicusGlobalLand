@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys,json
+import json,os,sys
 sys.path.extend(['../../'])
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.GenericRequest import GenericRequest
@@ -66,7 +66,7 @@ class StatsRequests(GenericRequest):
 	        GROUP BY a.id, a.name, a.pdescription
         ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
               self._requestData["options"]["dateEnd"])
-        
+
         return self.__getResponseFromDB(query)
 
     def __fetchStratificationInfo(self):
@@ -95,7 +95,7 @@ class StatsRequests(GenericRequest):
 	        GROUP BY a.id, a.description, a.tilelayer_url
         ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
               self._requestData["options"]["dateEnd"], self._requestData["options"]["product_id"])
-        
+
         return self.__getResponseFromDB(query)
 
     def __fetchStratificationDataByProductAndDate(self):
@@ -128,7 +128,7 @@ class StatsRequests(GenericRequest):
             ORDER BY poly_id
         )a;""".format(self._config.statsInfo.schema, self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
-        
+
         return self.__getResponseFromDB(query)
 
     def __histogramDataByProductAndPolygon(self):
@@ -142,13 +142,15 @@ class StatsRequests(GenericRequest):
             WHERE p.id = {1} AND pf."date" = '{2}' AND ps.poly_id = {3}
         """.format(self._config.statsInfo.schema, self._requestData["options"]["product_id"],
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
-        print(query)
         return self.__getResponseFromDB(query)
 
     def __getRawTimeSeriesDataForRegion(self):
+        if self._config.filesystem.imageryPath[-1] != "/":
+            self._config.filesystem.imageryPath += "/"
+
         query = """
             SELECT  pfd.variable
-            ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date ASC)
+            ,JSON_OBJECT_AGG( '{0}'||rel_file_path, date ORDER BY date ASC)
             ,pfd.pattern
             ,pfd.types
             ,pfd.create_date
@@ -162,7 +164,7 @@ class StatsRequests(GenericRequest):
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
         data = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
-        
+
         obj = PointValueExtractor(data[0],
                                   self._requestData["options"]["coordinate"][0], self._requestData["options"]["coordinate"][1],
                                   self._requestData["options"]["epsg"])
@@ -220,12 +222,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
 
