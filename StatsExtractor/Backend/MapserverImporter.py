@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, numpy as np, xml.etree.ElementTree as ET, multiprocessing
+import os, numpy as np, sys, xml.etree.ElementTree as ET, multiprocessing
 from osgeo import gdal, osr
 from concurrent.futures import ProcessPoolExecutor
 
@@ -21,6 +21,7 @@ from samba.dcerpc.dcerpc import response
 from Libs.MapServer import MapServer, LayerInfo
 from Libs.Utils import getImageExtent, getListOfFiles, netCDFSubDataset
 from Libs.Constants import Constants
+from Libs.ConfigurationParser import ConfigurationParser
 
 def myProgress(progress, progressData, another):
     progress = np.round(progress,2)
@@ -54,7 +55,6 @@ def processSingleImage(image):
         return None
 
     productKey, product, date = res
-
     subDataset = netCDFSubDataset(image, product.variable)
     tmpDt = gdal.Open(subDataset)
     tmpGt = tmpDt.GetGeoTransform()
@@ -131,18 +131,24 @@ class MapserverImporter(object):
         for productKey in productGroups:
             for year in productGroups[productKey]:
                 outFile = os.path.join(self._productsDirectory, *(productKey, year, "mapserver.map"))
-                mapserv = MapServer(productGroups[productKey][year], "http://192.168.2.15/wms/{0}/{1}".format(productKey, year), outFile)
+                mapserv = MapServer(productGroups[productKey][year], "http://192.168.2.2/wms/{0}/{1}".format(productKey, year), outFile)
                 mapserv.process()
 
 
 
 def main():
-    inputImageDir = os.path.expanduser("~/Projects/JRCStatsExtractor/ExperimentalData/Imagery/")
-    cfg = "../config.json"
-    stratificationType = "countries"
-    Constants.load(cfg)
+    if len(sys.argv) < 3:
+        print("Usage: python MapserverImporter.py config_file stratification_type")
+        return
 
-    obj = MapserverImporter(inputImageDir)
+    cfg = sys.argv[1]
+    Constants.load(cfg)
+    config = ConfigurationParser(cfg)
+    config.parse()
+    stratificationType = sys.argv[2]
+
+
+    obj = MapserverImporter(config.filesystem.imageryPath)
     obj.process()
 
 

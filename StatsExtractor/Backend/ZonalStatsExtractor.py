@@ -343,7 +343,7 @@ def main():
 
     #requirements:
     obj = ZonalStatsExtractor(stratificationType, cfg)
-    obj.process(8)
+    obj.process()
     print("Finished!")
 
 if __name__ == "__main__":

@@ -85,6 +85,8 @@ class MapServer:
 			layer.setMetaData("STATUS", "ON")
 			#layer.tileindex = tileIndex
 			imageryMap.insertLayer(layer)
+			
+		os.makedirs(os.path.split(self._outMapFile)[0],exist_ok=True)
 
 		imageryMap.save(self._outMapFile)
 		imageryMap = None
