@@ -29,7 +29,8 @@ export default {
 			bingId: null,
 			projectEPSG: "EPSG:3857",
 			productZIndex: 1,
-			stratificationZIndex: 2
+			stratificationZIndex: 2,
+			anomaliesZIndex: 3
 		}
 	},	
 	props: {},
@@ -116,10 +117,16 @@ export default {
 			});
 			requestedYears.forEach(year =>{
 				if (availableYears.includes(year)) {
+					//fetching raw wms layers
 					let productName = this.$store.getters.currentProduct.name;
 					this.$refs.map1.getAvailableWMSLayers(options.wmsURL + productName + "/" + year, this.productZIndex).then((data) => {
 						this.$store.commit("appendToProductsWMSLayers",data);
-					});			
+					});
+					//fetching anomalies names
+					let anomaliesName = "NDVI300V2_LongTermComparisonAnomalyDetector";
+					this.$refs.map1.getAvailableWMSLayers(options.anomaliesWMSURL + anomaliesName + "/" + year, this.anomaliesZIndex).then((data) => {
+						this.$store.commit("appendToProductsAnomaliesWMSLayers",data);
+					});
 				}
 			});
 		},
@@ -135,6 +142,11 @@ export default {
 			if (this.$store.getters.previousProductWMSLayer != null)
 				this.$refs.map1.setVisibility(this.$store.getters.previousProductWMSLayer.layerId, false);
 			this.$refs.map1.setVisibility( this.$store.getters.currentProductWMSLayer.layerId, true);
+		},
+		updateProductAnomalyWMSVisibility() {
+			if (this.$store.getters.previousProductAnomalyWMSLayer != null)
+				this.$refs.map1.setVisibility(this.$store.getters.previousProductAnomalyWMSLayer.layerId, false);
+			this.$refs.map1.setVisibility( this.$store.getters.currentProductAnomalyWMSLayer.layerId, true);
 		},
 		updateStratificationLayerStyle(){
 			if (this.$store.getters.areaDensity == null)

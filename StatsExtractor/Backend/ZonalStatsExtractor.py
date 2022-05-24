@@ -18,7 +18,7 @@ from osgeo import gdal, ogr, osr
 import json, os, multiprocessing,  numpy as np, pathlib, re
 
 import sys
-sys.path.extend(['..']) #to properly import modules from other dirs
+sys.path.extend(['../../']) #to properly import modules from other dirs
 from Libs.AlignToImage import AlignToImage
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import *

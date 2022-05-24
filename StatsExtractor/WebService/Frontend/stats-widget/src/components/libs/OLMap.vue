@@ -374,9 +374,11 @@ export default {
 			}
 			else {
 				let tmpLayer = new VectorTileLayer({
+					renderMode: 'vector',
 					source: this.layers[id].getSource(),
 					style: ( (ft) => {
 						if (ft.getId() == this.selectedFeatureId) {
+							console.log("@@@@@@");
 							return this.highlightPolygonStyle;
 						}
 						return null;
@@ -386,7 +388,11 @@ export default {
 				this.hoverLayers[id] = {
 					hoverId: this.__addGenericLayer(tmpLayer,  this.layers[id].getZIndex()+1),
 					listener: ((e) => {
+						console.log("before get features!!!!!");
+						//console.log(e);
+						
 						this.layers[id].getFeatures(e.pixel).then((fts) => {
+							console.log("pipoules");
 							let emt = null;
 							if (!fts.length) {
 								this.selectedFeatureId = null;
@@ -396,13 +402,14 @@ export default {
 						
 								if (currentId != this.selectedFeatureId) {
 									this.selectedFeatureId = currentId;
-									this.layers[this.hoverLayers[this.activeHighlightLayer].hoverId].changed();
+									//this.layers[this.hoverLayers[this.activeHighlightLayer].hoverId].changed();
 									emt = fts[0];
 								}
 							}
 							this.layers[this.hoverLayers[this.activeHighlightLayer].hoverId].changed();
 							this.$emit("featureClicked", emt);
 						});
+						//console.log(this.map.getFeaturesAtPixel(e.pixel));
 					})
 				}
 				this.activeHighlightLayer = id;
@@ -507,7 +514,8 @@ export default {
 		},
 		__addVectorTileLayerToMap(source, zIndex=null) {
 			let tmpLayer = new VectorTileLayer({
-				source: source
+				source: source,
+				declutter: true
 			});
 			return this.__addGenericLayer(tmpLayer, zIndex);
 			

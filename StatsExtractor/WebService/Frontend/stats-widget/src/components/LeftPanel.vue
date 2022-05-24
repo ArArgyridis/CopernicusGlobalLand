@@ -79,8 +79,7 @@
 						<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(key)"><a class="dropdown-item">{{densityType.description}}</a></li>
 					</ul>
 				</div>
-			</div>
-			
+			</div>			
 			<!-- WMS RAW DATA LAYER-->
 			<div class= "mt-3" v-if="viewStratification==1">
 				Current WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductWMSLayer}}</button>
@@ -88,6 +87,15 @@
 					<li v-for ="(wms, key) in wmsLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
 				</ul>
 			</div>
+			
+			<!-- WMS ANOMALY DATA LAYER-->
+			<div class= "mt-3" v-if="viewStratification==2">
+				Current Anomaly WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomalyWMSLayer}}</button>
+				<ul id="wmsDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+					<li v-for ="(wms, key) in wmsAnomalyLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentAnomalyWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
+				</ul>
+			</div>
+			
 		</div>
 	</div>
 </div>
@@ -96,8 +104,8 @@
 
 
 <script>
-import Datepicker from 'vue3-date-time-picker';
-import 'vue3-date-time-picker/dist/main.css';
+import Datepicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
 
 export default {
 	name: 'Left Panel',
@@ -125,6 +133,16 @@ export default {
 			set(val){
 				this.$store.commit("setCurrentProduct", val);
 				this.$emit("currentProductChange");
+			}
+		},
+		currentProductAnomalyWMSLayer: {
+			get() {
+				if (this.$store.getters.currentProductAnomalyWMSLayer == null)
+					return "No Layer Selected";
+				return this.$store.getters.currentProductAnomalyWMSLayer.title;
+			},
+			set(val) {
+				this.$store.commit("setCurrentProductAnomalyWMSLayer",val);
 			}
 		},
 		currentProductWMSLayer: {
@@ -214,6 +232,11 @@ export default {
 				});
 			}
 		},
+		wmsAnomalyLayers: {
+			get() {
+				return this.$store.getters.productsAnomaliesWMSLayers;
+			}
+		},
 		wmsLayers:{
 			get() {
 				return this.$store.getters.productsWMSLayers;
@@ -241,7 +264,6 @@ export default {
 			this.currentProduct = key;
 		},
 		setCurrentStratification(key) {
-			console.log("setting current stratification!!!!", key);
 			this.currentStratification = key;
 		},
 		setStratificationAreaDensity(key) {
@@ -250,6 +272,10 @@ export default {
 		},
 		setCurrentStratificationDate(key) {
 			this.currentStratificationDate = key;
+		},
+		setCurrentAnomalyWMS(key) {
+			this.currentProductAnomalyWMSLayer = key;
+			this.$emit("anomalyWMSChange");
 		},
 		setCurrentWMS(key) {
 			this.currentProductWMSLayer = key;

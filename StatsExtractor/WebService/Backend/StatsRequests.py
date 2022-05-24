@@ -13,7 +13,7 @@
 """
 
 import json,os,sys
-sys.path.extend(['../../'])
+sys.path.extend(['../../../'])
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.GenericRequest import GenericRequest
 from PointValueExtractor import PointValueExtractor

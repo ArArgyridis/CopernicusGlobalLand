@@ -21,7 +21,7 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-dateStart.setDate(dateStart.getDate() - 200);
+//dateStart.setDate(dateStart.getDate() - 200);
 dateStart = new Date("2020-01-01 00:00:00");
 // Create a new store instance.
 const store = createStore({
@@ -59,7 +59,12 @@ const store = createStore({
 			currentProductWMSLayer:null,
 			info:null,
 			previousProductWMSLayer:null,
-			wmsLayers:[]
+			wmsLayers:[],
+			anomalies: {
+				currentWMSLayer: null,
+				previouWMSLayer: null,
+				wmsLayers: []
+			}
 		},
 		stratifications:{
 			currentStratification: null,
@@ -69,6 +74,16 @@ const store = createStore({
 		}
 	},
 	mutations: {
+		appendToProductsAnomaliesWMSLayers(state, dt) {
+			state.products.anomalies.wmsLayers = state.products.anomalies.wmsLayers.concat(dt);
+			state.products.anomalies.wmsLayers = state.products.anomalies.wmsLayers.sort( function(a, b) {
+				let keyA = a.title,
+				keyB = b.title;
+				if (keyA < keyB) return 1;
+				if (keyA > keyB) return -1;
+				return 0;
+			});
+		},		
 		appendToProductsWMSLayers(state, dt) {
 			state.products.wmsLayers = state.products.wmsLayers.concat(dt);
 			state.products.wmsLayers = state.products.wmsLayers.sort( function(a, b) {
@@ -88,6 +103,11 @@ const store = createStore({
 			state.products.currentProductWMSLayer = null;
 			state.products.previousProductWMSLayer = null;
 		},
+		clearProductsAnomalyWMSLayers(state) {
+			state.products.anomalies.wmsLayers = [];
+			state.products.anomalies.currentWMSLayer = null;
+			state.products.anomalies.previousWMSLayer = null;
+		},
 		clearStratifications(state) {
 			state.stratifications.currentStratification = null;
 			state.stratifications.currentStratificationDate = null;
@@ -106,6 +126,10 @@ const store = createStore({
 		},
 		setDateEnd(state, dt) {
 			state.dateEnd = dt;
+		},
+		setCurrentProductAnomalyWMSLayer(state, dt) {
+			state.products.anomalies.previousWMSLayer = state.products.anomalies.currentWMSLayer;
+			state.products.anomalies.currentWMSLayer = dt;
 		},
 		setCurrentProductWMSLayer(state, dt) {
 			state.products.previousProductWMSLayer = state.products.currentProductWMSLayer;
@@ -150,6 +174,11 @@ const store = createStore({
 				return null;
 			return state.products.info[state.products.currentProduct];
 		},
+		currentProductAnomalyWMSLayer: (state) => {
+			if (state.products.anomalies.currentWMSLayer == null)
+				return null;
+			return state.products.anomalies.wmsLayers[state.products.anomalies.currentWMSLayer];
+		},
 		currentProductWMSLayer: (state) => {
 			if(state.products.currentProductWMSLayer == null)
 				return null;
@@ -162,6 +191,11 @@ const store = createStore({
 		},
 		currentStratificationDate: (state) => {
 			return state.stratifications.currentStratificationDate;
+		},
+		previousProductAnomalyWMSLayer: (state) => {
+			if (state.products.anomalies.previousWMSLayer == null)
+				return null;
+			return state.products.anomalies.wmsLayers[state.products.anomalies.previousWMSLayer];
 		},
 		previousProductWMSLayer: (state) => {
 			if (state.products.previousProductWMSLayer == null)
@@ -179,13 +213,14 @@ const store = createStore({
 		productsWMSLayers: (state) => {
 			return state.products.wmsLayers;
 		},
+		productsAnomaliesWMSLayers: (state) => {
+			return state.products.anomalies.wmsLayers;
+		},
 		stratifications: (state) => {
 			return state.stratifications.info;
 		}
-		
-		
 	}
-})
+});
 
 const app = createApp(App);
 app.use(store);

@@ -13,7 +13,8 @@
 """
 
 import sys, re, os, numpy as np, pandas as pd
-sys.path.extend(['../../'])
+sys.path.extend(['../../../'])
+
 from osgeo import gdal, osr
 from Libs.Utils import xyToColRow, scaleValue, getListOfFiles
 

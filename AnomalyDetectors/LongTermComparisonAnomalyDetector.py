@@ -1,13 +1,14 @@
 import os,sys, numpy as np, pandas as pd
-sys.path.extend(['../StatsExtractor/'])
+sys.path.extend(['../'])
 from osgeo import gdal
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import xyToColRow, netCDFSubDataset, scaleValue
-from WebService.Backend.PointValueExtractor import PointValueExtractor
+from Libs.Constants import Constants
 from multiprocessing import Process, cpu_count
 from shutil import rmtree
+
 
 def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataValue, variableName="NDVI"):
     print("computing anomally!!")
@@ -32,26 +33,51 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
     for row in range(startRow, endRow):
         #read data
         inProductBuffer = [0]*len(products)
+        scaledNoDataValue = None
         for i in range(len(products)):
             inProductBuffer[i] = scaleValue(inProductsMeta[i],
                                             inProductsBnd[i].ReadAsArray(0, row, cols, 1)[0],#.astype(np.float32),
                                             variableName)
+            scaledNoDataValue = scaleValue(inProductsMeta[i], noDataValue, variableName)
 
-        inProductBuffer = np.stack(inProductBuffer).mean(axis=0)
+        if len(products) > 0:
+            inProductBuffer = np.stack(inProductBuffer).mean(axis=0)
+        else:
+            inProductBuffer = inProductBuffer[0]
+
         ltsMeanBuffer = inLtsMeanBnd.ReadAsArray(0, row, cols, 1)[0]
         ltsStdBuffer = inLtsStdBnd.ReadAsArray(0, row, cols, 1)[0]
         idx = ltsMeanBuffer!=noDataValue
         idx = np.logical_and(idx, ltsStdBuffer != noDataValue)
-        idx = np.logical_and(idx, inProductBuffer != noDataValue)
+        idx = np.logical_and(idx, inProductBuffer != scaledNoDataValue)
 
         outBuffer = np.zeros(inProductBuffer.shape).astype(float)
         outBuffer.fill(noDataValue)
-        outBuffer[idx] = (inProductBuffer[idx] - ltsMeanBuffer[idx])/ltsStdBuffer[idx]
+        #outBuffer[idx] = (inProductBuffer[idx] - ltsMeanBuffer[idx])/ltsStdBuffer[idx]
+
+        outBuffer[idx] = (inProductBuffer[idx] < ltsMeanBuffer[idx] - 3 * ltsStdBuffer[idx]).astype(int) * (0) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 3 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsMeanBuffer[idx] - 2 * ltsStdBuffer[idx]).astype(int) * (1) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 2 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsMeanBuffer[idx] - 1 * ltsStdBuffer[idx]) * (2) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 1 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsMeanBuffer[idx] + 1 * ltsStdBuffer[idx]) * (3) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] + 1 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsMeanBuffer[idx] + 2 * ltsStdBuffer[idx]) * (4) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] + 2 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsMeanBuffer[idx] + 3 * ltsStdBuffer[idx]) * (5) \
+                         + (inProductBuffer[idx] >= ltsMeanBuffer[idx] + 3 * ltsStdBuffer[idx]) * (6) \
+                         + np.isnan(inProductBuffer[idx]) * 255
+
+
+
         #outBuffer[idx] = inProductBuffer[idx]
+        #outBuffer = inProductBuffer
         outImgBnd.WriteArray(outBuffer.reshape(1, cols), 0, row)
 
     outImgSrc.FlushCache()
     outImgSrc = None
+
     return
 
 def computeMean(outImg, imgs, dataPath, startRow, endRow, noDataValue):
@@ -108,25 +134,29 @@ def computeMean(outImg, imgs, dataPath, startRow, endRow, noDataValue):
 
 
 class LongTermComparisonAnomalyDetector:
-    def __init__(self, productId, dateStart, dateEnd, cfg, nThreads = cpu_count() -1):
+    def __init__(self, productId, dateStart, dateEnd, cfg, anomalyProductName, nThreads = cpu_count() -1):
         self._productId = productId
         self._dateStart = dateStart
         self._dateEnd = dateEnd
         self._cfg = ConfigurationParser(cfg)
         self._cfg.parse()
+        self._anomalyProductName = anomalyProductName
         self._nThreads = nThreads
         self._images = {}
         self._products = {}
         self._sessionTMPFolder = os.path.join(self._cfg.filesystem.tmpPath, "LTCAD")
 
+
     def __del__(self):
-        rmtree(self._sessionTMPFolder)
+        if os.path.isdir(self._sessionTMPFolder):
+            rmtree(self._sessionTMPFolder)
+
 
     def __getDekads(self, dekads=[1,11,21]):
         curDekads = []
         # build required dekads:
         curDt = datetime.strptime(self._dateStart, '%Y-%m-%d')
-        while curDt <= datetime.strptime(self._dateEnd, '%Y-%m-%d'):
+        while curDt < datetime.strptime(self._dateEnd, '%Y-%m-%d'):
             if curDt.day in dekads:
                 dkd = datetime.strftime(curDt, "'%m%d'")
                 if dkd not in curDekads:
@@ -135,7 +165,6 @@ class LongTermComparisonAnomalyDetector:
         return curDekads
 
     def _computeLongTermMeanStd(self, ):
-        print("Starting computing long term mean")
         if os.path.isfile(self._sessionTMPFolder):
             rmtree(self._sessionTMPFolder)
         os.makedirs(self._sessionTMPFolder, exist_ok=True)
@@ -150,14 +179,9 @@ class LongTermComparisonAnomalyDetector:
         AND  to_char(pf."date", 'mmdd') IN ({0})""".format(",".join(curDekads))
         res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
         ret = [None,None]
-        if res == False:
-            ret = [None, None]
-        elif len(res) == 1:
-            ret = [
-                netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, res[0][0]), "mean"),
-                netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, res[0][0]), "stdev")
-            ]
-        else: #compute the average of the LTSMean/StDev
+
+        if res != False: #compute the average of the LTSMean/StDev
+            print("Starting computing long term mean")
             #open a file to get required info
             tmpInData = gdal.Open(netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, res[0][0]), "mean"))
             drv = gdal.GetDriverByName("GTiff")
@@ -179,7 +203,6 @@ class LongTermComparisonAnomalyDetector:
             step = int(rasterYSize / (self._nThreads))
             threads = []
             images = [os.path.join(self._cfg.filesystem.imageryPath, k[0]) for k in res]
-            print(rasterYSize)
             #computeMean(ret, images, self._cfg.filesystem.imageryPath, 3000, 4000, noDataValue)
             for prevRow in range(0, rasterYSize - step + 1, step):
                 curRow = prevRow + step
@@ -200,6 +223,16 @@ class LongTermComparisonAnomalyDetector:
 
     def process(self):
             print("Starting computing anomalies")
+            #check if product already exists
+            query = """SELECT  pf.*
+                    FROM product p 
+                    JOIN product_file_description pfd on p.id = pfd.product_id 
+                    JOIN product_file pf on pfd.id = pf.product_description_id 
+                    WHERE p.name = '{0}' and date='{1}'""".format(self._anomalyProductName, self._dateStart)
+            res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
+            if len(res) > 0:
+                return
+
 
             #try:
             ltsMean, ltsStd = self._computeLongTermMeanStd()
@@ -208,12 +241,14 @@ class LongTermComparisonAnomalyDetector:
             productQuery = """SELECT pfd.variable,  '{0}'||pf.rel_file_path, pf.date, pfd.pattern, pfd.TYPES
                 FROM product_file_description pfd 
                 JOIN product_file pf ON pfd.id = pf.product_description_id
-                WHERE pfd.product_id = 1 AND pf."date" BETWEEN '{1}' AND '{2}'
+                WHERE pfd.product_id = 1 AND pf."date" >= '{1}' AND pf.date < '{2}'
                 AND  pf.rel_file_path LIKE '%.nc';""".\
                 format(self._cfg.filesystem.imageryPath, self._dateStart, self._dateEnd)
-            print("products retrieved")
 
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].getIteratableResult(productQuery)
+            print("products retrieved")
+
+
             mn = gdal.Open(ltsMean)
 
             gt = mn.GetGeoTransform()
@@ -239,21 +274,25 @@ class LongTermComparisonAnomalyDetector:
 
 
             #create output dataset
-            outImgPath = os.path.join(self._cfg.filesystem.anomalyProductsPath, "LongTermComparisonAnomalyDetector")
-            outImg = os.path.join(outImgPath,"{0}_{1}.tif".format(self._dateStart, self._dateEnd))
+            outImgPath = os.path.join(self._cfg.filesystem.anomalyProductsPath, *("NDVI300V2_LongTermComparisonAnomalyDetector",
+                                                                                  self._dateStart[0:4]))
+            outImg = os.path.join(outImgPath,
+                                  Constants.PRODUCT_INFO[self._anomalyProductName].fileNameCreationPattern.format(
+                                      self._dateStart, self._dateEnd))
+            print(outImg)
             #building output paths
+
             os.makedirs(outImgPath, exist_ok=True)
 
             drv = gdal.GetDriverByName("GTiff")
 
             outProduct = drv.Create(outImg, xsize=mn.RasterXSize, ysize=mn.RasterYSize,
-                                    bands=1, eType=gdal.GDT_Float32)
-            #,options=['COMPRESS=Deflate', 'PREDICTOR=3', "BIGTIFF=YES"]
+                                    bands=1, eType=gdal.GDT_Byte)
 
             outProduct.SetProjection(mn.GetProjection())
             outProduct.SetGeoTransform(mn.GetGeoTransform())
             outProduct.GetRasterBand(1).SetNoDataValue(noDataValue)
-            outProduct.FlushCache()
+            #outProduct.FlushCache()
             outProduct = None
             #computeAnomaly(outImg, products, ltsMean, ltsStd, 7000,8000, noDataValue, row[0])
 
@@ -274,6 +313,15 @@ class LongTermComparisonAnomalyDetector:
             for trd in threads:
                 trd.join()
 
+            #update db!
+            query = """INSERT INTO product_file(product_description_id, rel_file_path, date) VALUES ({0},'{1}','{2}') 
+                    ON CONFLICT(product_description_id, rel_file_path) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path; 
+                    """.format(
+                Constants.PRODUCT_INFO[self._anomalyProductName].id,
+                os.path.relpath(outImg, self._cfg.filesystem.anomalyProductsPath),
+                self._dateStart
+            )
+            self._cfg.pgConnections[self._cfg.statsInfo.connectionId].executeQueries([query,])
 
             print("anomalies computation finished!")
 
@@ -283,22 +331,47 @@ class LongTermComparisonAnomalyDetector:
             return 0
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python LongTermComparisonAnomalyDetector.py config_json_file")
+    if len(sys.argv) < 3:
+        print("Usage: python LongTermComparisonAnomalyDetector.py config_json_file anomaly_product_file_name")
         return
 
     cfg = sys.argv[1]
+    anomalyProductName = sys.argv[2]
+    Constants.load(cfg)
 
     datePtrn = "%Y-%m-%d"
+
     curTime = datetime.strptime("2020-07-01",datePtrn)
     dateEnd = datetime.now()
     relDelta = relativedelta(months=1)
+    while curTime < dateEnd - relDelta:
+        dekads = [1,11,21]
+        for i in range(len(dekads)):
+            d1 = curTime.replace(day=dekads[i]).strftime(datePtrn)
+            d2 = None
+            if (i+1 == len(dekads)):
+                if curTime.month > 11:
+                    d2 = curTime.replace(year = curTime.year+1, month=1, day=1)
+                else:
+                    d2 = curTime.replace(month=curTime.month+1,day=1)
+            else:
+                d2 = curTime.replace(day=dekads[i+1])
+
+            d2 = d2.strftime(datePtrn)
+
+            obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg, anomalyProductName, 11)
+            obj.process()
+        curTime += relDelta
+
+
+    """
     while (curTime < dateEnd-relDelta):
         d1 = curTime.strftime(datePtrn)
         d2 = (curTime+relDelta).strftime(datePtrn)
         obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg,1)
         obj.process()
         curTime += relDelta
+    """
 
 
 if __name__ == "__main__":

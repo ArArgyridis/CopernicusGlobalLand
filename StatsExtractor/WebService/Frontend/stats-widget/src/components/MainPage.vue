@@ -24,6 +24,7 @@
 					v-on:stratificationDateChange="refreshStratificationInfo()"
 					v-on:stratificationAreaDensityChange="updateStratificationLayerStyle()"
 					v-on:closeLeftPanel="toggleLeft()"
+					v-on:anomalyWMSChange="updateProductAnomalyWMSVisibility()"
 			/>
 		</div>
 		<div class="noPadding hidden">
@@ -89,7 +90,6 @@ export default {
 			this.$refs.mapApp.clearPolygonSelection();
 		},
 		refreshStratificationInfo() {
-			console.log("asdasdasd");
 			this.$refs.chartPanel.updatePolygonTimeseriesChart(this.currentStratificationPolygonId);
 			this.$refs.chartPanel.updateHistogramChart(this.currentStratificationPolygonId);
 			this.updateStratificationLayerStyle();
@@ -102,38 +102,17 @@ export default {
 			}
 		},		
 		toggleCurrentLayersVisibility(evt) {
-
-			if(evt.id == 0) {
-				if (this.$store.getters.currentStratification != null)
-					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, true);
-					
-				if (this.$store.getters.currentProductWMSLayer != null) 
-					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, false);
-			}else if (evt.id == 1) {
-				if (this.$store.getters.currentStratification != null)
-					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, false);
-					
-				if (this.$store.getters.currentProductWMSLayer != null) 
-					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, true);
-			}else if (evt.id == 2) {
-				if (this.$store.getters.currentStratification != null)
-					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, false);
-				if (this.$store.getters.currentProductWMSLayer != null) 
-					this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, false);
-			}
-			
-			this.setRightPanelVisibility(false);
-			this.$refs.chartPanel.resetAllCharts();
-
-			/*
 			if (this.$store.getters.currentStratification != null)
-				this.$refs.mapApp.toggleLayerVisibility(this.$store.getters.currentStratification.layerId);
-				
+				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, evt.id==0);
+			
 			if (this.$store.getters.currentProductWMSLayer != null) 
-				this.$refs.mapApp.toggleLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId);
+				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, evt.id==1);
+			
+			if (this.$store.getters.currentProductAnomalyWMSLayer != null) 
+				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductAnomalyWMSLayer.layerId, evt.id==2);
+
 			this.setRightPanelVisibility(false);
 			this.$refs.chartPanel.resetAllCharts();
-			*/
 		},
 		togglePanelClasses(id){
 			document.getElementById(id).classList.toggle("hiddenBar");
@@ -174,6 +153,10 @@ export default {
 		updateProductWMSVisibility() {
 			this.setRightPanelVisibility(false);
 			this.$refs.mapApp.updateProductWMSVisibility();
+		},
+		updateProductAnomalyWMSVisibility() {
+			this.setRightPanelVisibility(false);
+			this.$refs.mapApp.updateProductAnomalyWMSVisibility();
 		},
 		updateStratificationLayerStyle(){
 			this.$refs.mapApp.updateStratificationLayerStyle();

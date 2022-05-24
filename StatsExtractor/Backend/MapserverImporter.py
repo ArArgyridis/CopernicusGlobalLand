@@ -16,7 +16,7 @@ import os, numpy as np, sys, xml.etree.ElementTree as ET, multiprocessing
 from osgeo import gdal, osr
 from concurrent.futures import ProcessPoolExecutor
 
-sys.path.extend(['..']) #to properly import modules from other dirs
+sys.path.extend(['../../']) #to properly import modules from other dirs
 
 from Libs.MapServer import MapServer, LayerInfo
 from Libs.Utils import getImageExtent, getListOfFiles, netCDFSubDataset
@@ -131,22 +131,20 @@ class MapserverImporter(object):
         for productKey in productGroups:
             for year in productGroups[productKey]:
                 outFile = os.path.join(self._productsDirectory, *(productKey, year, "mapserver.map"))
-                mapserv = MapServer(productGroups[productKey][year], "http://192.168.2.2/wms/{0}/{1}".format(productKey, year), outFile)
+                mapserv = MapServer(productGroups[productKey][year], "http://localhost/wms/{0}/{1}".format(productKey, year), outFile)
                 mapserv.process()
 
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python MapserverImporter.py config_file stratification_type")
+    if len(sys.argv) < 2:
+        print("Usage: python MapserverImporter.py config_file")
         return
 
     cfg = sys.argv[1]
     Constants.load(cfg)
     config = ConfigurationParser(cfg)
     config.parse()
-    stratificationType = sys.argv[2]
-
 
     obj = MapserverImporter(config.filesystem.imageryPath)
     obj.process()

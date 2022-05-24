@@ -1,5 +1,5 @@
 import os,sys, numpy as np, pandas as pd
-sys.path.extend(['../StatsExtractor/'])
+sys.path.extend(['../'])
 from osgeo import gdal
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import xyToColRow
