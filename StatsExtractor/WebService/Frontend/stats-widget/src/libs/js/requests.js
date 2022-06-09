@@ -2,6 +2,17 @@ import axios from 'axios';
 import options from './options.js';
 
 export default {
+	fetchDashboard(polyId, productId, dateStart, dateEnd) {
+		let postParams = {};
+		postParams["request"] = "fetchdashboard";
+		postParams["options"] = {
+			poly_id:polyId,
+			product_id: productId,
+			date_start: dateStart,
+			date_end: dateEnd
+		};
+		return axios.post(options.endpointURL, postParams); 
+	},
 	fetchHistogramByPolygonAndDate(polyId, date, productId) {
 		let postParams  = {};
 		postParams["request"] = "fetchhistogrambypolygonanddate";

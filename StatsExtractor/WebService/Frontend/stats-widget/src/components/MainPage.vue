@@ -12,6 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
+<Dashboard v-show="showTheDashboard==true" ref="dashboard" region="my region" strata="strata stratoula"/>
 <div class="container-fluid fixed-top">
 	<div class="row">
 		<div id="leftPanel" class="noPadding hiddenBar raise hidden sidenav leftnav" >
@@ -28,6 +29,7 @@
 			/>
 		</div>
 		<div class="noPadding hidden">
+		<!--<button class="btn btn-secondary mt-3" v-on:click="showDashboard()"> Show Region Dashboard</button>-->
 			<MapApp ref="mapApp" 
 			v-on:featureClicked="updateStratificationPolygonInfo($event)"
 			v-on:mapCoordinate="updateRawDataChart($event)"
@@ -40,8 +42,7 @@
 			<div class="d-flex logo relative"><img alt="Copernicus LMS" src="../assets/copernicus_land_monitoring.png"></div>
 		</div>		
 		<div id="rightPanel" class="transition noPadding hiddenBar raise hidden sidenav rightnav">
-			<TimeseriesCharts v-bind:polyId=currentStratificationPolygonId ref="chartPanel" v-on:closeTimechartsPanel="closeRightPanel()"
-			/>
+			<TimeseriesCharts v-bind:polyId=currentStratificationPolygonId ref="chartPanel" v-on:closeTimechartsPanel="closeRightPanel()" v-on:showDashboard="showDashboard()"/>
 		</div>
 	</div>
 </div>
@@ -50,6 +51,7 @@
 <script> 
 import MapApp from "./MapApp.vue";
 import LeftPanel from "./LeftPanel.vue";
+import Dashboard from "./Dashboard.vue";
 import TimeseriesCharts from "./TimeseriesCharts.vue";
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faUserSecret, faEye, faBars } from '@fortawesome/free-solid-svg-icons'
@@ -66,13 +68,15 @@ export default {
 		MapApp,
 		LeftPanel,
 		FontAwesomeIcon,
-		TimeseriesCharts
+		TimeseriesCharts,
+		Dashboard
 	},
 	data() {
 		return {
 			currentStratificationPolygonId: null,
 			showRightPanel: false,
-			activateClickOnMap: false
+			activateClickOnMap: false,
+			showTheDashboard: false
 		}
 	},
 	methods: {
@@ -100,7 +104,13 @@ export default {
 				this.togglePanelClasses("rightPanel");
 				this.showRightPanel = status;
 			}
-		},		
+		},
+		showDashboard() {
+			this.showTheDashboard = true;
+			this.$refs.dashboard.init();
+			this.$refs.dashboard.setVisibility(true);
+			this.$refs.dashboard.refreshData(this.currentStratificationPolygonId);
+		},
 		toggleCurrentLayersVisibility(evt) {
 			if (this.$store.getters.currentStratification != null)
 				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, evt.id==0);

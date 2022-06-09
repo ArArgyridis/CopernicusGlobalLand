@@ -29,7 +29,7 @@
 	<highcharts ref="stratificationTimeSeriesChart" v-show="getActiveDiagram == 0 && stratificationTimeSeriesTitle !== 'Dummy Title'" id="stratificationTimeSeriesChart" :options="stratificationTimeSeries"/>
 	<highcharts ref="rawTimeSeriesChart" v-show="getActiveDiagram == 1 && rawTimeSeriesTitle !== 'Dummy Title' " id="rawTimeSeriesChart" :options="rawTimeSeries"/> 
 	<highcharts ref="histogramChart" v-show="getActiveDiagram == 2 && stratificationHistogramTitle !== 'Dummy Title'" id="histogramChart" :options="stratificationHistogram"/> <!-- -->
-
+	<button class="btn btn-secondary mt-3" v-on:click="this.$emit('showDashboard')"> Show Region Dashboard</button>
 </div>
 </template>
 
@@ -142,7 +142,7 @@ export default {
 						text:"Area having the specified density value"
 					}
 				},
-				xAxis:{
+				xAxis: {
 					type: "datetime",
 					dateTimeLabelFormats: {
 						month: '%e/%m/%y'
@@ -150,7 +150,13 @@ export default {
 					title:{
 						enabled:true,
 						text:"Date",
-					}
+					},
+					plotBands: [{ // mark the weekend
+						color: 'rgba(0,0,0,1)',
+						from:  Date.UTC(2021, 0, 2, 8),
+						to:  Date.UTC(2021, 0, 2, 14),
+						id: 'pltbnd1'
+					}]
 				},
 				legend:{
 					enabled: false
@@ -171,7 +177,13 @@ export default {
 					title:{
 						enabled:true,
 						text:"Raw Value"
-					}
+					},
+					plotBands: [{ // mark the weekend
+						color: 'rgba(0,0,0,1)',
+						from:  Date.UTC(2021, 0, 2, 8),
+						to:  Date.UTC(2021, 0, 2, 14),
+						id: 'pltbnd1'
+					}]
 				},
 				xAxis:{
 					type: "datetime",
@@ -269,6 +281,25 @@ export default {
 			this.$refs.rawTimeSeriesChart.chart.showLoading();
 			
 		},
+		updateChartCurrentDate() {
+			if (this.$store.getters.currentStratificationDate == null)
+				return;
+				
+			let tmpDt =  Date.parse(this.$store.getters.currentStratificationDate );
+
+			let dtStart = tmpDt - 86400*4;
+
+			let dtEnd = tmpDt + 86400*4;
+			["stratificationTimeSeriesChart", "rawTimeSeriesChart"].forEach( (type) => {
+				this.$refs[type].chart.xAxis[0].removePlotBand('pltbnd1');
+				this.$refs[type].chart.xAxis[0].addPlotBand({ // mark the weekend
+						color: 'rgba(255,145,71,0.9)',
+						from:  dtStart,
+						to:  dtEnd,
+						id: 'pltbnd1'
+					});
+			});
+		},
 		updatePolygonTimeseriesChart(polyId){
 			let currentProduct = this.$store.getters.currentProduct;
 			let areaDensity = this.$store.getters.areaDensity;
@@ -282,6 +313,7 @@ export default {
 						});
 						this.timeSeriesStratificationData = response.data.data;
 						this.stratificationTimeSeries.title.text = currentProduct.description;
+						this.updateChartCurrentDate();
 					}
 				})
 				.catch(() =>{

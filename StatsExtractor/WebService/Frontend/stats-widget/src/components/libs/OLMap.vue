@@ -286,6 +286,12 @@ export default {
 			});
 			return this.__addVectorLayerToMap(geojsonSource);
 		},
+		createGEOJSONLayerFromString(str) {
+			let geojsonSource = new VectorSource({
+				features: new GeoJSON().readFeatures(str)
+			});
+			return this.__addVectorLayerToMap(geojsonSource);
+		},
 		createPointLabel(layerId, featureId, color, showLabel) {
 			let tmpFeature = this.layers[layerId].getSource().getFeatureById(featureId);
 		
@@ -317,7 +323,7 @@ export default {
 			this.map.getView().fit(extent);
 		},
 		fitToLayerExtent(id) {
-			this.map.getView().fit(this.layers[id].getExtent());
+			this.map.getView().fit(this.layers[id].getSource().getExtent());
 		},
 		getAvailableWMSLayers(url, zIndex=null) {
 			let tmpURL = url+"?service=wms&version=1.3.0&request=GetCapabilities";
@@ -344,6 +350,9 @@ export default {
 				return ret;
 			});
 
+		},
+		getMapExtent() {
+			return this.map.getView().calculateExtent();
 		},
 		getLayerList() {
 			return this.layers;
@@ -377,22 +386,20 @@ export default {
 					renderMode: 'vector',
 					source: this.layers[id].getSource(),
 					style: ( (ft) => {
-						if (ft.getId() == this.selectedFeatureId) {
-							console.log("@@@@@@");
+						//console.log(ft);
+						if (ft.getId() == this.selectedFeatureId) 
 							return this.highlightPolygonStyle;
-						}
-						return null;
+						
+						//return null;
 					})
 				});
 
 				this.hoverLayers[id] = {
 					hoverId: this.__addGenericLayer(tmpLayer,  this.layers[id].getZIndex()+1),
 					listener: ((e) => {
-						console.log("before get features!!!!!");
 						//console.log(e);
 						
 						this.layers[id].getFeatures(e.pixel).then((fts) => {
-							console.log("pipoules");
 							let emt = null;
 							if (!fts.length) {
 								this.selectedFeatureId = null;

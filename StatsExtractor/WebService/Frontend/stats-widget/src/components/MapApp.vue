@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
-	<OLMap id="map1" v-bind:center=[0,0] v-bind:zoom=2 bingKey="Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl" v-bind:epsg=projectEPSG  ref="map1" class="map" />
+	<OLMap id="map1" v-bind:center=[0,0] v-bind:zoom=2 v-bind:bingKey=bingKey v-bind:epsg=projectEPSG  ref="map1" class="map" />
 </template>
 
 <script>
@@ -27,6 +27,7 @@ export default {
 		return {
 			activeWMSLayer: null,
 			bingId: null,
+			bingKey: options.bingKey,
 			projectEPSG: "EPSG:3857",
 			productZIndex: 1,
 			stratificationZIndex: 2,
@@ -37,7 +38,8 @@ export default {
 	components: {
 		OLMap
 	},
-	computed: {},
+	computed: {
+	},
 	methods: {
 		init() {
 			//cartographic background
