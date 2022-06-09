@@ -94,7 +94,7 @@ class DataCrawler:
         if dbData is None:
             dbData = []
 
-            inDir = [x[0] for x in os.walk(storageDir) if x[0].endswith(product)]
+            inDir = [x[0] for x in os.walk(storageDir) if x[0].endswith(product)][0]
             files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
             for fl in files:
                 for info in self._prodInfo:
