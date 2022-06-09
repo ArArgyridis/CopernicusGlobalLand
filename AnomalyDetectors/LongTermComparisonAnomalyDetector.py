@@ -230,6 +230,8 @@ class LongTermComparisonAnomalyDetector:
                     JOIN product_file pf on pfd.id = pf.product_description_id 
                     WHERE p.name = '{0}' and date='{1}'""".format(self._anomalyProductName, self._dateStart)
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
+            #print(query)
+            #print(res)
             if len(res) > 0:
                 return
 
@@ -343,7 +345,7 @@ def main():
 
     curTime = datetime.strptime("2020-07-01",datePtrn)
     dateEnd = datetime.now()
-    relDelta = relativedelta(months=1)
+    relDelta = relativedelta(days=5)
     while curTime < dateEnd - relDelta:
         dekads = [1,11,21]
         for i in range(len(dekads)):

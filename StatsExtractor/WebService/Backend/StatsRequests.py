@@ -28,6 +28,27 @@ class StatsRequests(GenericRequest):
         if isinstance(ret, list):
             ret = ret[0][0]
         return ret
+    
+    def __fetchDashboard(self):
+        query =  """
+	    WITH geom AS(
+		SELECT st_asgeojson(geom3857)::json geom
+		FROM {0}.stratification_geom sg 
+		WHERE id = {1}
+	),timeline AS(
+		SELECT json_object_agg(pf."date", ARRAY_TO_JSON(ARRAY[noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha])ORDER BY pf."date") tml
+		FROM {0}.poly_stats ps
+		JOIN {0}.product_file pf ON ps.product_file_id =pf.id 
+                JOIN {0}.product_file_description pfd on pf.product_description_id = pfd.id
+		WHERE pfd.product_id = {2} AND ps.poly_id={1}
+	)
+	SELECT json_build_object(
+	'type', 'Feature',
+	'geometry', geom.geom,
+	'properties', json_build_object('timeline', tml))
+	FROM geom
+	JOIN timeline ON true""".format(self._config.statsInfo.schema, self._requestData["options"]["poly_id"], self._requestData["options"]["product_id"])
+        return self.__getResponseFromDB(query)
 
     def fetchStatsByPolygonAndDateRange(self):
         query = """
@@ -66,7 +87,7 @@ class StatsRequests(GenericRequest):
 	        GROUP BY a.id, a.name, a.pdescription
         ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
               self._requestData["options"]["dateEnd"])
-
+        print(query)
         return self.__getResponseFromDB(query)
 
     def __fetchStratificationInfo(self):
@@ -174,7 +195,9 @@ class StatsRequests(GenericRequest):
 
     def _processRequest(self):
         ret = None
-        if self._requestData["request"] == "fetchhistogrambypolygonanddate":
+        if self._requestData["request"] == "fetchdashboard":
+            ret = self.__fetchDashboard()
+        elif self._requestData["request"] == "fetchhistogrambypolygonanddate":
             ret = self.__histogramDataByProductAndPolygon()
         elif self._requestData["request"] == "fetchstatsbypolygonanddaterange":
             ret = self.fetchStatsByPolygonAndDateRange()
