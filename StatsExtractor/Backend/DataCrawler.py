@@ -15,6 +15,31 @@ import os,paramiko,re,socks,sys
 sys.path.extend(['../../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 
+
+def scanDir(dirList, product, found=False):
+    examineList = []
+    for dir in dirList:
+        lst = os.listdir(dir)
+
+        for subDir in lst:
+            tmpPath = os.path.join(dir, subDir)
+            if not os.path.isdir(tmpPath):
+                continue
+
+            if subDir == product:
+                found = True
+                return os.path.join(dir, tmpPath)
+            else:
+                examineList.append(tmpPath)
+
+    if not found:
+        return scanDir(examineList, product)
+
+
+
+
+
+
 class DataCrawler:
     def __init__(self, cn, product, useProxy=True):
         self._cn = cn
@@ -87,6 +112,8 @@ class DataCrawler:
                                                                                  "'{0}'".format(info[3].format(*dateInfo))]))])
                     print("Downloading Finished!")
 
+
+
     def importProductFromLocalStorage(self, storageDir, product, dbData=None):
         query = """INSERT INTO product_file(product_description_id, rel_file_path, date) VALUES {0} 
         ON CONFLICT(product_description_id, rel_file_path) DO NOTHING; """
@@ -94,6 +121,9 @@ class DataCrawler:
         if dbData is None:
             dbData = []
 
+            print(scanDir([storageDir,], product))
+            return
+            """
             inDir = [x[0] for x in os.walk(storageDir) if x[0].endswith(product)][0]
             files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
             for fl in files:
@@ -106,6 +136,7 @@ class DataCrawler:
                                                               .format(os.path.relpath(fl, storageDir)),
                                                                "'{0}'".format(info[3].format(*dateInfo)) ])))
                         execute = True
+            """
         else:
             execute = True
 
@@ -119,11 +150,8 @@ if __name__ == "__main__":
 
     cfg = sys.argv[1]
     cfg = ConfigurationParser(cfg)
-    products = ["BioPar_NDVI300_V2_Global",
-             "BioPar_NDVI_STATS_Global",
-             "BioPar_FAPAR300_V1_Global"]
+    products = ["NDVI_300m_V2_Global",]
 
-    products = ["BioPar_NDVI_STATS_Global","BioPar_NDVI300_V2_Global"]
     if cfg.parse() != 1:
         for product in products:
             obj = DataCrawler(cfg, product, False)
