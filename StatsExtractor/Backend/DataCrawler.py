@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
     cfg = sys.argv[1]
     cfg = ConfigurationParser(cfg)
-    products = ["NDVI_300m_V2_Global",]
+    products = ["NDVI_300m_V2",]
 
     if cfg.parse() != 1:
         for product in products:
