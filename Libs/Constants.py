@@ -17,6 +17,7 @@ from Libs.ConfigurationParser import ConfigurationParser
 
 class ProductInfo:
     def __init__(self, row):
+        self.productNames = row[0]
         self.productType = row[1]
         self.id = row[2]
         self.pattern = row[3]
@@ -54,13 +55,13 @@ class Constants:
             SELECT p.name, p.type, pfd.*
             FROM {0}.product p 
             LEFT JOIN {0}.product_file_description pfd on p.id = pfd.product_id 
-            WHERE pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif'""".format(_cfg.statsInfo.schema)
+            WHERE pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif' ORDER BY p.id""".format(_cfg.statsInfo.schema)
 
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
             if res != 1:
                 for row in res:
-                    key = copy.deepcopy(row[0])
-                    Constants.PRODUCT_INFO[row[0]] = ProductInfo(row)
+                    key = copy.deepcopy(row[2])
+                    Constants.PRODUCT_INFO[row[2]] = ProductInfo(row)
         except:
             print("Unable to load configuration file!")
             raise RuntimeError
