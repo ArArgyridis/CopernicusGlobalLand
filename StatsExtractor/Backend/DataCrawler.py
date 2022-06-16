@@ -137,6 +137,7 @@ class DataCrawler:
         #inDir = [x[0] for x in os.walk(storageDir) if x[0].endswith(product)][0]
         print(inDir)
         files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
+        files.sort()
         dbData = []
         for fl in files:
             pattern = re.compile(self._prodInfo.pattern)
@@ -166,11 +167,14 @@ if __name__ == "__main__":
     if cfg.parse() != 1:
         for pid in Constants.PRODUCT_INFO:
             obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
-            if Constants.PRODUCT_INFO[pid].productType != "raw": #this should be used only when fetching data remotely
-                continue
             if sys.argv[2] == "disk_import":
-                obj.importProductFromLocalStorage(cfg.filesystem.imageryPath)
+                inDir = cfg.filesystem.imageryPath
+                if Constants.PRODUCT_INFO[pid].productType == "anomaly":
+                    inDir = cfg.filesystem.anomalyProductsPath
+                obj.importProductFromLocalStorage(inDir)
             else:
+                if Constants.PRODUCT_INFO[pid].productType != "raw":
+                    continue
                 obj.fetchProductFromVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath)
 
 

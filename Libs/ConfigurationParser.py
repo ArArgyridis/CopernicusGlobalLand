@@ -54,8 +54,6 @@ class PGOptions(object):
                 cursor.execute(curQuery)
             cursor.close()
 
-
-
         except:
             session.rollback()
             print("Unable to execute non-transaction queries. Exiting")
@@ -137,6 +135,12 @@ class FileSystem(object):
         self.imageryPath = cfg["imagery_path"]
         self.anomalyProductsPath = cfg["anomaly_products_path"]
         self.tmpPath = cfg["tmp_path"]
+        self.mapserverPath = cfg["mapserver_data_path"]
+
+class MapServer(object):
+    def __init__(self, cfg):
+        self.rawDataWMS = cfg["raw_data_wms"]
+        self.anomaliesWMS = cfg["anomalies_wms"]
 
 class ConfigurationParser(object):
     def __init__(self, cfgFile):
@@ -177,6 +181,9 @@ class ConfigurationParser(object):
 
             #path-relevant info
             self.filesystem = FileSystem(configData["filesystem"])
+            
+            #mapserver 
+            self.mapserver = MapServer(configData["mapserver"])
             return 0
 
         except FileExistsError:
