@@ -54,7 +54,7 @@ def processSingleImage(params, relImagePath):
     gdal.SetConfigOption("COMPRESS_OVERVIEW", "DEFLATE")
 
     image = os.path.join(params["dataPath"],relImagePath[0])
-    print(image)
+    #print(image)
 
     dstImg = None
     if params["productInfo"].productType == "raw":
@@ -150,8 +150,8 @@ class MapserverImporter(object):
     def process(self):
         productGroups = dict()
         for productId in Constants.PRODUCT_INFO:
-            print(Constants.PRODUCT_INFO[productId].productType)
-            query = "SELECT rel_file_path FROM product_file WHERE product_description_id = {0}".format(productId)
+            #print(Constants.PRODUCT_INFO[productId].productType)
+            query = "SELECT rel_file_path FROM product_file WHERE product_description_id = {0} ORDER BY rel_file_path".format(productId)
             res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(query)
             self.__prepareLayerForImport(productId, res)
 
