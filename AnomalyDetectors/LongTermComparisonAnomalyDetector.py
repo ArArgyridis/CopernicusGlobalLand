@@ -175,12 +175,12 @@ class LongTermComparisonAnomalyDetector:
         FROM product p 
         JOIN product_file_description pfd  ON p.id = pfd.product_id 
         JOIN product_file pf ON pfd.id = pf.product_description_id 
-        WHERE p.name = 'BioPar_NDVI_STATS_Global' AND pf.rel_file_path LIKE '%.nc'
+        WHERE 'BioPar_NDVI_STATS_Global' = ANY(p.name)  AND pf.rel_file_path LIKE '%.nc'
         AND  to_char(pf."date", 'mmdd') IN ({0})""".format(",".join(curDekads))
         res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
         ret = [None,None]
 
-        if res != False: #compute the average of the LTSMean/StDev
+        if res != False and len(res) > 0 : #compute the average of the LTSMean/StDev
             print("Starting computing long term mean")
             #open a file to get required info
             tmpInData = gdal.Open(netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, res[0][0]), "mean"))
@@ -228,13 +228,12 @@ class LongTermComparisonAnomalyDetector:
                     FROM product p 
                     JOIN product_file_description pfd on p.id = pfd.product_id 
                     JOIN product_file pf on pfd.id = pf.product_description_id 
-                    WHERE p.name = '{0}' and date='{1}'""".format(self._anomalyProductName, self._dateStart)
+                    WHERE '{0}' = ANY(p.name)  and date='{1}'""".format(self._anomalyProductName, self._dateStart)
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
             #print(query)
             #print(res)
             if len(res) > 0:
                 return
-
 
             #try:
             ltsMean, ltsStd = self._computeLongTermMeanStd()
@@ -246,10 +245,11 @@ class LongTermComparisonAnomalyDetector:
                 WHERE pfd.product_id = 1 AND pf."date" >= '{1}' AND pf.date < '{2}'
                 AND  pf.rel_file_path LIKE '%.nc';""".\
                 format(self._cfg.filesystem.imageryPath, self._dateStart, self._dateEnd)
-
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].getIteratableResult(productQuery)
             print("products retrieved")
 
+            if ltsMean is None:
+                return 1
 
             mn = gdal.Open(ltsMean)
 
