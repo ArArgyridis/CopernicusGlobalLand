@@ -64,6 +64,16 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
+	getPieDataByDateAndPolygon(productId, date, polyId) {
+		let postParams = {};
+		postParams["request"] = "piedatabydateandpolygon";
+		postParams["options"] = {
+			product_id: productId,
+			date: date,
+			poly_id: polyId
+		}
+		return axios.post(options.endpointURL, postParams);
+	},	
 	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productId, coordInfo) {
 		let postParams = {};
 		postParams["request"] = "getrawtimeseriesdataforregion";

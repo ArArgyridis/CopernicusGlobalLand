@@ -37,7 +37,7 @@
 			<div class="dropdown">
 				<h4> Product Selection</h4>
 				Current Product: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductDescription}}</button>
-				<ul id="productDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentProduct(key)"><a class="dropdown-item">{{product.description}}</a></li>
 				</ul>
 			</div>
@@ -60,14 +60,14 @@
 				<!--STRATIFICATION -->
 				<div>
 					Current stratification: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
-					<ul id="stratificationDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+					<ul id="stratificationDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(stratification, key) in stratifications" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratification(key)"><a class="dropdown-item">{{stratification.name}}</a></li>
 					</ul>
 				</div>
 				
 				<!-- STRATIFICATION DATE-->
 				<div class="mt-2" v-if="currentStratificationName != 'Select stratification'">Select date: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationDate}} </button>
-					<ul id="wmsLayersDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
+					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
 					<li v-for ="(date, key) in stratificationDates" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratificationDate(date)"><a class="dropdown-item">{{date}}</a></li>
 					</ul>
 				</div>	
@@ -83,7 +83,7 @@
 			<!-- WMS RAW DATA LAYER-->
 			<div class= "mt-3" v-if="viewStratification==1">
 				Current WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductWMSLayer}}</button>
-				<ul id="wmsDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+				<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(wms, key) in wmsLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
 				</ul>
 			</div>
@@ -91,7 +91,7 @@
 			<!-- WMS ANOMALY DATA LAYER-->
 			<div class= "mt-3" v-if="viewStratification==2">
 				Current Anomaly WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomalyWMSLayer}}</button>
-				<ul id="wmsDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+				<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(wms, key) in wmsAnomalyLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentAnomalyWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
 				</ul>
 			</div>
@@ -223,13 +223,16 @@ export default {
 		stratificationDates:{
 			get() {
 				let tmpDates = Object.keys(this.$store.getters.currentStratification.dates);
-				return tmpDates.sort( function(a, b) {
+				tmpDates.sort( function(a, b) {
 					let keyA = a.title,
 					keyB = b.title;
 					if (keyA < keyB) return -1;
 					if (keyA > keyB) return 1;
 					return 0;
 				});
+				for(let i = 0; i < tmpDates.length; i++)
+					tmpDates[i] = tmpDates[i].substring(0,10);
+				return tmpDates;
 			}
 		},
 		wmsAnomalyLayers: {
@@ -322,10 +325,13 @@ h3 {
 .raise{
 	z-index:1;
 }
-
-
 .roundBorder {
 	border-radius: 5px;
+}
+
+.scrollable {
+	max-height:30vh;
+	overflow-y: scroll;
 }
 
 </style>

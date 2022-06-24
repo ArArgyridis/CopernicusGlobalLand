@@ -18,7 +18,7 @@ from Libs.Constants import Constants
 
 
 def scanDir(dirList, product, found=False):
-    examineList = []
+    #examineList = []
     for dir in dirList:
         lst = os.listdir(dir)
 
@@ -31,10 +31,11 @@ def scanDir(dirList, product, found=False):
                 found = True
                 return os.path.join(dir, tmpPath)
             else:
-                examineList.append(tmpPath)
+                dirList.append(tmpPath)
+                #dirList.pop(0)
 
-    if not found:
-        return scanDir(examineList, product)
+    #if not found:
+    #    return scanDir(examineList, product)
 
 
 class DataCrawler:
@@ -152,10 +153,11 @@ class DataCrawler:
         if execute:
             self._store(dbData)
 
-
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 3:
         print("usage: python DataCrawler.py config_file remote_server_path (optional) disk_import")
+        return 1
+
 
     cfg = sys.argv[1]
 
@@ -176,5 +178,11 @@ if __name__ == "__main__":
                 if Constants.PRODUCT_INFO[pid].productType != "raw":
                     continue
                 obj.fetchProductFromVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath)
+
+
+
+
+if __name__ == "__main__":
+    main()
 
 

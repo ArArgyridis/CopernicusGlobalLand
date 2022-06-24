@@ -13,22 +13,22 @@
 --->
 <template>
 <div class="base">
-	<div class="row position-relative">
-	<div class="col-11 position-absolute">
-	<ul class="nav nav-tabs" v-on:click="switchActive(evt)">
-		<li v-for="nav in navBarOptions" v-bind:key="nav.id" class="nav-item" v-on:click="switchActive(nav.id)">
-			<a v-bind:class="{active: nav.active}" class="nav-link text-muted" href="#">{{nav.content}}</a>
-		</li>
-	</ul>
+	<div class="row position-relative d-flex flex-center">
+	<!--<div class="col position-absolute">-->
+	<div class="nav nav-tabs" v-on:click="switchActive(evt)">
+		<button v-for="nav in navBarOptions" v-bind:key="nav.id" class=" col center nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActive(nav.id)" v-bind:id="'chart_'+nav.id">
+			{{nav.content}}
+		</button>
 	</div>
 	<div>
 		<div class="text-end raise" ><div class="btn" v-on:click="closePanel"><a>x</a></div></div>
 	</div>
 	</div>
-
-	<highcharts ref="stratificationTimeSeriesChart" v-show="getActiveDiagram == 0 && stratificationTimeSeriesTitle !== 'Dummy Title'" id="stratificationTimeSeriesChart" :options="stratificationTimeSeries"/>
-	<highcharts ref="rawTimeSeriesChart" v-show="getActiveDiagram == 1 && rawTimeSeriesTitle !== 'Dummy Title' " id="rawTimeSeriesChart" :options="rawTimeSeries"/> 
-	<highcharts ref="histogramChart" v-show="getActiveDiagram == 2 && stratificationHistogramTitle !== 'Dummy Title'" id="histogramChart" :options="stratificationHistogram"/> <!-- -->
+	
+	<highcharts ref="rawTimeSeriesChart" v-show="getActiveDiagram == 0 && navBarOptions[0].condition() " id="rawTimeSeriesChart" :options="rawTimeSeries"/> 
+	<highcharts ref="stratificationTimeSeriesChart" v-show="getActiveDiagram == 1 && navBarOptions[1].condition()" id="stratificationTimeSeriesChart" :options="stratificationTimeSeries"/>
+	<highcharts ref="pieDatePolygonChart" v-show="getActiveDiagram == 2 && navBarOptions[2].condition()" id="datePieChart" :options="datePolygonPie"/>
+	<highcharts ref="histogramChart" v-show="getActiveDiagram == 3 && navBarOptions[3].condition()" id="histogramChart" :options="stratificationHistogram"/>
 	<button class="btn btn-secondary mt-3" v-on:click="this.$emit('showDashboard')"> Show Region Dashboard</button>
 </div>
 </template>
@@ -51,7 +51,7 @@ export default {
 			for (let i = 0; i < this.navBarOptions.length; i++)
 				if (this.navBarOptions[i].active)
 					return this.navBarOptions[i].id;
-			return 0;
+			return -1;
 
 		},	
 		stratificationHistogramTitle() {
@@ -74,7 +74,7 @@ export default {
 		stratificationTimeSeriesTitle() {
 			if (this.$store.getters.currentProduct == null)
 				return "Dummy Title";
-			return this.$store.getters.currentProduct.description;
+			return this.$store.getters.currentProduct.description + " Timeseries (Density: " + this.$store.getters.areaDensity.description +")"
 		},
 		timeSeriesStratificationData:{
 			get() {
@@ -86,12 +86,30 @@ export default {
 				this.$refs.stratificationTimeSeriesChart.chart.reflow();
 			}
 		},
+		pieDatePolygonTitle() {
+			console.log("pie title!!!", this.$store.getters.currentStratificationDate);
+			if (this.$store.getters.currentProduct == null || this.$store.getters.currentStratificationDate == null) {
+				console.log("return dummy!!!");
+				return "Dummy Title";
+			}
+			console.log("here");
+			return "Density Distribution for " + this.$store.getters.currentStratificationDate;
+		}, 
+		pieDatePolygonData: {
+			get() {
+				return this.$refs.pieDatePolygonChart.chart.series[0].data;
+			},
+			set(dt) {
+				this.$refs.pieDatePolygonChart.chart.series[0].setData(dt, true);
+			}
+		},
 		rawTimeSeriesTitle() {
 			if (this.$store.getters.currentProduct == null)
 				return "Dummy Title";
 				
 			return "Raw " + this.$store.getters.currentProduct.description;
-		}, 
+		},
+		
 		rawTimeSeriesData: {
 			get() {
 				return this.rawTimeSeries.series[0].data;
@@ -107,23 +125,30 @@ export default {
 	data() {
 		return {
 			navBarOptions: [
-				{	
+				{
 					id: 0,
-					content: "Area (ha)",
+					content: "Point Timeseries",
+					active: true,
+					condition: () => { return this.$store.getters.currentProduct !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
+				},
+				{	
+					id: 1,
+					content: "Density-Driven Polygon Timeseries",
 					active: false,
-					condition: this.timeSeriesStratificationData !== null
+					condition: () => {return this.$store.getters.currentProduct !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null;}
+					
 				},
 				{
-					id: 1,
-					content: "Location Timeseries",
-					active: true,
-					condition: this.rawTimeSeriesData !== null
-				},				
-				{
 					id: 2,
-					content: "Region Histogram",
+					content: "Density Distribution",
 					active: false,
-					condition: this.stratificationHistogramData !== null
+					condition: () => {return this.$store.getters.currentProduct !== null && this.$store.getters.currentStratificationDate != null }
+				},
+				{
+					id: 3,
+					content: "Polygon Histogram Values",
+					active: false,
+					condition: () => {return this.$store.getters.currentProduct !== null && this.$store.getters.currentStratificationDate != null;}
 				}
 			],
 			stratificationTimeSeries:{
@@ -139,7 +164,7 @@ export default {
 				yAxis:{
 					title:{
 						enabled:true,
-						text:"Area having the specified density value"
+						text:"Area (ha)"
 					}
 				},
 				xAxis: {
@@ -199,6 +224,43 @@ export default {
 					enabled: false
 				}
 			},
+			datePolygonPie: {
+				credits:{
+					enabled:false
+				},
+				chart: {
+					plotBackgroundColor: null,
+					plotBorderWidth: null,
+					plotShadow: false,
+					type: 'pie'
+				},
+				title: {
+					text: this.pieDatePolygonTitle
+				},
+				tooltip: {
+					pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+				},
+				accessibility: {
+					point: {
+						valueSuffix: '%'
+					}
+				},
+				plotOptions: {
+					pie: {
+						allowPointSelect: true,
+						cursor: 'pointer',
+						dataLabels: {
+							enabled: true,
+								format: '<b>{point.name}</b>:  {point.percentage:.1f} % '
+							}
+					}
+				},
+					series: [{
+						name: 'Density',
+						colorByPoint: true,
+						data: []
+					}]
+			},
 			stratificationHistogram:{
 				credits:{
 					enabled:false
@@ -254,7 +316,8 @@ export default {
 			if (id == null)
 				return;
 			this.navBarOptions.forEach((nav) => {
-				nav.active = (nav.id == id && nav.condition);
+				nav.active = (nav.id == id && nav.condition());
+				console.log(nav.id, nav.condition());
 			});
 		},
 		closePanel(){
@@ -300,10 +363,10 @@ export default {
 					});
 			});
 		},
-		updatePolygonTimeseriesChart(polyId){
+		updatePolygonTimeseriesChart(polyId) {
 			let currentProduct = this.$store.getters.currentProduct;
 			let areaDensity = this.$store.getters.areaDensity;
-
+			let date = this.$store.getters.currentStratificationDate;
 			if(polyId != null && currentProduct != null &&  areaDensity != null) { 
 				requests.fetchStatsByPolygonAndDateRange(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, currentProduct.id, areaDensity.col)
 				.then((response) =>{
@@ -312,7 +375,6 @@ export default {
 							pair[0] = (new Date(pair[0])).getTime();
 						});
 						this.timeSeriesStratificationData = response.data.data;
-						this.stratificationTimeSeries.title.text = currentProduct.description;
 						this.updateChartCurrentDate();
 					}
 				})
@@ -322,6 +384,18 @@ export default {
 			}
 			else
 				this.timeSeriesStratificationData = null;
+			
+			if (polyId != null && currentProduct != null && date != null)
+				requests.getPieDataByDateAndPolygon(currentProduct.id, date, polyId).then((response) => {
+					let dt = [];
+					Object.keys(response.data.data).forEach( key  => {
+						console.log(key);
+						dt.push({name: key, y: response.data.data[key]});
+					});
+					this.pieDatePolygonData = dt;
+					console.log(response.data.data);
+				});
+			
 		},
 		updateHistogramChart(polyId) {
 		
@@ -359,6 +433,9 @@ export default {
 		
 			if (this.rawTimeSeriesTitle != "Dummy Title")
 				this.$refs.rawTimeSeriesChart.chart.reflow();
+			
+			if (this.pieDatePolygonTitle != "Dummy Title")
+				this.$refs.pieDatePolygonChart.chart.reflow();
 			
 		}
 	},

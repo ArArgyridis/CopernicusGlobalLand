@@ -186,17 +186,11 @@ class MapserverImporter(object):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python MapserverImporter.py config_file")
+        print("Usage: python MapserverImporter.py config_file product_id")
         return
 
     cfg = sys.argv[1]
     Constants.load(cfg)
-
-
-
-
-    #config = ConfigurationParser(cfg)
-    #config.parse()
 
     obj = MapserverImporter(cfg)
     obj.process()

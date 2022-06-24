@@ -89,6 +89,7 @@ class PGOptions(object):
             return res
         except:
             session.rollback()
+            print(query)
             print("Unable to fetch query reqult. Exiting")
             return 1
 

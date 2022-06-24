@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, wait, ALL_COMPLETED
 from datetime import datetime
 from osgeo import gdal, ogr, osr
 import json, os, multiprocessing,  numpy as np, pathlib, re
@@ -85,14 +85,12 @@ class GeomProcessor():
                 continue
             #cheking which product matches the current image
             xpr = re.compile(Constants.PRODUCT_INFO[self.__product].pattern)
-            vals = xpr.findall(os.path.split(dt["image_rel_path"])[1])
-            date = Constants.PRODUCT_INFO[self.__product].createDate(vals[0])
-            dbVals += "({0},{1},'{2}','{3}',{4},{5},{6},{7},'{8}','{9}','{10}','{11}', '{12}'),"\
-                .format(dt["poly_id"], dt["product_file_id"], dt["image_rel_path"],
-                        date, dt["no"], dt["sparse"], dt["mid"],dt["dense"], json.dumps(dt["novalcolor"]),
+
+            dbVals += "({0},{1},{2},{3},{4},{5},'{6}','{7}','{8}','{9}', '{10}'),"\
+                .format(dt["poly_id"], dt["product_file_id"], dt["no"], dt["sparse"], dt["mid"],dt["dense"], json.dumps(dt["novalcolor"]),
                         json.dumps(dt["sparsevalcolor"]), json.dumps(dt["midvalcolor"]), json.dumps(dt["highvalcolor"]),
                         json.dumps(dt["histogram"].tolist()))
-        query = """WITH tmp_data(poly_id, product_file_id, rel_file_path, date, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
+        query = """WITH tmp_data(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
         noval_color, sparseval_color, midval_color, highval_color, histogram) AS( VALUES {0})
          INSERT INTO {1}.poly_stats(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
          noval_color, sparseval_color, midval_color, highval_color, histogram)
@@ -143,21 +141,28 @@ class GeomProcessor():
     def __extractStats(self, low, mid, high):
         out = list(range(len(self.__srcImages)))
         imgIdx = 0
+
         for image in self.__srcImages:
+
             inRasterData = gdal.Open(image[0])
             metaData = inRasterData.GetMetadata()
-            tmpLow = reverseValue(metaData, low, self.__variable)
-            tmpSparse = reverseValue(metaData, mid, self.__variable)
-            tmpHigh = reverseValue(metaData, high, self.__variable)
+            tmpLow = low
+            tmpSparse = mid
+            tmpHigh = high
+
+            if image[0].endswith(".nc"):
+                tmpLow = reverseValue(metaData, low, self.__variable)
+                tmpSparse = reverseValue(metaData, mid, self.__variable)
+                tmpHigh = reverseValue(metaData, high, self.__variable)
+
             noDataValue = inRasterData.GetRasterBand(1).GetNoDataValue()
+
 
             inGt = inRasterData.GetGeoTransform()
             upperLeft  = xyToColRow(self.__rasterExtents[0][0], self.__rasterExtents[0][1], inGt)
             lowerRight = xyToColRow(self.__rasterExtents[1][0], self.__rasterExtents[1][1], inGt)
-            id = self.__ft.GetFID()
 
-            if (not (upperLeft[0] >= 0 and upperLeft[1] >= 0 and lowerRight[0] < inRasterData.RasterXSize and lowerRight[1] < inRasterData.RasterYSize)):
-                continue
+            id = self.__ft.GetFID()
 
             cntNo = 0
             cntSparse = 0
@@ -166,6 +171,24 @@ class GeomProcessor():
 
             bins = 10
             hist = np.zeros(bins)
+
+            out[imgIdx] = {
+                "poly_id": id,
+                "product_file_id": self.__srcImages[imgIdx][1],
+                "no": "NULL",
+                "sparse": "NULL",
+                "mid": "NULL",
+                "dense": "NULL",
+                "novalcolor": "NULL",
+                "sparsevalcolor": "NULL",
+                "midvalcolor": "NULL",
+                "highvalcolor": "NULL",
+                "histogram": hist
+            }
+
+            if (not (upperLeft[0] >= 0 and upperLeft[1] >= 0 and lowerRight[0] < inRasterData.RasterXSize and lowerRight[1] < inRasterData.RasterYSize)):
+                imgIdx += 1
+                continue
 
             for i in range(self.__rasterFt.RasterYSize):
                 #data row
@@ -189,54 +212,38 @@ class GeomProcessor():
 
             #print(noAreaHa, sparseAreaHa, midAreaHa, denseAreaHa)
             sumAreaHa = noAreaHa + sparseAreaHa + midAreaHa + denseAreaHa
-            out[imgIdx] = {
-                "poly_id": id,
-                "product_file_id": self.__srcImages[imgIdx][1],
-                "image_rel_path": os.path.relpath(pathlib.Path(image[0].split(":")[1].replace("\"", "")),
-                                                  self._config.filesystem.imageryPath),
-                "no": "NULL",
-                "sparse": "NULL",
-                "mid": "NULL",
-                "dense": "NULL",
-                "novalcolor": "NULL",
-                "sparsevalcolor": "NULL",
-                "midvalcolor": "NULL",
-                "highvalcolor": "NULL",
-                "histogram": np.zeros(bins)
-            }
-            if sumAreaHa == 0:
-                continue
 
-            noValColor = sparseValColor = midValColor = highValColor = 'NULL'
-            if Constants.PRODUCT_INFO[self.__product].novalColorRamp is not None:
-                noValColor = interpolateColor(round(noAreaHa / sumAreaHa * 100),
+            if sumAreaHa != 0:
+                noValColor = sparseValColor = midValColor = highValColor = 'NULL'
+                if Constants.PRODUCT_INFO[self.__product].novalColorRamp is not None:
+                    noValColor = interpolateColor(round(noAreaHa / sumAreaHa * 100),
                              Constants.PRODUCT_INFO[self.__product].novalColorRamp)
 
-            if Constants.PRODUCT_INFO[self.__product].sparsevalColorRamp is not None:
-                sparseValColor = interpolateColor(round(sparseAreaHa / sumAreaHa * 100),
+                if Constants.PRODUCT_INFO[self.__product].sparsevalColorRamp is not None:
+                    sparseValColor = interpolateColor(round(sparseAreaHa / sumAreaHa * 100),
                              Constants.PRODUCT_INFO[self.__product].sparsevalColorRamp)
 
-            if Constants.PRODUCT_INFO[self.__product].midvalColorRamp is not None:
-                midValColor = interpolateColor(round(midAreaHa / sumAreaHa * 100),
+                if Constants.PRODUCT_INFO[self.__product].midvalColorRamp is not None:
+                    midValColor = interpolateColor(round(midAreaHa / sumAreaHa * 100),
                                  Constants.PRODUCT_INFO[self.__product].midvalColorRamp)
 
-            if Constants.PRODUCT_INFO[self.__product].highvalColorRamp is not None:
-                highValColor = interpolateColor(round(denseAreaHa / sumAreaHa * 100),
+                if Constants.PRODUCT_INFO[self.__product].highvalColorRamp is not None:
+                    highValColor = interpolateColor(round(denseAreaHa / sumAreaHa * 100),
                                  Constants.PRODUCT_INFO[self.__product].highvalColorRamp)
-            out[imgIdx] = {
-                "poly_id": id,
-                "product_file_id": self.__srcImages[imgIdx][1],
-                "image_rel_path": os.path.relpath(pathlib.Path(image[0].split(":")[1].replace("\"","")), self._config.filesystem.imageryPath),
-                "no": noAreaHa,
-                "sparse": sparseAreaHa,
-                "mid": midAreaHa,
-                "dense": denseAreaHa,
-                "novalcolor":noValColor,
-                "sparsevalcolor": sparseValColor,
-                "midvalcolor": midValColor,
-                "highvalcolor": highValColor,
-                "histogram": hist
-            }
+
+                out[imgIdx] = {
+                    "poly_id": id,
+                    "product_file_id": self.__srcImages[imgIdx][1],
+                    "no": noAreaHa,
+                    "sparse": sparseAreaHa,
+                    "mid": midAreaHa,
+                    "dense": denseAreaHa,
+                    "novalcolor":noValColor,
+                    "sparsevalcolor": sparseValColor,
+                    "midvalcolor": midValColor,
+                    "highvalcolor": highValColor,
+                    "histogram": hist
+                }
             imgIdx += 1
             del inRasterData
             inRasterData = None
@@ -286,7 +293,7 @@ class ZonalStatsExtractor():
         self._stratificationType = stratificationType
         self._config = ConfigurationParser(configFile)
 
-    def process(self, nThreads=multiprocessing.cpu_count()-1, products=['BioPar_NDVI300_V2_Global', 'BioPar_FAPAR300_V1_Global']):
+    def process(self, nThreads=multiprocessing.cpu_count()-1, productIds=[1,2]):
         try:
             self._config.parse()
             Constants.load(self._config.getFile())
@@ -295,25 +302,37 @@ class ZonalStatsExtractor():
             session = self._config.pgConnections[self._config.statsInfo.connectionId].getNewSession()
 
             dataQuery = """
-            SELECT sg.id, p."name", ARRAY_AGG(JSON_BUILD_ARRAY(pf.rel_file_path, pf.id)) images, ST_ASTEXT(sg.geom)
+            SELECT sg.id, pfd.id, ARRAY_AGG(JSON_BUILD_ARRAY(pf.rel_file_path, pf.id)) images, ST_ASTEXT(sg.geom)
             , ST_SRID(sg.geom) 
             FROM stratification s 
-            JOIN stratification_geom sg ON s.id = sg.stratification_id 
-            JOIN product p ON p."name" IN ({0})
-            JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.pattern LIKE '%.nc'
+            JOIN stratification_geom sg ON s.id = sg.stratification_id --AND sg.id = 1
+            JOIN product p ON TRUE
+            JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id IN ({0}) 
             JOIN product_file pf ON pfd.id = pf.product_description_id 
             LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id
             WHERE s.description ='countries' AND ps.id IS NULL 
-            GROUP BY sg.id, p."name" ORDER BY sg.id, p."name" """.format(",".join(["'{0}'".format(prod) for prod in products ]))
-
+            GROUP BY sg.id, pfd.id ORDER BY sg.id, pfd.id """.format(",".join([str(id) for id in productIds]))
             executor = ProcessPoolExecutor(max_workers=nThreads)
             res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(dataQuery,
                                                                                                           session)
-
+            futures = []
             for row in res:
-                images = [[netCDFSubDataset(os.path.join(self._config.filesystem.imageryPath, img[0]), Constants.PRODUCT_INFO[row[1]].variable),img[1]] for img in row[2]]
+                images = list(range(len(row[2])))
+                path = self._config.filesystem.imageryPath
+                if Constants.PRODUCT_INFO[row[1]].productType == "anomaly":
+                    path = self._config.filesystem.anomalyProductsPath
+
+                for i in range(len(row[2])):
+                    imgPath = os.path.join(path, row[2][i][0])
+                    if imgPath.endswith(".nc"):
+                        imgPath = netCDFSubDataset(imgPath, Constants.PRODUCT_INFO[row[1]].variable)
+                    images[i] = [imgPath, row[2][i][1]]
+
+                #images = [[netCDFSubDataset(os.path.join(self._config.filesystem.imageryPath, img[0]), Constants.PRODUCT_INFO[row[1]].variable),img[1]] for img in row[2]]
                 #geomProcessor(images, [row[0], row[3],row[4]], row[1], self._config)
-                executor.submit(geomProcessor, images, [row[0], row[3],row[4]], row[1], self._config)
+                futures.append(executor.submit(geomProcessor, images, [row[0], row[3],row[4]], row[1], self._config))
+
+            wait(futures, return_when=ALL_COMPLETED)
 
         except FileExistsError:
             print("A specified does not exist. Verify the list of input files")

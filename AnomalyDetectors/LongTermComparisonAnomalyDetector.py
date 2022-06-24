@@ -134,13 +134,14 @@ def computeMean(outImg, imgs, dataPath, startRow, endRow, noDataValue):
 
 
 class LongTermComparisonAnomalyDetector:
-    def __init__(self, productId, dateStart, dateEnd, cfg, anomalyProductName, nThreads = cpu_count() -1):
+    def __init__(self, productId, dateStart, dateEnd, cfg, id, nThreads = cpu_count() -1):
         self._productId = productId
         self._dateStart = dateStart
         self._dateEnd = dateEnd
         self._cfg = ConfigurationParser(cfg)
         self._cfg.parse()
-        self._anomalyProductName = anomalyProductName
+        self._anomalyProductId = id
+        #self._anomalyProductName = anomalyProductName
         self._nThreads = nThreads
         self._images = {}
         self._products = {}
@@ -222,13 +223,13 @@ class LongTermComparisonAnomalyDetector:
         return ret
 
     def process(self):
-            print("Starting computing anomalies")
+            #print("Starting computing anomalies")
             #check if product already exists
             query = """SELECT  pf.*
                     FROM product p 
                     JOIN product_file_description pfd on p.id = pfd.product_id 
                     JOIN product_file pf on pfd.id = pf.product_description_id 
-                    WHERE '{0}' = ANY(p.name)  and date='{1}'""".format(self._anomalyProductName, self._dateStart)
+                    WHERE pfd.id = {0}  and date='{1}'""".format(self._anomalyProductId, self._dateStart)
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
             #print(query)
             #print(res)
@@ -239,12 +240,12 @@ class LongTermComparisonAnomalyDetector:
             ltsMean, ltsStd = self._computeLongTermMeanStd()
 
             #retrieve products from DB
-            productQuery = """SELECT pfd.variable,  '{0}'||pf.rel_file_path, pf.date, pfd.pattern, pfd.TYPES
+            productQuery = """SELECT pfd.variable,  pf.rel_file_path, pf.date, pfd.pattern, pfd.TYPES
                 FROM product_file_description pfd 
                 JOIN product_file pf ON pfd.id = pf.product_description_id
-                WHERE pfd.product_id = 1 AND pf."date" >= '{1}' AND pf.date < '{2}'
+                WHERE pfd.product_id = 1 AND pf."date" >= '{0}' AND pf.date < '{1}'
                 AND  pf.rel_file_path LIKE '%.nc';""".\
-                format(self._cfg.filesystem.imageryPath, self._dateStart, self._dateEnd)
+                format( self._dateStart, self._dateEnd)
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].getIteratableResult(productQuery)
             print("products retrieved")
 
@@ -265,21 +266,21 @@ class LongTermComparisonAnomalyDetector:
             variable = None
             for row in res:
                 variable = row[0]
-                tmpProd = os.path.join(self._sessionTMPFolder, row[1].split(self._cfg.filesystem.imageryPath)[1])
+                tmpProd = os.path.join(self._sessionTMPFolder, row[1])
                 tmpProd = os.path.splitext(tmpProd)[0] + ".tif"
                 tmpDir = os.path.split(tmpProd)[0]
                 os.makedirs(tmpDir, exist_ok=True)
                 products.append(tmpProd)
-
-                gdal.Warp(tmpProd, netCDFSubDataset(row[1],row[0]), xRes = np.abs(gt[1]), yRes = np.abs(gt[5]),
+                subDt = netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath,row[1]),row[0])
+                gdal.Warp(tmpProd, subDt, xRes = np.abs(gt[1]), yRes = np.abs(gt[5]),
                          format = "GTiff", outputBounds =[gt[0],yImageMin,xImageMax,gt[3]])
 
 
             #create output dataset
-            outImgPath = os.path.join(self._cfg.filesystem.anomalyProductsPath, *("NDVI300V2_LongTermComparisonAnomalyDetector",
+            outImgPath = os.path.join(self._cfg.filesystem.anomalyProductsPath, *(Constants.PRODUCT_INFO[self._anomalyProductId].productNames[0],
                                                                                   self._dateStart[0:4]))
             outImg = os.path.join(outImgPath,
-                                  Constants.PRODUCT_INFO[self._anomalyProductName].fileNameCreationPattern.format(
+                                  Constants.PRODUCT_INFO[self._anomalyProductId].fileNameCreationPattern.format(
                                       self._dateStart, self._dateEnd))
             print(outImg)
             #building output paths
@@ -319,7 +320,7 @@ class LongTermComparisonAnomalyDetector:
             query = """INSERT INTO product_file(product_description_id, rel_file_path, date) VALUES ({0},'{1}','{2}') 
                     ON CONFLICT(product_description_id, rel_file_path) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path; 
                     """.format(
-                Constants.PRODUCT_INFO[self._anomalyProductName].id,
+                self._anomalyProductId,
                 os.path.relpath(outImg, self._cfg.filesystem.anomalyProductsPath),
                 self._dateStart
             )
@@ -334,12 +335,16 @@ class LongTermComparisonAnomalyDetector:
 
 def main():
     if len(sys.argv) < 3:
-        print("Usage: python LongTermComparisonAnomalyDetector.py config_json_file anomaly_product_file_name")
+        print("Usage: python LongTermComparisonAnomalyDetector.py config_json_file anomaly_product_id")
         return
 
     cfg = sys.argv[1]
-    anomalyProductName = sys.argv[2]
+    anomalyProductId = sys.argv[2]
     Constants.load(cfg)
+    run(anomalyProductId, cfg)
+
+def run(anomalyProductId, cfg):
+
 
     datePtrn = "%Y-%m-%d"
 
@@ -361,7 +366,7 @@ def main():
 
             d2 = d2.strftime(datePtrn)
 
-            obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg, anomalyProductName, 11)
+            obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg, anomalyProductId, 11)
             obj.process()
         curTime += relDelta
 

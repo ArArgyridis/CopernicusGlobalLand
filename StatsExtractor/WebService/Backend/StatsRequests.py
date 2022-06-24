@@ -65,7 +65,7 @@ class StatsRequests(GenericRequest):
     def __fetchProductInfo(self):
         query = """
         WITH dt AS( 
-        	SELECT distinct p.id, p.name, pfd.description pdescription, pf."date",  s.description sdescription 
+        	SELECT distinct p.id, p.name[1], pfd.description pdescription, pf."date",  s.description sdescription 
 	        FROM {0}.poly_stats ps 
 	        JOIN {0}.stratification_geom sg ON ps.poly_id = sg.id
 	        JOIN {0}.stratification s ON sg.stratification_id = s.id
@@ -87,7 +87,6 @@ class StatsRequests(GenericRequest):
 	        GROUP BY a.id, a.name, a.pdescription
         ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
               self._requestData["options"]["dateEnd"])
-        print(query)
         return self.__getResponseFromDB(query)
 
     def __fetchStratificationInfo(self):
@@ -151,9 +150,20 @@ class StatsRequests(GenericRequest):
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
 
         return self.__getResponseFromDB(query)
+    
+    def __pieDataByDateAndPolygon(self):
+        query = """
+        SELECT row_to_json(a.*) response FROM(
+        SELECT ps.noval_area_ha "No value", ps.sparse_area_ha "Sparse", ps.mid_area_ha "Mild", ps.dense_area_ha "Dense"
+        FROM poly_stats ps
+        JOIN product_file pf ON ps.product_file_id = pf.id  
+        JOIN product_file_description pfd ON pf.product_description_id = pfd.id
+        JOIN product p ON pfd.product_id = p.id
+        WHERE p.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2})a
+        """.format(self._requestData["options"]["product_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        return self.__getResponseFromDB(query)
 
     def __histogramDataByProductAndPolygon(self):
-        print(self._requestData)
         query = """
             SELECT JSON_BUILD_OBJECT('histogram', histogram, 'low_value', pfd.min_prod_value , 'high_value', pfd.max_prod_value) 
             FROM {0}.poly_stats ps 
@@ -209,39 +219,11 @@ class StatsRequests(GenericRequest):
             ret = self.__fetchStratificationDataByProductAndDate()
         elif self._requestData["request"] == "getrawtimeseriesdataforregion":
             ret = self.__getRawTimeSeriesDataForRegion()
+        elif self._requestData["request"] == "piedatabydateandpolygon":
+            ret = self.__pieDataByDateAndPolygon()
         else:
             raise SystemError
         return ret
-def main():
-    cfg = "../../config.json"
-    """
-    req = {
-        "request": "fetchstatsfordaterange",
-        "options": {
-            "date_start": "2019-01-01",
-            "date_end": "2022-01-01",
-            "poly_id": 10,
-            "variable": "BioPar_NDVI300_V2_Global"
-        }
-    }
-    """
-    req = {
-        "request": "getrawtimeseriesdataforregion",
-        "options": {
-            "date_start": "2020-01-01",
-            "date_end": "2021-12-31",
-            "product_id": 1,
-            "epsg":"EPSG:3857",
-            "coordinate":[ 6883079.514636854, 7063087.438264163]
-        }
-    }
-
-
-    obj = StatsRequests(cfg, req)
-    print(obj.process())
-
-
-
 
 if __name__ == "__main__":
     main()
