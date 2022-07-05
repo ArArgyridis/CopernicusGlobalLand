@@ -67,12 +67,21 @@ export default {
 		},
 		clearWMSLayers(){
 			//remove wms layers from map
+			
 			this.$store.getters.productsWMSLayers.forEach( (key) => {
 				this.$refs.map1.removeLayer(key.layerId );
 			}); 
 			
 			//clearing existing wmsLayers from store
 			this.$store.commit("clearProductsWMSLayers");
+			
+						
+			//removing anomaly wms layers from map
+			this.$store.getters.productsAnomaliesWMSLayers.forEach( (key) => {
+				this.$refs.map1.removeLayer(key.layerId );
+			}); 
+			
+			this.$store.commit("clearProductsAnomalyWMSLayers");
 			
 			//clearing stratification style
 			if (this.$store.getters.currentStratification != null)
@@ -176,7 +185,6 @@ export default {
 							})
 						});
 					}
-					
 					return null;
 				});
 			});

@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, sys
+import os, sys, threading
 from time import sleep
 from StatsExtractor.Backend.DataCrawler import DataCrawler
 from StatsExtractor.Backend.ZonalStatsExtractor import ZonalStatsExtractor
@@ -46,9 +46,9 @@ def main():
 				obj.importProductFromLocalStorage(inDir)
 				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 				#compute anomalies
-				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
-					print("Computing anomalies!")
-					runLongTermComparisonAnomalyDetector(pid, config)
+				#if Constants.PRODUCT_INFO[pid].productType == "anomaly":
+				#	print("Computing anomalies!")
+				#	runLongTermComparisonAnomalyDetector(pid, config)
 
 				mapserver = MapserverImporter(config)
 				mapserver.process()
@@ -60,7 +60,7 @@ def main():
 			if res != 1:
 				for row in res:
 					obj = ZonalStatsExtractor(row[0], config)
-					obj.process(nThreads=5, productIds=[ Constants.PRODUCT_INFO[pid].id for pid in Constants.PRODUCT_INFO])
+					obj.process(productIds=[ Constants.PRODUCT_INFO[pid].id for pid in Constants.PRODUCT_INFO])
 
 			print("process completed! Waiting....")
 			sleep(43200)

@@ -24,6 +24,18 @@ let dateStart = new Date();
 //dateStart.setDate(dateStart.getDate() - 200);
 dateStart = new Date("2020-01-01 00:00:00");
 // Create a new store instance.
+function computeDescription(str, val1, val2) {
+	if (str == "No value")
+		return "No value (less than " + val2 +  ")";
+	else if (str =="Sparse")
+		return "Sparse (" + val1 + ", " + val2 + ")";
+	else if (str =="Mild")
+		return "Mild (" + val1 + ", " + val2 + ")";
+	else 
+		return "Dense (greater than " + val1 +  ")";
+}
+
+
 const store = createStore({
 	state: {
 		proj4: proj4,
@@ -53,7 +65,12 @@ const store = createStore({
 				}
 			],
 			areaDensity: null
-		},		
+		},
+		categories: {
+			info: null,
+			current: null,
+			previous: null
+		},
 		products: {
 			currentProduct: null,
 			currentProductWMSLayer:null,
@@ -94,6 +111,12 @@ const store = createStore({
 				return 0;
 			});
 		},
+		changeCategory(state, dt) {
+			state.categories.info[state.categories.current].active = false;
+			state.categories.previous = state.categories.current;
+			state.categories.current = dt;
+			state.categories.info[state.categories.current].active = true;
+		},
 		clearProducts(state) {
 			state.products.info=null;
 			state.products.currentProduct=null;
@@ -114,6 +137,15 @@ const store = createStore({
 			state.stratifications.info = null;
 			state.stratifications.previousStratification = null;
 			state.areaDensityOptions.currentDensity = null;
+		},
+		setCategoryInfo(state, dt) {
+			state.categories.info = dt;
+			let cont = true;
+			for (let i = 0; i < dt.length && cont; i++)
+				if (dt[i].active) {
+					state.categories.current = i;
+					cont = false;
+				}
 		},
 		setCurrentProduct(state, dt) {
 			state.products.currentProduct = dt;
@@ -136,7 +168,7 @@ const store = createStore({
 			state.products.currentProductWMSLayer = dt;			
 		},
 		setCurrentStratification(state, dt) {
-			state.stratifications.previousStratification = state.currentStratification;
+			state.stratifications.previousStratification = state.stratifications.currentStratification;
 			state.stratifications.currentStratification = dt;
 		},	
 		setCurrentStratificationDate(state, dt) {
@@ -156,7 +188,12 @@ const store = createStore({
 	},
 	getters: {
 		areaDensityOptions: (state) => {
-			return state.areaDensityOptions.options;
+			let tmp = [-0.08, 0.225, 0.45, 0.75, 0.92];
+			let ret = JSON.parse(JSON.stringify(state.areaDensityOptions.options));
+			for (let i = 0; i < ret.length; i++) {
+				ret[i].description = computeDescription(ret[i].description, tmp[i], tmp[i+1]);
+			}
+			return ret;
 		},		
 		dateEnd:(state)=>{
 			return state.dateEnd;
@@ -164,10 +201,16 @@ const store = createStore({
 		dateStart:(state) => {
 			return state.dateStart;
 		},
+		activeCategory: (state) => {
+			return state.categories.info[state.categories.current];
+		},		
 		areaDensity: (state) => {
 			if (state.areaDensityOptions.currentDensity == null)
 				return null;
 			return state.areaDensityOptions.options[state.areaDensityOptions.currentDensity];
+		},
+		categories: (state) => {
+			return state.categories.info;
 		},
 		currentProduct: (state) =>{
 			if (state.products.currentProduct == null)

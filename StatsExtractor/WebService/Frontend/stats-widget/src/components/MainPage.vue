@@ -17,7 +17,7 @@
 	<div class="row">
 		<div id="leftPanel" class="noPadding hiddenBar raise hidden sidenav leftnav" >
 			<LeftPanel v-on:closeSideMenu="toggleLeft()" 
-					v-on:dateChange="updateProducts()"
+					v-on:updateProducts="updateProducts()"
 					v-on:currentProductChange="updateAll()"
 					v-on:rawWMSChange="updateProductWMSVisibility()" 
 					v-on:stratificationChange="updateStratificationLayerVisibility()"
@@ -81,7 +81,7 @@ export default {
 	},
 	methods: {
 		init() {
-			this.updateProducts();
+			//this.updateProducts();
 			//hack to properly resize right panel timechart
 			document.getElementById("rightPanel").addEventListener('transitionend', () => {
 				this.$refs.chartPanel.resizeChart();
@@ -134,7 +134,7 @@ export default {
 		},
 		updateProductInfo() {
 			this.$store.commit("clearProducts");
-			requests.fetchProductInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd).then((response)=>{
+			requests.fetchProductInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.activeCategory.id).then((response)=>{
 				this.$store.commit("setProducts", response.data.data);
 			});
 		},
@@ -269,10 +269,10 @@ export default {
 
 @media(min-width:901px) {
 	.shownBar {
-		width: 500px;
+		width: 700px;
 	}	
 	.offsetButton {
-		left:500px;
+		left:700px;
 	}	
 	.logo {
 		justify-content:end;

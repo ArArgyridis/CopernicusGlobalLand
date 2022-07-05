@@ -2,9 +2,15 @@ import axios from 'axios';
 import options from './options.js';
 
 export default {
+	categories() {
+		let postParams = {};
+		postParams["request"] = "categories";
+		postParams["options"] = null;
+		return axios.post(options.endpointURL, postParams); 
+	},
 	fetchDashboard(polyId, productId, dateStart, dateEnd) {
 		let postParams = {};
-		postParams["request"] = "fetchdashboard";
+		postParams["request"] = "dashboard";
 		postParams["options"] = {
 			poly_id:polyId,
 			product_id: productId,
@@ -15,7 +21,7 @@ export default {
 	},
 	fetchHistogramByPolygonAndDate(polyId, date, productId) {
 		let postParams  = {};
-		postParams["request"] = "fetchhistogrambypolygonanddate";
+		postParams["request"] = "histogrambypolygonanddate";
 		postParams["options"] = {
 			poly_id: polyId,
 			date: date,
@@ -23,18 +29,19 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams); 
 	},
-	fetchProductInfo(dateStart, dateEnd) {
+	fetchProductInfo(dateStart, dateEnd, categoryId) {
 		let postParams = {};
-		postParams["request"] = "fetchproductinfo";
+		postParams["request"] = "productinfo";
 		postParams["options"] = {
 			dateStart:dateStart,
-			dateEnd:dateEnd
+			dateEnd:dateEnd,
+			category_id: categoryId
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
 	fetchStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productId, area_type="noval_area_ha"){
 		let postParams={};
-		postParams["request"] = "fetchstatsbypolygonanddaterange";
+		postParams["request"] = "statsbypolygonanddaterange";
 		postParams["options"]={
 			poly_id: polyId,
 			product_id: productId,
@@ -46,7 +53,7 @@ export default {
 	},		
 	fetchStratificationInfo(dateStart, dateEnd, productId) {
 		let postParams = {};
-		postParams["request"] = "fetchstratificationinfo";
+		postParams["request"] = "stratificationinfo";
 		postParams["options"] = {
 			dateStart: dateStart,
 			dateEnd: dateEnd,
@@ -56,7 +63,7 @@ export default {
 	},
 	fetchStratificationDataByProductAndDate(date, product, stratification) {
 		let postParams = {};
-		postParams["request"] = "fetchstratificationinfobyproductanddate"
+		postParams["request"] = "stratificationinfobyproductanddate"
 		postParams["options"] = {
 			date: date,
 			product_id: product,
@@ -76,7 +83,7 @@ export default {
 	},	
 	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productId, coordInfo) {
 		let postParams = {};
-		postParams["request"] = "getrawtimeseriesdataforregion";
+		postParams["request"] = "rawtimeseriesdataforregion";
 		postParams["options"] = {
 			date_start: dateStart,
 			date_end: dateEnd,

@@ -66,8 +66,6 @@ def processSingleImage(params, relImagePath):
             dstImg = os.path.join(params["mapserverPath"], *["raw", relImagePath[0].split(".")[0]+".tif"])
             os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
 
-            print(dstImg)
-
             if not os.path.isfile(dstImg):
                 outDrv = gdal.GetDriverByName("GTiff")
                 outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,

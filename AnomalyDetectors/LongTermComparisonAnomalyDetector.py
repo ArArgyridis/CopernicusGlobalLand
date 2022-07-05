@@ -11,7 +11,7 @@ from shutil import rmtree
 
 
 def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataValue, variableName="NDVI"):
-    print("computing anomally!!")
+    #loading data
     outImgSrc = gdal.Open(outImg, gdal.GA_Update)
     outImgBnd = outImgSrc.GetRasterBand(1)
 
@@ -23,6 +23,7 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
         inProductsBnd[i] = inProductsSrc[i].GetRasterBand(1)
         inProductsMeta[i] = inProductsSrc[i].GetMetadata()
 
+    #loading lts mean & std
     inLtsMeanSrc = gdal.Open(ltsMean)
     inLtsMeanBnd = inLtsMeanSrc.GetRasterBand(1)
 
@@ -30,14 +31,14 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
     inLtsStdBnd = inLtsStdSrc.GetRasterBand(1)
 
     cols = inLtsMeanSrc.RasterXSize
+    #iterating over output rows
     for row in range(startRow, endRow):
-        #read data
+        #scaling data
         inProductBuffer = [0]*len(products)
         scaledNoDataValue = None
         for i in range(len(products)):
             inProductBuffer[i] = scaleValue(inProductsMeta[i],
-                                            inProductsBnd[i].ReadAsArray(0, row, cols, 1)[0],#.astype(np.float32),
-                                            variableName)
+                                            inProductsBnd[i].ReadAsArray(0, row, cols, 1)[0],variableName)
             scaledNoDataValue = scaleValue(inProductsMeta[i], noDataValue, variableName)
 
         if len(products) > 0:
@@ -53,11 +54,10 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
 
         outBuffer = np.zeros(inProductBuffer.shape).astype(float)
         outBuffer.fill(noDataValue)
-        #outBuffer[idx] = (inProductBuffer[idx] - ltsMeanBuffer[idx])/ltsStdBuffer[idx]
-
-        outBuffer[idx] = (inProductBuffer[idx] < ltsMeanBuffer[idx] - 3 * ltsStdBuffer[idx]).astype(int) * (0) \
+        #compute deviation from long-term mean in [0,6]
+        outBuffer[idx] = (inProductBuffer[idx] < ltsMeanBuffer[idx] - 3 * ltsStdBuffer[idx]).astype(int) * (0)\
                          + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 3 * ltsStdBuffer[idx],
-                                          inProductBuffer[idx] < ltsMeanBuffer[idx] - 2 * ltsStdBuffer[idx]).astype(int) * (1) \
+                          inProductBuffer[idx] < ltsMeanBuffer[idx] - 2 * ltsStdBuffer[idx]).astype(int) * (1)\
                          + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 2 * ltsStdBuffer[idx],
                                           inProductBuffer[idx] < ltsMeanBuffer[idx] - 1 * ltsStdBuffer[idx]) * (2) \
                          + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 1 * ltsStdBuffer[idx],
@@ -68,11 +68,7 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
                                           inProductBuffer[idx] < ltsMeanBuffer[idx] + 3 * ltsStdBuffer[idx]) * (5) \
                          + (inProductBuffer[idx] >= ltsMeanBuffer[idx] + 3 * ltsStdBuffer[idx]) * (6) \
                          + np.isnan(inProductBuffer[idx]) * 255
-
-
-
-        #outBuffer[idx] = inProductBuffer[idx]
-        #outBuffer = inProductBuffer
+        #writing result
         outImgBnd.WriteArray(outBuffer.reshape(1, cols), 0, row)
 
     outImgSrc.FlushCache()
@@ -107,8 +103,6 @@ def computeMean(outImg, imgs, dataPath, startRow, endRow, noDataValue):
         stdImgSrcs[i] = gdal.Open(stdImgs[i])
         stdImgBnds[i] = stdImgSrcs[i].GetRasterBand(1)
         stdImgMeta[i] = stdImgSrcs[i].GetMetadata()
-
-
 
     for row in range(startRow, endRow):
         meanBuffer = [0]*imgCnt
@@ -277,8 +271,10 @@ class LongTermComparisonAnomalyDetector:
 
 
             #create output dataset
-            outImgPath = os.path.join(self._cfg.filesystem.anomalyProductsPath, *(Constants.PRODUCT_INFO[self._anomalyProductId].productNames[0],
-                                                                                  self._dateStart[0:4]))
+            outImgPath = os.path.join(self._cfg.filesystem.anomalyProductsPath,
+                                      *(Constants.PRODUCT_INFO[self._anomalyProductId].productNames[0],
+                                        self._dateStart[0:4]))
+
             outImg = os.path.join(outImgPath,
                                   Constants.PRODUCT_INFO[self._anomalyProductId].fileNameCreationPattern.format(
                                       self._dateStart, self._dateEnd))

@@ -13,7 +13,7 @@
 """
 
 import numpy as np, os, socket
-from osgeo import gdal
+from osgeo import gdal, ogr
 
 netCDFSubDataset = lambda  fl, var: """NETCDF:"{0}":{1}""".format(fl, var)
 
@@ -56,6 +56,40 @@ def getListOfFiles(dirName):
             allFiles.append(fullPath)
 
     return allFiles
+
+def geomRasterizer(rasterExtents, dstResolution, ft, dstOSR):
+        outRasterXSize = int((rasterExtents[1][0] - rasterExtents[0][0]) / dstResolution)
+        outRasterYSize = int((rasterExtents[0][1] - rasterExtents[1][1]) / dstResolution)
+        drv = gdal.GetDriverByName("MEM")
+
+        print("Poly id: {0}, Output image dimensions: ({1},{2})".format(ft.GetFID(),
+                                                                        outRasterXSize, outRasterYSize))
+
+        rasterFt = drv.Create("tmp_img_{0}.tif".format(ft.GetFID()),outRasterXSize,outRasterYSize,
+                                     1, gdal.GDT_Byte)
+        if rasterFt is None:
+            return None
+        rasterFt.SetProjection(ft.GetGeometryRef().GetSpatialReference().ExportToWkt())
+        rasterFt.SetGeoTransform((rasterExtents[0][0], dstResolution, 0, rasterExtents[0][1], 0, -dstResolution))
+
+        # create temporary dataset
+        ogrDrv = ogr.GetDriverByName("Memory")
+        memVSource = ogrDrv.CreateDataSource(str(ft.GetFID()))
+
+        memVLayer = memVSource.CreateLayer("tmp", dstOSR, geom_type=ogr.wkbPolygon)
+        tmpFtDefn = memVLayer.GetLayerDefn()
+        tmpFt = ogr.Feature(tmpFtDefn)
+        tmpFt.SetGeometry(ft.geometry().MakeValid())
+        memVLayer.CreateFeature(tmpFt)
+
+        gdal.RasterizeLayer(rasterFt, [1], memVLayer, burn_values=[1, ])
+        del memVLayer
+        memVLayer = None
+        del memVSource
+        memVSource = None
+        return rasterFt.GetRasterBand(1).ReadAsArray()
+
+
 
 def pixelsToAreaM2Degrees(pxCount, pixelSize):
     return pxCount*np.power((pixelSize*np.pi/180*6371000),2)

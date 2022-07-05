@@ -12,11 +12,10 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from concurrent.futures import ProcessPoolExecutor, wait, ALL_COMPLETED
+from multiprocessing import Process, Manager
 from datetime import datetime
 from osgeo import gdal, ogr, osr
 import json, os, multiprocessing,  numpy as np, pathlib, re
-
 import sys
 sys.path.extend(['../../']) #to properly import modules from other dirs
 from Libs.AlignToImage import AlignToImage
@@ -42,10 +41,40 @@ def interpolateColor(areaPerc, palette):
         cls.append(int((high - low) * (areaPerc - keys[mn])/100.0 + low))
     return cls
 
+def computeStats(threadID, imageFile, geomMask, chunk, upperLeft, productId, bins, tmpLow, tmpSparse, tmpHigh, result):
+    inRasterData = gdal.Open(imageFile)
+    noDataValue = inRasterData.GetRasterBand(1).GetNoDataValue()
+    hist = np.zeros(bins)
+    cntNo = 0
+    cntSparse = 0
+    cntMid = 0
+    cntDense = 0
+    for i in chunk:
+        #print("i=",i)
+        # data row
+        dtCol = inRasterData.ReadAsArray(upperLeft[0] + i, upperLeft[1], 1, geomMask.shape[0]).flatten()
+        plCol = geomMask[:,i]#self._rasterFt.ReadAsArray(i, 0, 1, self._rasterFt.RasterYSize)
+        res = dtCol[(dtCol != noDataValue) & (plCol == 1)]
+        tmpHist = np.histogram(res, bins=10, range=(Constants.PRODUCT_INFO[productId].minValue,
+                                                    Constants.PRODUCT_INFO[productId].maxValue))
+        hist += tmpHist[0]
+        cntNo += res[res < tmpLow].shape[0]
+        cntSparse += res[(res >= tmpLow) & (res < tmpSparse)].shape[0]
+        cntMid += res[(res >= tmpSparse) & (res < tmpHigh)].shape[0]
+        cntDense += res[res >= tmpHigh].shape[0]
+
+    result[threadID] = {
+        "cntNo": cntNo,
+        "cntSparse": cntSparse,
+        "cntMid": cntMid,
+        "cntDense": cntDense,
+        "hist": hist
+    }
+
 class GeomProcessor():
     def __init__(self, ft, dstOSR, inImages, dstResolution, product, cfgObj):
         self.__ft = ft
-        self.__rasterFt = None
+        self._rasterFt = None
         self.__rasterExtents = None
         self.__dstOSR = dstOSR
         self.__srcImages = inImages
@@ -58,13 +87,14 @@ class GeomProcessor():
 
     def __del__(self):
         del self.__ft
-        del self.__rasterFt
+        del self._rasterFt
         self.__rasterExtents = None
         del self.__dstOSR
         self.__srcImages = None
         self.__dstResolution = None
         self.__variable = None
         self.__pixelToAreaFunc = None
+        print("all clear!")
 
     def __setPixelToAreaFunc(self):
         tmpData = gdal.Open(self.__srcImages[0][0])
@@ -89,7 +119,7 @@ class GeomProcessor():
             dbVals += "({0},{1},{2},{3},{4},{5},'{6}','{7}','{8}','{9}', '{10}'),"\
                 .format(dt["poly_id"], dt["product_file_id"], dt["no"], dt["sparse"], dt["mid"],dt["dense"], json.dumps(dt["novalcolor"]),
                         json.dumps(dt["sparsevalcolor"]), json.dumps(dt["midvalcolor"]), json.dumps(dt["highvalcolor"]),
-                        json.dumps(dt["histogram"].tolist()))
+                        json.dumps(dt["histogram"]))
         query = """WITH tmp_data(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
         noval_color, sparseval_color, midval_color, highval_color, histogram) AS( VALUES {0})
          INSERT INTO {1}.poly_stats(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
@@ -109,38 +139,15 @@ class GeomProcessor():
         allignedImage = AlignToImage(self.__ft, self.__srcImages[0])
 
         self.__rasterExtents = allignedImage.process(vector=True)
-        outRasterXSize = int((self.__rasterExtents[1][0] - self.__rasterExtents[0][0]) / self.__dstResolution)
-        outRasterYSize = int((self.__rasterExtents[0][1] - self.__rasterExtents[1][1]) / self.__dstResolution)
-        drv = gdal.GetDriverByName("MEM")
-
-        print("Poly id: {0}, Output image dimensions: ({1},{2})".format(self.__ft.GetFID(),
-                                                                        outRasterXSize, outRasterYSize))
-
-        self.__rasterFt = drv.Create("tmp_img_{0}.tif".format(self.__ft.GetFID()),outRasterXSize,outRasterYSize,
-                                     1, gdal.GDT_Byte)
-        self.__rasterFt.SetProjection(self.__ft.GetGeometryRef().GetSpatialReference().ExportToWkt())
-        self.__rasterFt.SetGeoTransform((self.__rasterExtents[0][0], self.__dstResolution, 0, self.__rasterExtents[0][1], 0, -self.__dstResolution))
-
-        # create temporary dataset
-        ogrDrv = ogr.GetDriverByName("Memory")
-        memVSource = ogrDrv.CreateDataSource(str(self.__ft.GetFID()))
-
-        memVLayer = memVSource.CreateLayer("tmp", self.__dstOSR, geom_type=ogr.wkbPolygon)
-        tmpFtDefn = memVLayer.GetLayerDefn()
-        tmpFt = ogr.Feature(tmpFtDefn)
-        tmpFt.SetGeometry(self.__ft.geometry().MakeValid())
-        memVLayer.CreateFeature(tmpFt)
-
-        gdal.RasterizeLayer(self.__rasterFt, [1], memVLayer, burn_values=[1, ])
-        del memVLayer
-        memVLayer = None
-        del memVSource
-        memVSource = None
-
-
-    def __extractStats(self, low, mid, high):
+        self._rasterFt = geomRasterizer(self.__rasterExtents, self.__dstResolution, self.__ft, self.__dstOSR)
+        
+    def __extractStats(self, low, mid, high, nThreads):
         out = list(range(len(self.__srcImages)))
         imgIdx = 0
+
+        chunks = chunkIt(range(self._rasterFt.shape[1]), nThreads)
+        for chunk in chunks:
+            print(chunk)
 
         for image in self.__srcImages:
 
@@ -149,14 +156,17 @@ class GeomProcessor():
             tmpLow = low
             tmpSparse = mid
             tmpHigh = high
+            maxVal = Constants.PRODUCT_INFO[self.__product].maxValue
+            minVal = Constants.PRODUCT_INFO[self.__product].minValue
 
-            if image[0].endswith(".nc"):
+            if image[0][0:6] == "NETCDF":
                 tmpLow = reverseValue(metaData, low, self.__variable)
                 tmpSparse = reverseValue(metaData, mid, self.__variable)
                 tmpHigh = reverseValue(metaData, high, self.__variable)
+                maxVal = scaleValue(metaData, maxVal, self.__variable)
+                minVal = scaleValue(metaData, minVal, self.__variable)
 
             noDataValue = inRasterData.GetRasterBand(1).GetNoDataValue()
-
 
             inGt = inRasterData.GetGeoTransform()
             upperLeft  = xyToColRow(self.__rasterExtents[0][0], self.__rasterExtents[0][1], inGt)
@@ -171,6 +181,11 @@ class GeomProcessor():
 
             bins = 10
             hist = np.zeros(bins)
+            histWidth = (maxVal-minVal) / bins
+
+            histXaxis = list(range(bins+1))
+            for i in range(bins+1):
+                histXaxis[i] = np.round(minVal + i* histWidth,3)
 
             out[imgIdx] = {
                 "poly_id": id,
@@ -183,27 +198,36 @@ class GeomProcessor():
                 "sparsevalcolor": "NULL",
                 "midvalcolor": "NULL",
                 "highvalcolor": "NULL",
-                "histogram": hist
+                "histogram": {"x":histXaxis, "y": hist.tolist()}
             }
 
             if (not (upperLeft[0] >= 0 and upperLeft[1] >= 0 and lowerRight[0] < inRasterData.RasterXSize and lowerRight[1] < inRasterData.RasterYSize)):
                 imgIdx += 1
                 continue
 
-            for i in range(self.__rasterFt.RasterYSize):
-                #data row
-                dtRow = inRasterData.ReadAsArray(upperLeft[0], upperLeft[1]+i, self.__rasterFt.RasterXSize, 1)[0]
-                plRow = self.__rasterFt.ReadAsArray(0, i, self.__rasterFt.RasterXSize, 1)[0]
-                res = dtRow[(dtRow!=noDataValue) & (plRow == 1)]
-                tmpHist = np.histogram(res, bins=10, range=(Constants.PRODUCT_INFO[self.__product].minValue,
-                Constants.PRODUCT_INFO[self.__product].maxValue))
-                hist += tmpHist[0]
-                cntNo += res[res < tmpLow].shape[0]
-                cntSparse += res[(res >= tmpLow) & (res < tmpSparse)].shape[0]
-                cntMid += res[(res >= tmpSparse) & (res < tmpHigh)].shape[0]
-                cntDense += res[res >= tmpHigh].shape[0]
-                del plRow
-                del dtRow
+            threads = list(range(len(chunks)))
+            trd = 0
+
+            results = Manager().dict()
+            for i in range(len(chunks)):
+                results[i] = None
+
+            for chunk in chunks:
+                threads[trd] = Process(target=computeStats, args=(trd, image[0],self._rasterFt, chunk, upperLeft,
+                                                                self.__product, bins,tmpLow, tmpSparse, tmpHigh,
+                                                                  results))
+                threads[trd].start()
+                trd +=1
+
+            for trd in threads:
+                trd.join()
+
+            for key in results:
+                cntNo += results[key]["cntNo"]
+                cntSparse += results[key]["cntSparse"]
+                cntMid += results[key]["cntMid"]
+                cntDense += results[key]["cntDense"]
+                hist += results[key]["hist"]
 
             noAreaHa = np.round(self.__pixelToAreaFunc(cntNo, inGt[1])/10000,2)
             sparseAreaHa = np.round(self.__pixelToAreaFunc(cntSparse, inGt[1])/10000,2)
@@ -242,21 +266,23 @@ class GeomProcessor():
                     "sparsevalcolor": sparseValColor,
                     "midvalcolor": midValColor,
                     "highvalcolor": highValColor,
-                    "histogram": hist
+                    "histogram": {"x":histXaxis, "y": hist.tolist()}
                 }
             imgIdx += 1
             del inRasterData
             inRasterData = None
+
         return out
 
-    def process(self):
+    def process(self, nThreads = 5):
         self.__setPixelToAreaFunc()
         self.__geomRasterizer()
-        data = self.__extractStats(self.__valueRange["low"], self.__valueRange["mid"], self.__valueRange["high"])
-        self.__storeToDB(data)
+        if self._rasterFt is not None:
+            data = self.__extractStats(self.__valueRange["low"], self.__valueRange["mid"], self.__valueRange["high"], nThreads)
+            self.__storeToDB(data)
 
-def geomProcessor(inImages, poly, productInfo, cfgObj):
-    inRasterData = gdal.Open( inImages[0][0])
+def geomProcessor(inImages, poly, productInfo, cfgObj, nThreads):
+    inRasterData = gdal.Open(inImages[0][0])
 
     resolution = inRasterData.GetGeoTransform()[1]
 
@@ -276,17 +302,22 @@ def geomProcessor(inImages, poly, productInfo, cfgObj):
     ft.SetFID(poly[0])
 
     geoProc = GeomProcessor(ft, dstOSR, inImages, resolution, productInfo, cfgObj)
-    ret = geoProc.process()
+    ret = geoProc.process(nThreads)
 
+    del geoProc
+    geoProc = None
     del ft
+    ft = None
     del geom
+    geom = None
 
     del ftSRS
+    ftSRS = None
     del dstOSR
+    dstOSR = None
     del inRasterData
+    inRasterData = None
     return ret
-
-
 
 class ZonalStatsExtractor():
     def __init__(self, stratificationType, configFile = "../config.json"):
@@ -310,12 +341,11 @@ class ZonalStatsExtractor():
             JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id IN ({0}) 
             JOIN product_file pf ON pfd.id = pf.product_description_id 
             LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id
-            WHERE s.description ='countries' AND ps.id IS NULL 
-            GROUP BY sg.id, pfd.id ORDER BY sg.id, pfd.id """.format(",".join([str(id) for id in productIds]))
-            executor = ProcessPoolExecutor(max_workers=nThreads)
+            WHERE s.description ='{1}' AND ps.id IS NULL 
+            GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id""".format(",".join([str(id) for id in productIds]),
+                                                                    self._stratificationType)
             res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(dataQuery,
-                                                                                                          session)
-            futures = []
+                                                                                                         session)
             for row in res:
                 images = list(range(len(row[2])))
                 path = self._config.filesystem.imageryPath
@@ -328,11 +358,9 @@ class ZonalStatsExtractor():
                         imgPath = netCDFSubDataset(imgPath, Constants.PRODUCT_INFO[row[1]].variable)
                     images[i] = [imgPath, row[2][i][1]]
 
-                #images = [[netCDFSubDataset(os.path.join(self._config.filesystem.imageryPath, img[0]), Constants.PRODUCT_INFO[row[1]].variable),img[1]] for img in row[2]]
-                #geomProcessor(images, [row[0], row[3],row[4]], row[1], self._config)
-                futures.append(executor.submit(geomProcessor, images, [row[0], row[3],row[4]], row[1], self._config))
+                geomProcessor(images, [row[0], row[3],row[4]], row[1], self._config, nThreads)
+            res = None
 
-            wait(futures, return_when=ALL_COMPLETED)
 
         except FileExistsError:
             print("A specified does not exist. Verify the list of input files")
@@ -362,7 +390,7 @@ def main():
 
     #requirements:
     obj = ZonalStatsExtractor(stratificationType, cfg)
-    obj.process()
+    obj.process(nThreads=7)
     print("Finished!")
 
 if __name__ == "__main__":

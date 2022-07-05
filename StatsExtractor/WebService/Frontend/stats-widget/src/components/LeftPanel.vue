@@ -34,8 +34,14 @@
 					</div>
 				</div>
 			</div>
-			<div class="dropdown">
-				<h4> Product Selection</h4>
+			<!-- CLMS PRODUCT CATEGORIES-->
+			<div class="row nav nav-tabs">
+				<button v-for="nav, idx in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActive(idx)" v-bind:id="'chart_'+nav.id">
+			{{nav.title}}
+		</button>
+	</div>	
+			<div class="dropdown mt-3">
+				<!--<h4> Product Selection</h4>-->
 				Current Product: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductDescription}}</button>
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentProduct(key)"><a class="dropdown-item">{{product.description}}</a></li>
@@ -45,18 +51,17 @@
 		<div class = "container mt-3" v-if="currentProduct != null">
 			<h4>Select Mode</h4>
 			<div class="row gap-2">
-				<div class="col btn btn-secondary disabled" id="showStratificationButton" v-on:click=showStratificationMenu(0)>
+				<div class="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==0 }" id="showStratificationButton" v-on:click=showStratificationMenu(0)>
 					Stratification-driven Statistics
 				</div>
-				<div class ="col btn btn-secondary" id="showRawDataButton" v-on:click=showStratificationMenu(1)>
+				<div class ="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==1}" id="showRawDataButton" v-on:click=showStratificationMenu(1)>
 					Raw Data Visaulization
 				</div>
-				<div class ="col btn btn-secondary " id="showProductAnomalyButton" v-on:click=showStratificationMenu(2)>
+				<div class ="col btn btn-secondary " v-bind:class="{ disabled: viewStratification ==2 }" id="showProductAnomalyButton" v-on:click=showStratificationMenu(2)>
 					Product Anomalies
 				</div>
 			</div>
-			<div class = "mt-3" v-if="viewStratification==0">
-			
+			<div class = "mt-3" v-if="viewStratification==0">			
 				<!--STRATIFICATION -->
 				<div>
 					Current stratification: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
@@ -70,7 +75,8 @@
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
 					<li v-for ="(date, key) in stratificationDates" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratificationDate(date)"><a class="dropdown-item">{{date}}</a></li>
 					</ul>
-				</div>	
+				</div>
+				
 				<!--v-if="currentAreaDensity != 'Select Area Density'"-->
 				<!-- AREA DENSITY-->
 				<div class="mt-2" v-if="currentStratificationDate != 'Select date'">
@@ -79,7 +85,8 @@
 						<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(key)"><a class="dropdown-item">{{densityType.description}}</a></li>
 					</ul>
 				</div>
-			</div>			
+			</div>		
+			
 			<!-- WMS RAW DATA LAYER-->
 			<div class= "mt-3" v-if="viewStratification==1">
 				Current WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductWMSLayer}}</button>
@@ -106,6 +113,7 @@
 <script>
 import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
+import requests from '../libs/js/requests.js';
 
 export default {
 	name: 'Left Panel',
@@ -118,7 +126,10 @@ export default {
 			get() {
 				return this.$store.getters.areaDensityOptions;
 			}
-		},	
+		},
+		categories() {
+			return this.$store.getters.categories;
+		},
 		currentProductDescription: {
 			get() {
 				if (this.currentProduct == null)
@@ -198,7 +209,7 @@ export default {
 			},
 			set(date) {
 				this.$store.commit("setDateStart", date);
-				this.$emit("dateChange");
+				this.$emit("updateProducts");
 			}			
 		},
 		dateEnd: {
@@ -207,7 +218,7 @@ export default {
 			},
 			set(date) {
 				this.$store.commit("setDateEnd", date);
-				this.$emit("dateChange");
+				this.$emit("updateProducts");
 			}
 		},
 		products: {
@@ -249,11 +260,16 @@ export default {
 	data() {
 		return {
 			dateFormat: "dd MMM yyyy",
-			viewStratification: 0,
+			viewStratification: 0
 		}
 	},
 	methods: {
-		init() {},
+		init() {
+			requests.categories().then((response) => {
+				this.$store.commit("setCategoryInfo", response.data.data);
+				this.$emit("updateProducts");
+			});
+		},
 		closeLeftPanel() {
 			this.$emit("closeLeftPanel");
 		},
@@ -286,16 +302,13 @@ export default {
 		},
 		showStratificationMenu(val) {
 			this.viewStratification = val;
-			let ids = ["showStratificationButton","showRawDataButton","showProductAnomalyButton"];
-			
-			//disabling all other buttons
-			for (let i = 0; i < ids.length; i++) {
-				if (val == i)
-					document.getElementById(ids[i]).classList.add("disabled");
-				else
-					document.getElementById(ids[i]).classList.remove("disabled");
-			}
 			this.$emit("switchViewMode", {id:val});
+		},
+		switchActive(id) {
+			if (id == null)
+				return;
+			this.$store.commit("changeCategory", id);
+			this.$emit("updateProducts");
 		}
 	},
 	mounted() {

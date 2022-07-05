@@ -404,16 +404,17 @@ export default {
 				return
 			}
 			requests.fetchHistogramByPolygonAndDate(polyId, this.$store.getters.currentStratificationDate, this.$store.getters.currentProduct.id).then((response) =>{
-				let barWidth = (response.data.data.high_value-response.data.data.low_value)/response.data.data.histogram.length;
+				
+				//let barWidth = (response.data.data.high_value-response.data.data.low_value)/response.data.data.histogram.length;
 				let xAxisCategories = [];
-				let prev = 0;
-				let next = barWidth;
-				for (let i = 0; i < response.data.data.histogram.length; i++) {
-					xAxisCategories.push(prev.toString() +"-" + next.toString());
-					prev += barWidth;
-					next += barWidth;
+				//let prev = 0;
+				//let next = barWidth;
+				for (let i = 0; i < response.data.data.histogram.y.length; i++) {
+					console.log(response.data.data.histogram.x[i].toString() +"-" + response.data.data.histogram.x[i+1].toString());
+					xAxisCategories.push(response.data.data.histogram.x[i].toString() +"-" + response.data.data.histogram.x[i+1].toString());
 				}
-				this.stratificationHistogramData = [response.data.data.histogram, xAxisCategories];
+				
+				this.stratificationHistogramData = [response.data.data.histogram.y, xAxisCategories];
 				
 			}).catch( ()=> {
 				this.stratificationHistogramData = [null, null];			

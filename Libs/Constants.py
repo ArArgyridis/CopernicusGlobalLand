@@ -55,12 +55,14 @@ class Constants:
             SELECT p.name, p.type, pfd.*
             FROM {0}.product p 
             LEFT JOIN {0}.product_file_description pfd on p.id = pfd.product_id 
-            WHERE (pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif') AND p.id IN(1,3,4) ORDER BY p.id""".format(_cfg.statsInfo.schema)
+            WHERE (pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif') AND p.id IN(6) ORDER BY p.id""".format(_cfg.statsInfo.schema)
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
             if res != 1:
                 for row in res:
                     key = copy.deepcopy(row[2])
                     Constants.PRODUCT_INFO[row[2]] = ProductInfo(row)
+            res = None
+
         except:
             print("Unable to load configuration file!")
             raise RuntimeError
