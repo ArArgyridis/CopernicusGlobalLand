@@ -70,20 +70,32 @@ class DataCrawler:
         detectedProductName = None
         listFiles = None
         i = 0
-        while detectedProductName is None:
+        #subfolders with products
+        subFolders = ["REMOTE_PRODUCTS",]
+        listFiles = []
+        inProdDir = None
+
+        while detectedProductName is None and i < len(self._prodInfo.productNames):
             prdPath = self._prodInfo.productNames[i]
-            stdin, stdout, stderr = self._sshCn.exec_command("find {0}".format(os.path.join(dir, prdPath)))
+            inProdDir = os.path.join(dir, prdPath)
+
+            stdin, stdout, stderr = self._sshCn.exec_command("find {0}".format(inProdDir))
             listFiles = stdout.read().split()
+            if len(listFiles) == 0: #checking the valid subfolders if the products are there
+                fldId = 0
+                while fldId < len(subFolders) and len(listFiles) == 0:
+                    inProdDir = os.path.join(dir, *[subFolders[i],prdPath])
+                    stdin, stdout, stderr = self._sshCn.exec_command("find {0}".format(inProdDir))
+                    listFiles = stdout.read().split()
+
             if len(listFiles) > 0:
                 detectedProductName = prdPath
-
             i += 1
 
         if detectedProductName is None:
             return
 
         outProdDir = os.path.join(storageDir, detectedProductName)
-        inProdDir = os.path.join(dir, detectedProductName)
 
         print("Files/Paths available for product:{0} : {1}".format(detectedProductName, len(listFiles)))
         for fl in listFiles:

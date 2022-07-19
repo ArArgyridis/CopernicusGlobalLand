@@ -10,7 +10,7 @@ from multiprocessing import Process, cpu_count
 from shutil import rmtree
 
 
-def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataValue, variableName="NDVI"):
+def computeAnomaly(outImg, products, ltsmedian, ltsStd, startRow, endRow, noDataValue, variableName="NDVI"):
     #loading data
     outImgSrc = gdal.Open(outImg, gdal.GA_Update)
     outImgBnd = outImgSrc.GetRasterBand(1)
@@ -23,14 +23,14 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
         inProductsBnd[i] = inProductsSrc[i].GetRasterBand(1)
         inProductsMeta[i] = inProductsSrc[i].GetMetadata()
 
-    #loading lts mean & std
-    inLtsMeanSrc = gdal.Open(ltsMean)
-    inLtsMeanBnd = inLtsMeanSrc.GetRasterBand(1)
+    #loading lts median & std
+    inLtsmedianSrc = gdal.Open(ltsmedian)
+    inLtsmedianBnd = inLtsmedianSrc.GetRasterBand(1)
 
     inLtsStdSrc = gdal.Open(ltsStd)
     inLtsStdBnd = inLtsStdSrc.GetRasterBand(1)
 
-    cols = inLtsMeanSrc.RasterXSize
+    cols = inLtsmedianSrc.RasterXSize
     #iterating over output rows
     for row in range(startRow, endRow):
         #scaling data
@@ -46,27 +46,27 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
         else:
             inProductBuffer = inProductBuffer[0]
 
-        ltsMeanBuffer = inLtsMeanBnd.ReadAsArray(0, row, cols, 1)[0]
+        ltsmedianBuffer = inLtsmedianBnd.ReadAsArray(0, row, cols, 1)[0]
         ltsStdBuffer = inLtsStdBnd.ReadAsArray(0, row, cols, 1)[0]
-        idx = ltsMeanBuffer!=noDataValue
+        idx = ltsmedianBuffer!=noDataValue
         idx = np.logical_and(idx, ltsStdBuffer != noDataValue)
         idx = np.logical_and(idx, inProductBuffer != scaledNoDataValue)
 
         outBuffer = np.zeros(inProductBuffer.shape).astype(float)
         outBuffer.fill(noDataValue)
-        #compute deviation from long-term mean in [0,6]
-        outBuffer[idx] = (inProductBuffer[idx] < ltsMeanBuffer[idx] - 3 * ltsStdBuffer[idx]).astype(int) * (0)\
-                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 3 * ltsStdBuffer[idx],
-                          inProductBuffer[idx] < ltsMeanBuffer[idx] - 2 * ltsStdBuffer[idx]).astype(int) * (1)\
-                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 2 * ltsStdBuffer[idx],
-                                          inProductBuffer[idx] < ltsMeanBuffer[idx] - 1 * ltsStdBuffer[idx]) * (2) \
-                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] - 1 * ltsStdBuffer[idx],
-                                          inProductBuffer[idx] < ltsMeanBuffer[idx] + 1 * ltsStdBuffer[idx]) * (3) \
-                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] + 1 * ltsStdBuffer[idx],
-                                          inProductBuffer[idx] < ltsMeanBuffer[idx] + 2 * ltsStdBuffer[idx]) * (4) \
-                         + np.logical_and(inProductBuffer[idx] >= ltsMeanBuffer[idx] + 2 * ltsStdBuffer[idx],
-                                          inProductBuffer[idx] < ltsMeanBuffer[idx] + 3 * ltsStdBuffer[idx]) * (5) \
-                         + (inProductBuffer[idx] >= ltsMeanBuffer[idx] + 3 * ltsStdBuffer[idx]) * (6) \
+        #compute deviation from long-term median in [0,6]
+        outBuffer[idx] = (inProductBuffer[idx] < ltsmedianBuffer[idx] - 3 * ltsStdBuffer[idx]).astype(int) * (0)\
+                         + np.logical_and(inProductBuffer[idx] >= ltsmedianBuffer[idx] - 3 * ltsStdBuffer[idx],
+                          inProductBuffer[idx] < ltsmedianBuffer[idx] - 2 * ltsStdBuffer[idx]).astype(int) * (1)\
+                         + np.logical_and(inProductBuffer[idx] >= ltsmedianBuffer[idx] - 2 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsmedianBuffer[idx] - 1 * ltsStdBuffer[idx]) * (2) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsmedianBuffer[idx] - 1 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsmedianBuffer[idx] + 1 * ltsStdBuffer[idx]) * (3) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsmedianBuffer[idx] + 1 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsmedianBuffer[idx] + 2 * ltsStdBuffer[idx]) * (4) \
+                         + np.logical_and(inProductBuffer[idx] >= ltsmedianBuffer[idx] + 2 * ltsStdBuffer[idx],
+                                          inProductBuffer[idx] < ltsmedianBuffer[idx] + 3 * ltsStdBuffer[idx]) * (5) \
+                         + (inProductBuffer[idx] >= ltsmedianBuffer[idx] + 3 * ltsStdBuffer[idx]) * (6) \
                          + np.isnan(inProductBuffer[idx]) * 255
         #writing result
         outImgBnd.WriteArray(outBuffer.reshape(1, cols), 0, row)
@@ -76,52 +76,52 @@ def computeAnomaly(outImg, products, ltsMean, ltsStd, startRow, endRow, noDataVa
 
     return
 
-def computeMean(outImg, imgs, dataPath, startRow, endRow, noDataValue):
-    meanImgs = [netCDFSubDataset(os.path.join(dataPath, k), "mean") for k in imgs]
+def computemedian(outImg, imgs, dataPath, startRow, endRow, noDataValue):
+    medianImgs = [netCDFSubDataset(os.path.join(dataPath, k), "median") for k in imgs]
     stdImgs = [netCDFSubDataset(os.path.join(dataPath, k), "stdev") for k in imgs]
 
-    imgCnt = len(meanImgs)
-    meanImgSrc = gdal.Open(outImg[0], gdal.GA_Update)
-    meanImgBnd = meanImgSrc.GetRasterBand(1)
-    meanImgSrcs = [0]*len(meanImgs)
-    meanImgBnds = [0]*len(meanImgs)
-    meanImgMeta = [0]*len(meanImgs)
+    imgCnt = len(medianImgs)
+    medianImgSrc = gdal.Open(outImg[0], gdal.GA_Update)
+    medianImgBnd = medianImgSrc.GetRasterBand(1)
+    medianImgSrcs = [0]*len(medianImgs)
+    medianImgBnds = [0]*len(medianImgs)
+    medianImgMeta = [0]*len(medianImgs)
 
     stdImgSrc = gdal.Open(outImg[1], gdal.GA_Update)
     stdImgBnd = stdImgSrc.GetRasterBand(1)
-    stdImgSrcs = [0] * len(meanImgs)
-    stdImgBnds = [0] * len(meanImgs)
-    stdImgMeta = [0] * len(meanImgs)
+    stdImgSrcs = [0] * len(medianImgs)
+    stdImgBnds = [0] * len(medianImgs)
+    stdImgMeta = [0] * len(medianImgs)
 
-    cols = meanImgSrc.RasterXSize
+    cols = medianImgSrc.RasterXSize
 
     for i in range(imgCnt):
-        meanImgSrcs[i] = gdal.Open(meanImgs[i])
-        meanImgBnds[i] = meanImgSrcs[i].GetRasterBand(1)
-        meanImgMeta[i] = meanImgSrcs[i].GetMetadata()
+        medianImgSrcs[i] = gdal.Open(medianImgs[i])
+        medianImgBnds[i] = medianImgSrcs[i].GetRasterBand(1)
+        medianImgMeta[i] = medianImgSrcs[i].GetMetadata()
 
         stdImgSrcs[i] = gdal.Open(stdImgs[i])
         stdImgBnds[i] = stdImgSrcs[i].GetRasterBand(1)
         stdImgMeta[i] = stdImgSrcs[i].GetMetadata()
 
     for row in range(startRow, endRow):
-        meanBuffer = [0]*imgCnt
+        medianBuffer = [0]*imgCnt
         stdBuffer = [0]*imgCnt
         for i in range(imgCnt):
-            meanBuffer[i] = meanImgBnds[i].ReadAsArray(0, row, cols, 1)[0].astype(float)
-            idx = meanBuffer[i] != noDataValue
-            meanBuffer[i][idx] = scaleValue(meanImgMeta[i], meanBuffer[i][idx], "mean")
+            medianBuffer[i] = medianImgBnds[i].ReadAsArray(0, row, cols, 1)[0].astype(float)
+            idx = medianBuffer[i] != noDataValue
+            medianBuffer[i][idx] = scaleValue(medianImgMeta[i], medianBuffer[i][idx], "median")
             stdBuffer[i] = stdImgBnds[i].ReadAsArray(0, row, cols, 1)[0].astype(float)
             stdBuffer[i][idx] = scaleValue(stdImgMeta[i], stdBuffer[i][idx], "stdev")
 
-        meanBuffer = np.stack(meanBuffer)
-        meanImgBnd.WriteArray(meanBuffer.mean(axis=0).reshape(1,cols), 0, row)
+        medianBuffer = np.stack(medianBuffer)
+        medianImgBnd.WriteArray(medianBuffer.mean(axis=0).reshape(1,cols), 0, row)
 
         stdBuffer = np.stack(stdBuffer)
         stdImgBnd.WriteArray((np.sqrt(np.power(stdBuffer,2).sum(axis=0)/imgCnt)).reshape(1,cols), 0, row)
 
     for i in range(imgCnt):
-        meanImgSrcs[i] = None
+        medianImgSrcs[i] = None
         stdImgSrcs[i] = None
 
 
@@ -159,7 +159,7 @@ class LongTermComparisonAnomalyDetector:
             curDt += timedelta(days=1)
         return curDekads
 
-    def _computeLongTermMeanStd(self, ):
+    def _computeLongTermmedianStd(self, ):
         if os.path.isfile(self._sessionTMPFolder):
             rmtree(self._sessionTMPFolder)
         os.makedirs(self._sessionTMPFolder, exist_ok=True)
@@ -175,12 +175,12 @@ class LongTermComparisonAnomalyDetector:
         res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
         ret = [None,None]
 
-        if res != False and len(res) > 0 : #compute the average of the LTSMean/StDev
-            print("Starting computing long term mean")
+        if res != False and len(res) > 0 : #compute the average of the LTSmedian/StDev
+            print("Starting computing long term median")
             #open a file to get required info
-            tmpInData = gdal.Open(netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, res[0][0]), "mean"))
+            tmpInData = gdal.Open(netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, res[0][0]), "median"))
             drv = gdal.GetDriverByName("GTiff")
-            ret = [os.path.join(self._sessionTMPFolder, "ltsmean.tif"),
+            ret = [os.path.join(self._sessionTMPFolder, "ltsmedian.tif"),
                         os.path.join(self._sessionTMPFolder, "ltsstd.tif")]
 
             for newProd in ret:
@@ -198,21 +198,21 @@ class LongTermComparisonAnomalyDetector:
             step = int(rasterYSize / (self._nThreads))
             threads = []
             images = [os.path.join(self._cfg.filesystem.imageryPath, k[0]) for k in res]
-            #computeMean(ret, images, self._cfg.filesystem.imageryPath, 3000, 4000, noDataValue)
+            #computemedian(ret, images, self._cfg.filesystem.imageryPath, 3000, 4000, noDataValue)
             for prevRow in range(0, rasterYSize - step + 1, step):
                 curRow = prevRow + step
                 if rasterYSize-curRow < step:
                     curRow = rasterYSize
                 print(prevRow, curRow)
 
-                threads.append(Process(target=computeMean,args=(
+                threads.append(Process(target=computemedian,args=(
                                            ret, images, self._cfg.filesystem.imageryPath, prevRow, curRow, noDataValue)))
                 threads[-1].start()
 
 
             for trd in threads:
                 trd.join()
-        print("Long term mean computation finished!")
+        print("Long term median computation finished!")
 
         return ret
 
@@ -231,7 +231,7 @@ class LongTermComparisonAnomalyDetector:
                 return
 
             #try:
-            ltsMean, ltsStd = self._computeLongTermMeanStd()
+            ltsmedian, ltsStd = self._computeLongTermmedianStd()
 
             #retrieve products from DB
             productQuery = """SELECT pfd.variable,  pf.rel_file_path, pf.date, pfd.pattern, pfd.TYPES
@@ -243,10 +243,10 @@ class LongTermComparisonAnomalyDetector:
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].getIteratableResult(productQuery)
             print("products retrieved")
 
-            if ltsMean is None:
+            if ltsmedian is None:
                 return 1
 
-            mn = gdal.Open(ltsMean)
+            mn = gdal.Open(ltsmedian)
 
             gt = mn.GetGeoTransform()
             xImageMax = gt[0] + mn.RasterXSize * gt[1] + mn.RasterYSize * gt[2]
@@ -293,7 +293,7 @@ class LongTermComparisonAnomalyDetector:
             outProduct.GetRasterBand(1).SetNoDataValue(noDataValue)
             #outProduct.FlushCache()
             outProduct = None
-            #computeAnomaly(outImg, products, ltsMean, ltsStd, 7000,8000, noDataValue, row[0])
+            #computeAnomaly(outImg, products, ltsmedian, ltsStd, 7000,8000, noDataValue, row[0])
 
             prevRow = 0
             step = int(mn.RasterYSize /self._nThreads)
@@ -305,7 +305,7 @@ class LongTermComparisonAnomalyDetector:
                     curRow = mn.RasterYSize
                 print(prevRow, curRow)
                 threads.append(Process(target=computeAnomaly,
-                                       args=(outImg, products, ltsMean, ltsStd, prevRow, curRow, noDataValue, variable)))
+                                       args=(outImg, products, ltsmedian, ltsStd, prevRow, curRow, noDataValue, variable)))
                 threads[-1].start()
                 prevRow = curRow
 
@@ -335,7 +335,7 @@ def main():
         return
 
     cfg = sys.argv[1]
-    anomalyProductId = sys.argv[2]
+    anomalyProductId = int(sys.argv[2])
     Constants.load(cfg)
     run(anomalyProductId, cfg)
 

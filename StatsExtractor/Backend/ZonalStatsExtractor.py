@@ -145,12 +145,16 @@ class GeomProcessor():
         out = list(range(len(self.__srcImages)))
         imgIdx = 0
 
-        chunks = chunkIt(range(self._rasterFt.shape[1]), nThreads)
+        chunkCnt = nThreads
+        if self._rasterFt.shape[1] < chunkCnt:
+            chunkCnt = 1
+
+        chunks = chunkIt(range(self._rasterFt.shape[1]), chunkCnt)
         for chunk in chunks:
             print(chunk)
 
         for image in self.__srcImages:
-
+            #print(image[0])
             inRasterData = gdal.Open(image[0])
             metaData = inRasterData.GetMetadata()
             tmpLow = low
@@ -332,34 +336,37 @@ class ZonalStatsExtractor():
             #creating cursor to retrieve polygons and respective images from DB
             session = self._config.pgConnections[self._config.statsInfo.connectionId].getNewSession()
 
-            dataQuery = """
-            SELECT sg.id, pfd.id, ARRAY_AGG(JSON_BUILD_ARRAY(pf.rel_file_path, pf.id)) images, ST_ASTEXT(sg.geom)
-            , ST_SRID(sg.geom) 
-            FROM stratification s 
-            JOIN stratification_geom sg ON s.id = sg.stratification_id --AND sg.id = 1
-            JOIN product p ON TRUE
-            JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id IN ({0}) 
-            JOIN product_file pf ON pfd.id = pf.product_description_id 
-            LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id
-            WHERE s.description ='{1}' AND ps.id IS NULL 
-            GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id""".format(",".join([str(id) for id in productIds]),
-                                                                    self._stratificationType)
-            res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(dataQuery,
+            for prdId in productIds:
+                dataQuery = """
+                SELECT sg.id, pfd.id, ARRAY_AGG(JSON_BUILD_ARRAY(pf.rel_file_path, pf.id)) images, ST_ASTEXT(sg.geom)
+                , ST_SRID(sg.geom) 
+                FROM stratification s 
+                JOIN stratification_geom sg ON s.id = sg.stratification_id --AND sg.id = 1
+                JOIN product p ON TRUE
+                JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id = {0} 
+                JOIN product_file pf ON pfd.id = pf.product_description_id 
+                LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id
+                WHERE s.description ='{1}' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL 
+                GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id""".format(prdId,
+                                                                        self._stratificationType)
+
+                #print(dataQuery)
+                res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(dataQuery,
                                                                                                          session)
-            for row in res:
-                images = list(range(len(row[2])))
-                path = self._config.filesystem.imageryPath
-                if Constants.PRODUCT_INFO[row[1]].productType == "anomaly":
-                    path = self._config.filesystem.anomalyProductsPath
+                for row in res:
+                    images = list(range(len(row[2])))
+                    path = self._config.filesystem.imageryPath
+                    if Constants.PRODUCT_INFO[row[1]].productType == "anomaly":
+                        path = self._config.filesystem.anomalyProductsPath
 
-                for i in range(len(row[2])):
-                    imgPath = os.path.join(path, row[2][i][0])
-                    if imgPath.endswith(".nc"):
-                        imgPath = netCDFSubDataset(imgPath, Constants.PRODUCT_INFO[row[1]].variable)
-                    images[i] = [imgPath, row[2][i][1]]
+                    for i in range(len(row[2])):
+                        imgPath = os.path.join(path, row[2][i][0])
+                        if imgPath.endswith(".nc"):
+                            imgPath = netCDFSubDataset(imgPath, Constants.PRODUCT_INFO[row[1]].variable)
+                        images[i] = [imgPath, row[2][i][1]]
 
-                geomProcessor(images, [row[0], row[3],row[4]], row[1], self._config, nThreads)
-            res = None
+                    geomProcessor(images, [row[0], row[3],row[4]], row[1], self._config, nThreads)
+                res = None
 
 
         except FileExistsError:

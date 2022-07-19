@@ -20,6 +20,7 @@ from StatsExtractor.Backend.MapserverImporter import MapserverImporter
 from AnomalyDetectors.LongTermComparisonAnomalyDetector import run as runLongTermComparisonAnomalyDetector
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
+from StatsExtractor.WebService.Backend.PointValueExtractor import PointValueExtractor
 
 def main():
 	if len(sys.argv) < 2:
@@ -50,8 +51,8 @@ def main():
 				#	print("Computing anomalies!")
 				#	runLongTermComparisonAnomalyDetector(pid, config)
 
-				mapserver = MapserverImporter(config)
-				mapserver.process()
+				#mapserver = MapserverImporter(config)
+				#mapserver.process()
 
 			#fetching stratifications and compute stats for each strata
 			query = "select description from stratification s "

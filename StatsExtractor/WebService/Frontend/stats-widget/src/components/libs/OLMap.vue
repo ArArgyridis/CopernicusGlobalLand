@@ -329,24 +329,29 @@ export default {
 			let tmpURL = url+"?service=wms&version=1.3.0&request=GetCapabilities";
 			return axios.get(tmpURL).then( (response) =>{
 				let parser = new WMSCapabilities();
-				let capabilities = parser.read(response.data);
 				let ret = [];
-				capabilities.Capability.Layer.Layer.forEach( (layer) => {
-					let layerId = this.addCustomWMSLayerToMap({
-						url: url,
-						projection: layer.CRS[0],
-						wmsParams: {
-							LAYERS: layer.Title,
-							WIDTH:256,
-							HEIGHT:256
-						},
-						serverType: "mapserver",
-						crossOrigin: "anonymous",
-						zIndex: zIndex
-					});
-					this.setVisibility(layerId);
-					ret.push({title: layer.Title, layerId: layerId, name: layer.Name});
+				try {
+					let capabilities = parser.read(response.data);
+					capabilities.Capability.Layer.Layer.forEach( (layer) => {
+						let layerId = this.addCustomWMSLayerToMap({
+							url: url,
+							projection: layer.CRS[0],
+							wmsParams: {
+								LAYERS: layer.Title,
+								WIDTH:256,
+								HEIGHT:256
+							},
+							serverType: "mapserver",
+							crossOrigin: "anonymous",
+							zIndex: zIndex
+						});
+						this.setVisibility(layerId);
+						ret.push({title: layer.Title, layerId: layerId, name: layer.Name});
 				});
+				}catch (e) {
+					console.log("Unable to parse wms capabilities");
+					console.log(e);
+				}
 				return ret;
 			});
 

@@ -54,18 +54,6 @@ class StatsRequests(GenericRequest):
 	JOIN timeline ON true""".format(self._config.statsInfo.schema, self._requestData["options"]["poly_id"], self._requestData["options"]["product_id"])
         return self.__getResponseFromDB(query)
 
-    def fetchStatsByPolygonAndDateRange(self):
-        query = """
-        SELECT ARRAY_TO_JSON (ARRAY_AGG(JSON_BUILD_ARRAY( pf.date, ps.{0}) ORDER BY pf.date))
-        FROM {1}.poly_stats ps 
-        JOIN {1}.product_file pf ON ps.product_file_id = pf.id
-        JOIN {1}.product_file_description pfd ON pf.product_description_id = pfd.id
-        WHERE ps.poly_id = {2} AND pfd.product_id ={3} AND pf.date BETWEEN '{4}' AND '{5}'
-        """.format(self._requestData["options"]["area_type"], self._config.statsInfo.schema, self._requestData["options"]["poly_id"],
-                   self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
-                   self._requestData["options"]["date_end"])
-        return self.__getResponseFromDB(query)
-
     def __fetchProductInfo(self):
         query = """
         WITH dt AS( 
@@ -97,35 +85,18 @@ class StatsRequests(GenericRequest):
               self._requestData["options"]["dateEnd"], self._requestData["options"]["category_id"])
         return self.__getResponseFromDB(query)
 
-    def __fetchStratificationInfo(self):
+    def fetchStatsByPolygonAndDateRange(self):
         query = """
-        WITH dt as(
-	        SELECT DISTINCT s.*, pf."date", p.name
-	        FROM {0}.poly_stats ps 
-	        JOIN {0}.stratification_geom sg ON ps.poly_id = sg.id
-	        JOIN {0}.stratification s ON sg.stratification_id = s.id
-	        JOIN {0}.product_file pf ON ps.product_file_id = pf.id
-	        JOIN {0}.product_file_description pfd ON pf.product_description_id = pfd.id
-	        JOIN {0}.product p ON pfd.product_id = p.id
-	        WHERE pf."date" between '{1}' AND '{2}' AND  p.id = {3}  
-        )
-        SELECT ARRAY_TO_JSON(ARRAY_AGG(
-         json_build_object('id', a.id, 'name', a.description, 'url', a.tilelayer_url, 'dates', 
-        a.res))) 
-        FROM(
-	        SELECT a.id, a.description, a.tilelayer_url, json_object_agg(a.date, avail_prods) res 
-            	FROM ( 
-		            SELECT dt.id, dt.description, dt.tilelayer_url, dt.date, 
-		            ARRAY_TO_JSON(ARRAY_AGG(dt.name ORDER BY dt.name)) avail_prods 
-		            FROM dt
-		            GROUP BY dt.id, dt.description, dt.tilelayer_url, dt.date
-	        )a
-	        GROUP BY a.id, a.description, a.tilelayer_url
-        ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
-              self._requestData["options"]["dateEnd"], self._requestData["options"]["product_id"])
-
+        SELECT ARRAY_TO_JSON (ARRAY_AGG(JSON_BUILD_ARRAY( pf.date, ps.{0}) ORDER BY pf.date))
+        FROM {1}.poly_stats ps 
+        JOIN {1}.product_file pf ON ps.product_file_id = pf.id
+        JOIN {1}.product_file_description pfd ON pf.product_description_id = pfd.id
+        WHERE ps.poly_id = {2} AND pfd.product_id ={3} AND pf.date BETWEEN '{4}' AND '{5}'
+        """.format(self._requestData["options"]["area_type"], self._config.statsInfo.schema, self._requestData["options"]["poly_id"],
+                   self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
+                   self._requestData["options"]["date_end"])
         return self.__getResponseFromDB(query)
-
+    
     def __fetchStratificationDataByProductAndDate(self):
         query = """
         WITH sm AS(
@@ -158,31 +129,36 @@ class StatsRequests(GenericRequest):
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
         print(query)
         return self.__getResponseFromDB(query)
-    
-    def __pieDataByDateAndPolygon(self):
+  
+    def __fetchStratificationInfo(self):
         query = """
-        SELECT row_to_json(a.*) response FROM(
-        SELECT ps.noval_area_ha "No value", ps.sparse_area_ha "Sparse", ps.mid_area_ha "Mild", ps.dense_area_ha "Dense"
-        FROM poly_stats ps
-        JOIN product_file pf ON ps.product_file_id = pf.id  
-        JOIN product_file_description pfd ON pf.product_description_id = pfd.id
-        JOIN product p ON pfd.product_id = p.id
-        WHERE p.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2})a
-        """.format(self._requestData["options"]["product_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
-        return self.__getResponseFromDB(query)
+        WITH dt as(
+	        SELECT DISTINCT s.*, pf."date", p.name
+	        FROM {0}.poly_stats ps 
+	        JOIN {0}.stratification_geom sg ON ps.poly_id = sg.id
+	        JOIN {0}.stratification s ON sg.stratification_id = s.id
+	        JOIN {0}.product_file pf ON ps.product_file_id = pf.id
+	        JOIN {0}.product_file_description pfd ON pf.product_description_id = pfd.id
+	        JOIN {0}.product p ON pfd.product_id = p.id
+	        WHERE pf."date" between '{1}' AND '{2}' AND  p.id = {3}  
+        )
+        SELECT ARRAY_TO_JSON(ARRAY_AGG(
+         json_build_object('id', a.id, 'name', a.description, 'url', a.tilelayer_url, 'dates', 
+        a.res))) 
+        FROM(
+	        SELECT a.id, a.description, a.tilelayer_url, json_object_agg(a.date, avail_prods) res 
+            	FROM ( 
+		            SELECT dt.id, dt.description, dt.tilelayer_url, dt.date, 
+		            ARRAY_TO_JSON(ARRAY_AGG(dt.name ORDER BY dt.name)) avail_prods 
+		            FROM dt
+		            GROUP BY dt.id, dt.description, dt.tilelayer_url, dt.date
+	        )a
+	        GROUP BY a.id, a.description, a.tilelayer_url
+        ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
+              self._requestData["options"]["dateEnd"], self._requestData["options"]["product_id"])
 
-    def __histogramDataByProductAndPolygon(self):
-        query = """
-            SELECT JSON_BUILD_OBJECT('histogram', histogram, 'low_value', pfd.min_prod_value , 'high_value', pfd.max_prod_value) 
-            FROM {0}.poly_stats ps 
-            JOIN {0}.product_file pf ON ps.product_file_id  = pf.id
-            JOIN {0}.product_file_description pfd ON pf.product_description_id = pfd.id
-            JOIN {0}.product p ON pfd.product_id = p.id
-            WHERE p.id = {1} AND pf."date" = '{2}' AND ps.poly_id = {3}
-        """.format(self._config.statsInfo.schema, self._requestData["options"]["product_id"],
-                   self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
         return self.__getResponseFromDB(query)
-
+  
     def __getRawTimeSeriesDataForRegion(self):
         if self._config.filesystem.imageryPath[-1] != "/":
             self._config.filesystem.imageryPath += "/"
@@ -198,8 +174,7 @@ class StatsRequests(GenericRequest):
             JOIN {1}.product p on pfd.product_id =p.id
             WHERE date between  '{2}' and '{3}' and product_id  = {4}
             GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date
-            HAVING pfd.variable != ''
-        """.format(self._config.filesystem.imageryPath,
+            HAVING pfd.variable != ''""".format(self._config.filesystem.imageryPath,
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
         data = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
@@ -211,10 +186,44 @@ class StatsRequests(GenericRequest):
         res = obj.process()
         return res
 
+    def __histogramDataByProductAndPolygon(self):
+        query = """
+            SELECT JSON_BUILD_OBJECT('histogram', histogram, 'low_value', pfd.min_prod_value , 'high_value', pfd.max_prod_value) 
+            FROM {0}.poly_stats ps 
+            JOIN {0}.product_file pf ON ps.product_file_id  = pf.id
+            JOIN {0}.product_file_description pfd ON pf.product_description_id = pfd.id
+            JOIN {0}.product p ON pfd.product_id = p.id
+            WHERE p.id = {1} AND pf."date" = '{2}' AND ps.poly_id = {3}
+        """.format(self._config.statsInfo.schema, self._requestData["options"]["product_id"],
+                   self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        return self.__getResponseFromDB(query)
+    
+    def __rankStrataByDensity(self):
+        query = """
+            SELECT ARRAY_TO_JSON(ARRAY_AGG((JSON_BUILD_OBJECT('id',ps.id, 'description',sg.description, 'area_ha',{0})) ORDER BY {0} DESC)) response
+            FROM stratification_geom sg 
+            JOIN poly_stats ps ON sg.id =ps.poly_id 
+            JOIN product_file pf ON ps.product_file_id =pf.id
+            WHERE sg.stratification_id = {1} AND pf.date='{2}'  AND pf.product_description_id = {3} AND {0} IS NOT NULL""".format(self._requestData["options"]["density"],
+                                                                                                                                  self._requestData["options"]["stratification_id"], self._requestData["options"]["date"], self._requestData["options"]["product_id"])
+        return self.__getResponseFromDB(query)
+
+    def __pieDataByDateAndPolygon(self):
+        query = """
+        SELECT row_to_json(a.*) response FROM(
+        SELECT ps.noval_area_ha "No value", ps.sparse_area_ha "Sparse", ps.mid_area_ha "Mild", ps.dense_area_ha "Dense"
+        FROM poly_stats ps
+        JOIN product_file pf ON ps.product_file_id = pf.id  
+        JOIN product_file_description pfd ON pf.product_description_id = pfd.id
+        JOIN product p ON pfd.product_id = p.id
+        WHERE p.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2})a
+        """.format(self._requestData["options"]["product_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        return self.__getResponseFromDB(query)
+
     def _processRequest(self):
         ret = None
         if self._requestData["request"] == "cropbystrata":
-            print("@@@")
+            print("Not implemented yet....")
         elif self._requestData["request"] == "categories":
             ret = self.__fetchCategories()
         elif self._requestData["request"] == "dashboard":
@@ -225,6 +234,8 @@ class StatsRequests(GenericRequest):
             ret = self.fetchStatsByPolygonAndDateRange()
         elif self._requestData["request"] == "productinfo":
             ret = self.__fetchProductInfo()
+        elif self._requestData["request"] == "rankstratabydensity":
+            ret = self.__rankStrataByDensity()
         elif self._requestData["request"] == "stratificationinfo":
             ret = self.__fetchStratificationInfo()
         elif self._requestData["request"] == "stratificationinfobyproductanddate":

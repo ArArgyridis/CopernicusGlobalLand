@@ -91,5 +91,16 @@ export default {
 		};
 		postParams["options"] = {...postParams["options"], ...coordInfo};
 		return axios.post(options.endpointURL, postParams);
+	},
+	rankStratabyAreaDensity(productId, date, stratification, density) {
+		let postParams = {};
+		postParams["request"] = "rankstratabydensity";
+		postParams["options"] = {
+			product_id: productId,
+			date: date,
+			stratification_id: stratification,
+			density: density
+		};
+		return axios.post(options.endpointURL, postParams);
 	}
 };

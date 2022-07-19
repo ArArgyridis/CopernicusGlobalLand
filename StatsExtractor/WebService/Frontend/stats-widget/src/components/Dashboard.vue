@@ -24,14 +24,11 @@
 						</div>
 					</div>
 				</div>
-				
-				<!--
 				<div class="modal-footer">
 					<p>default footer</p>
 					<button class="btn btn-secondary modal-default-button" v-on:click="setVisibility(false)">OK</button>
 					<button class="btn btn-primary modal-default-button" v-on:click="print()"> Print</button>
 				</div>
-				-->
 			</div>
 		</div>
 	</div>
@@ -88,11 +85,12 @@ export default {
 			bingKey: options.bingKey,
 			projectEPSG: "EPSG:3857",
 			vectorLayer: null,
+			renderTimeOut: null
 		}
 	},
 	methods: {
 		init() {
-			setTimeout(this.refreshRender, 50);
+			this.renderTimeOut = setTimeout(this.refreshRender, 150);
 			//setting bing maps to 
 			this.bingIdDashboard = this.$refs.map2.addBingLayerToMap("aerial",  true, 0);
 			this.$refs.map2.setVisibility(this.bingIdDashboard, true);
@@ -105,24 +103,26 @@ export default {
 			document.getElementById("dashboardPrintArea").removeAttribute("hidden");
 			setTimeout(() => {
 				html2canvas(document.getElementById("dashboardPrintArea")).then(canvas => {
-				let tmpEl = document.createElement('a');
-				tmpEl.href= canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-				tmpEl.download= "dashboard.png";
-				document.body.appendChild(tmpEl);
-				tmpEl.click();
-				document.body.removeChild(tmpEl);
-				document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
-			});
+					let tmpEl = document.createElement('a');
+					tmpEl.href= canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+					tmpEl.download= "dashboard.png";
+					document.body.appendChild(tmpEl);
+					tmpEl.click();
+					document.body.removeChild(tmpEl);
+					document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
+				});
 			}, 250);
 		},
 		refreshRender() {
 			this.$refs.map2.getMap().updateSize();
-			
 			document.getElementById("dashboardPrintArea").removeAttribute("hidden");
+			
 			this.$refs.map3.getMap().updateSize();
 			document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
 		},
 		refreshData(polyId) {
+			if (polyId == null)
+				return;
 			requests.fetchDashboard(polyId, this.$store.getters.currentProduct.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then( (response) => {
 				//this.$refs.map.refreshRender();
 				/*
@@ -135,28 +135,22 @@ export default {
 					this.$refs[key].setVisibility(this.vectorLayer, true);
 					this.$refs[key].fitToLayerExtent(this.vectorLayer);
 				})
-				
-				
-				
 				/*
 				let tmpVecLayer = this.$refs.map3.createGEOJSONLayerFromString(response.data.data);
 				this.$refs.map3.setVisibility(tmpVecLayer, true);
 				this.$refs.map3.fitToLayerExtent(tmpVecLayer);
 				*/
-				
-				
 			});
 		}
 		,setVisibility(vis) {
 			this.showModal  = vis;
 		},
-	}	
+	},
+	unmount() {
+		console.log("unmounting dashboard");
+		console.log("here")
+	}
 }
-
-
-
-
-
 
 </script>
 
