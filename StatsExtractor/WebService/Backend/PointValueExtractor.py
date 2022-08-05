@@ -77,10 +77,15 @@ class PointValueExtractor():
                 if not os.path.isfile(img):
                     issueImg  = img
                     raise FileExistsError
-
-                inData = gdal.Open(self.__getNETCDFSubdataset(img))
+            
+                inData = None
+                if self._data[0] is None: #that should be an anomaly....
+                    inData = gdal.Open(img)
+                else:
+                    inData = gdal.Open(self.__getNETCDFSubdataset(img))
+                
                 if inData is None:
-                    raise IOError
+                    continue
 
                 #checking if coordinates are in the same epsg with the dataset
                 if not transformed:
@@ -99,12 +104,12 @@ class PointValueExtractor():
 
                 gt = inData.GetGeoTransform()
                 col,row = xyToColRow(self._xCoord, self._yCoord, gt)
-                value = inData.GetRasterBand(1).ReadAsArray(col, row, 1, 1)[0,0]
+                value = inData.GetRasterBand(1).ReadAsArray(col, row, 1, 1)[0,0].astype(float)
                 ret["raw"][i] = [self._data[1][img], value]
                 if value == inData.GetRasterBand(1).GetNoDataValue():
                     ret["raw"][i][1] = None
-                #applying netCDF scaling
-                else:
+                #applying netCDF scaling for raw data
+                elif self._data[0] is not None:
                     ret["raw"][i][1] =  np.round(scaleValue(inData.GetMetadata(), ret["raw"][i][1], self._data[0]), 4)
                 i += 1
         except FileExistsError:

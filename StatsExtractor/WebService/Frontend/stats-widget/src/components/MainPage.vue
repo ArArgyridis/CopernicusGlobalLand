@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
-<Dashboard v-show="showTheDashboard==true" ref="dashboard" region="my region" strata="strata stratoula"/>
+<Dashboard v-show="showTheDashboard==true" ref="dashboard"/>
 <div class="container-fluid fixed-top">
 	<div class="row">
 		<div id="leftPanel" class="noPadding hiddenBar raise hidden sidenav leftnav" >
@@ -31,7 +31,7 @@
 		<div class="noPadding hidden">
 		<!--<button class="btn btn-secondary mt-3" v-on:click="showDashboard()"> Show Region Dashboard</button>-->
 			<MapApp ref="mapApp" 
-			v-on:featureClicked="updateStratificationPolygonInfo($event)"
+			v-on:featureClicked="refreshStratificationInfo()"
 			v-on:mapCoordinate="updateRawDataChart($event)"
 			/>
 			<div class="d-flex">
@@ -71,13 +71,30 @@ export default {
 		RightPanel,
 		Dashboard
 	},
+	computed: {
+		clickedCoordinates: {
+			get() {
+				return this.$store.getters.clickedCoordinates();
+			},
+			set(dt) {
+				this.$store.commit("clickedCoordinates", dt);
+			}
+		},
+		currentStratificationPolygonId: {
+			get() {
+				return this.$store.getters.selectedPolygon;
+			},
+			set(dt) {
+				this.$store.commit("selectedPolygon", dt);
+			}
+		}
+
+	},
 	data() {
 		return {
-			currentStratificationPolygonId: null,
 			showRightPanel: false,
 			activateClickOnMap: false,
 			showTheDashboard: false,
-			clickedCoordinates: null
 		}
 	},
 	methods: {
@@ -91,13 +108,12 @@ export default {
 		},
 		closeRightPanel() {
 			this.setRightPanelVisibility(false);
-			this.currentStratificationPolygonId = null;
 			this.refreshStratificationInfo();
 			this.$refs.mapApp.clearPolygonSelection();
 		},
 		refreshStratificationInfo() {
-			this.$refs.rightPanel.loadStratificationCharts(this.currentStratificationPolygonId);
-			this.$refs.rightPanel.loadLocationCharts(this.clickedCoordinates);
+			this.$refs.rightPanel.loadStratificationCharts();
+			this.$refs.rightPanel.loadLocationCharts();
 			this.updateStratificationLayerStyle();
 		},
 		//hiding right panel
@@ -111,7 +127,7 @@ export default {
 			this.showTheDashboard = true;
 			this.$refs.dashboard.init();
 			this.$refs.dashboard.setVisibility(true);
-			this.$refs.dashboard.refreshData(this.currentStratificationPolygonId);
+			this.$refs.dashboard.refreshData();
 		},
 		toggleCurrentLayersVisibility(evt) {
 			if (this.$store.getters.currentStratification != null)
@@ -140,29 +156,16 @@ export default {
 				this.$store.commit("setProducts", response.data.data);
 			});
 		},
-		updateStratificationAreaType() {
-			/*
-			this.$refs.mapApp.refreshCurrentStratificationStyle();
-			if (this.currentStratificationPolygonId != null)
-				this.$refs.rightPanel.updatePolygonTimeseriesChart(this.currentStratificationPolygonId);
-			*/
-		},
 		updateStratificationInfo() {
 			this.$refs.mapApp.clearStratifications();
 			requests.fetchStratificationInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.currentProduct.id).then((response)=>{
 				this.$store.commit("setStratifications", response.data.data);
 				this.$refs.mapApp.refreshStratifications();
 			});
-		},		
-		updateStratificationPolygonInfo(evt) {
-			if (evt != null) {
-				this.currentStratificationPolygonId = evt.getId();
-			}
-			else
-				this.currentStratificationPolygonId = null;
-				
+		},/*
+		updateStratificationPolygonInfo(evt) {				
 			this.refreshStratificationInfo();
-		},
+		},*/
 		updateProductWMSVisibility() {
 			this.setRightPanelVisibility(false);
 			this.$refs.mapApp.updateProductWMSVisibility();
@@ -206,7 +209,7 @@ export default {
 				return;
 			
 			this.clickedCoordinates = evt;
-			this.$refs.rightPanel.loadLocationCharts(evt);
+			this.$refs.rightPanel.loadLocationCharts();
 			this.setRightPanelVisibility(true);
 		},
 		updateWMSLayers() {

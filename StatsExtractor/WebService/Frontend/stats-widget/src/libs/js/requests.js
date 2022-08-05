@@ -80,7 +80,15 @@ export default {
 			poly_id: polyId
 		}
 		return axios.post(options.endpointURL, postParams);
-	},	
+	},
+	getPolygonDescription(polyId) {
+		let postParams = {};
+		postParams["request"] = "polygonDescription";
+		postParams["options"] = {
+			poly_id: polyId
+		};
+		return axios.post(options.endpointURL, postParams);
+	},
 	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productId, coordInfo) {
 		let postParams = {};
 		postParams["request"] = "rawtimeseriesdataforregion";

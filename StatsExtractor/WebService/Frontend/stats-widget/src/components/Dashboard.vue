@@ -5,7 +5,7 @@
 		<div class="modal-wrapper">
 			<div class="modal-container" id="dashboardContainer" >
 				<div class="modal-header" >
-					<h3>Region: {{region}} (Strata: {{strata}})</h3>
+					<h3>{{region}} <br>({{strata}})</h3>
 				</div>
 				<div class="modal-body">
 					<OLMap id="map2" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map2" class="dashboardMap" />
@@ -36,18 +36,22 @@
 	<div class="dashboardPrintArea" ref="dashboardPrintArea" id="dashboardPrintArea">
 		<div class="dashboardPrintInnerArea">
 			<div class="modal-header" >
-				<h3>Region: {{region}} (Strata: {{strata}})</h3>
+				<h3>{{region}} <br>({{strata}})</h3>
 			</div>
-			<OLMap id="map3" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map3" class="dashboardMap" />
+			<div><OLMap id="map3" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map3" class="dashboardMap" /></div>
+			<div class="container mt-2">
+				<div class="row">
+					<div class="col-sm"><PointTimeSeries ref="PointTimeSeries" /></div>
+					<div class="col-sm"><PolygonAreaDensityPieChart ref="PolygonAreaDensityPieChart" class="col-sm"/></div>
+				</div>
+				<div class="row">
+					<div class="col-sm"><PolygonHistogramData ref="PolygonHistogramData"/></div>
+					<div class="col-sm"><PolygonTimeSeries ref="PolygonTimeSeries"/></div>
+				</div>
 		</div>
 	</div>
 	</div>
-    
-
-    
-    
-    
-    
+</div>
 </template>
 
 <script>
@@ -57,16 +61,21 @@ import requests from "../libs/js/requests.js";
 import OLMap from "./libs/OLMap.vue";
 import DateTime from "./libs/DateTime.vue";
 import options from "../libs/js/options.js";
+import PointTimeSeries from "./charts/PointTimeSeries.vue";
+import PolygonAreaDensityPieChart from "./charts/PolygonAreaDensityPieChart.vue";
+import PolygonHistogramData from "./charts/PolygonHistogramData.vue";
+import PolygonTimeSeries from "./charts/PolygonTimeSeries.vue";
+
 
 export default {
 	name: "Dashboard",
 	components: {
+		DateTime,
 		OLMap,
-		DateTime
-	},
-	props:{
-		region: String,
-		strata: String	
+		PointTimeSeries,
+		PolygonAreaDensityPieChart,
+		PolygonHistogramData,
+		PolygonTimeSeries
 	},
 	computed: {
 		dateStart() {
@@ -85,19 +94,37 @@ export default {
 			bingKey: options.bingKey,
 			projectEPSG: "EPSG:3857",
 			vectorLayer: null,
-			renderTimeOut: null
+			renderTimeOut: null,
+			printTimeOut: null,
+			region: "region",
+			strata: "strata",
+			diagramRefs: ["PointTimeSeries", "PolygonAreaDensityPieChart", "PolygonHistogramData", "PolygonTimeSeries"]
 		}
 	},
 	methods: {
 		init() {
-			this.renderTimeOut = setTimeout(this.refreshRender, 150);
-			//setting bing maps to 
+			this.renderTimeOut = setTimeout(this.refreshRender, 200);
+			
 			this.bingIdDashboard = this.$refs.map2.addBingLayerToMap("aerial",  true, 0);
 			this.$refs.map2.setVisibility(this.bingIdDashboard, true);
+			
 			this.bingIdPrintArea = this.$refs.map3.addBingLayerToMap("aerial",  true, 0);
 			this.$refs.map3.setVisibility(this.bingIdPrintArea, true);
+
+			this.diagramRefs.forEach((dg) => {
+				this.$refs[dg].updateChartData();
+			});
 		},
 		print() {
+			this.printTimeOut = setInterval(() => {			
+				if (this.$refs.PointTimeSeries.loads() || this.$refs.PolygonAreaDensityPieChart.loads() || this.$refs.PolygonHistogramData.loads() || this.$refs.PolygonTimeSeries.loads())
+					return;
+
+				this.__print();
+				clearInterval(this.printTimeOut);
+			}, 1 );
+		},
+		__print() {
 			this.$refs.map3.getMap().setView(this.$refs.map2.getMap().getView());
 			this.refreshRender();
 			document.getElementById("dashboardPrintArea").removeAttribute("hidden");
@@ -120,27 +147,22 @@ export default {
 			this.$refs.map3.getMap().updateSize();
 			document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
 		},
-		refreshData(polyId) {
+		refreshData() {
+			let polyId = this.$store.getters.selectedPolygon;
 			if (polyId == null)
 				return;
 			requests.fetchDashboard(polyId, this.$store.getters.currentProduct.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then( (response) => {
-				//this.$refs.map.refreshRender();
-				/*
-				if(this.vectorLayer != null)
-					this.$refs.map.removeLayer(this.vectorLayer);
-				*/
 				let keys = ["map2", "map3"];
 				keys.forEach((key) => {
 					this.vectorLayer = this.$refs[key].createGEOJSONLayerFromString(response.data.data);
 					this.$refs[key].setVisibility(this.vectorLayer, true);
 					this.$refs[key].fitToLayerExtent(this.vectorLayer);
-				})
-				/*
-				let tmpVecLayer = this.$refs.map3.createGEOJSONLayerFromString(response.data.data);
-				this.$refs.map3.setVisibility(tmpVecLayer, true);
-				this.$refs.map3.fitToLayerExtent(tmpVecLayer);
-				*/
+				});
+				this.region = response.data.data.properties.description;
+				this.strata = response.data.data.properties.strata;
 			});
+			
+			
 		}
 		,setVisibility(vis) {
 			this.showModal  = vis;
@@ -148,7 +170,6 @@ export default {
 	},
 	unmount() {
 		console.log("unmounting dashboard");
-		console.log("here")
 	}
 }
 
@@ -173,7 +194,7 @@ export default {
 }
 
 .dashboardMap {
-	height:400px;
+	height:350px;
 	z-index: 10;
 	width:100%;
 }
@@ -220,11 +241,11 @@ export default {
 
 .dashboardPrintArea {
 	padding: 1%;
-	margin: 101% auto;
+	margin: 100% auto;
 	z-index: 9998;
 	width: 1240px;
 	height: 1754px;
-	border:1px solid red;
+	border:2px solid red;
 }
 
 .dashboardPrintInnerArea {

@@ -54,7 +54,7 @@ def processSingleImage(params, relImagePath):
     gdal.SetConfigOption("COMPRESS_OVERVIEW", "DEFLATE")
 
     image = os.path.join(params["dataPath"],relImagePath[0])
-    #print(image)
+    print(image)
 
     dstImg = None
     if params["productInfo"].productType == "raw":
@@ -82,6 +82,8 @@ def processSingleImage(params, relImagePath):
                     outDt = None
                 except:
                     print("issue for image: ", dstImg)
+        else:
+            return
 
 
     elif params["productInfo"].productType == "anomaly": #for now just copy file
@@ -89,18 +91,19 @@ def processSingleImage(params, relImagePath):
         if not os.path.isfile(dstImg):
             os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
             shutil.copy(image, dstImg)
+    else:
+        return
 
     if params["productInfo"].style is not None:
         applyColorTable(dstImg, params["productInfo"].style)
 
-
+    print(dstImg)
     dstOverviews = dstImg + ".ovr"
     outDt = gdal.Open(dstImg)
     if not os.path.isfile(dstOverviews):
         outDt = gdal.Open(dstImg)
         print("Building overviews for: " + os.path.split(dstImg)[1])
 
-        # , callback=myProgress
         callbackData = {
             "cnt": 0
         }
@@ -134,6 +137,7 @@ class MapserverImporter(object):
                                  "productInfo":Constants.PRODUCT_INFO[productId]
                                 }, row)
         """
+
 
         threads = executor.map(processSingleImage, [{ "dataPath":rootPath,
                                                      "mapserverPath": self._config.filesystem.mapserverPath,
@@ -176,8 +180,8 @@ class MapserverImporter(object):
                 if(Constants.PRODUCT_INFO[productKey].productType == "anomaly"):
                     mapservURL = self._config.mapserver.anomaliesWMS
 
-                mapserv = MapServer(productGroups[productKey][year], mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0], year), outFile)
-                mapserv.process()
+                #mapserv = MapServer(productGroups[productKey][year], mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0], year), outFile)
+                #mapserv.process()
 
 
 

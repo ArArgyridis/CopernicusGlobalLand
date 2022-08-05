@@ -30,6 +30,8 @@ def process(environ):
 			req = StatsRequests(requestData=requestData)
 			res = req.process()
 			response["data"] = res[1]
+			print(response)
+			print(json.dumps(response))
 			return (res[0], json.dumps(response).encode("utf-8"))
 
 

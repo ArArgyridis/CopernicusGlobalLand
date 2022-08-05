@@ -47,9 +47,9 @@ def main():
 				obj.importProductFromLocalStorage(inDir)
 				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 				#compute anomalies
-				#if Constants.PRODUCT_INFO[pid].productType == "anomaly":
-				#	print("Computing anomalies!")
-				#	runLongTermComparisonAnomalyDetector(pid, config)
+				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
+					print("Computing anomalies!")
+					runLongTermComparisonAnomalyDetector(pid, config)
 
 				#mapserver = MapserverImporter(config)
 				#mapserver.process()

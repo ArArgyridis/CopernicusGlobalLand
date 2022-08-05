@@ -12,7 +12,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
-	<OLMap id="map1" v-bind:center=[0,0] v-bind:zoom=2 v-bind:bingKey=bingKey v-bind:epsg=projectEPSG  ref="map1" class="map" />
+	<OLMap id="map1" v-bind:center=[0,0] v-bind:zoom=2 v-bind:bingKey=bingKey v-bind:epsg=projectEPSG  ref="map1" class="map" 
+		v-on:featureClicked="updateSelectedPolygon($event)"
+	/>
 </template>
 
 <script>
@@ -27,6 +29,7 @@ export default {
 		return {
 			activeWMSLayer: null,
 			bingId: null,
+			clickedPointLayerId: null,
 			bingKey: options.bingKey,
 			projectEPSG: "EPSG:3857",
 			productZIndex: 1,
@@ -45,7 +48,6 @@ export default {
 			//cartographic background
 			this.bingId = this.$refs.map1.addBingLayerToMap("aerial",  true, 0);
 			this.$refs.map1.setVisibility(this.bingId, true);
-			//initializing stratifications			
 		},
 		activateLayer(key) {
 			if (this.activeWMSLayer != null)
@@ -64,6 +66,7 @@ export default {
 		},
 		clearPolygonSelection() {
 			this.$refs.map1.clearCurrentPolygonSelection();
+			this.$store.commit("selectedPolygon", null);
 		},
 		clearWMSLayers(){
 			//remove wms layers from map
@@ -93,8 +96,7 @@ export default {
 		},
 		refreshCurrentStratificationStyle(){
 			this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId).changed();
-		},
-		
+		},		
 		refreshStratifications() {
 			this.$store.getters.stratifications.forEach((strat) => {
 				strat.layerId = this.$refs.map1.createVectorTileLayer({
@@ -141,9 +143,8 @@ export default {
 				}
 			});
 		},
-		toggleClickOnMap(){
+		toggleClickOnMap() {
 			this.$refs.map1.toggleGetMapCoordinates();
-
 		},
 		toggleLayerVisibility(id) {
 			if(id != null)
@@ -159,6 +160,9 @@ export default {
 				this.$refs.map1.setVisibility(this.$store.getters.previousProductAnomalyWMSLayer.layerId, false);
 			this.$refs.map1.setVisibility( this.$store.getters.currentProductAnomalyWMSLayer.layerId, true);
 		},
+		updateSelectedPolygon(evt) {
+			this.$store.commit("selectedPolygon", evt.getId());
+		},		
 		updateStratificationLayerStyle(){
 			if (this.$store.getters.areaDensity == null)
 				return;

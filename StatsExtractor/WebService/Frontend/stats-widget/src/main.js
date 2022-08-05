@@ -21,8 +21,8 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-//dateStart.setDate(dateStart.getDate() - 200);
-dateStart = new Date("2020-01-01 00:00:00");
+dateStart.setDate(dateStart.getDate() - 200);
+//dateStart = new Date("2020-01-01 00:00:00");
 // Create a new store instance.
 function computeDescription(str, val1, val2) {
 	if (str == "No value")
@@ -41,6 +41,7 @@ const store = createStore({
 		proj4: proj4,
 		dateEnd: dateEnd,
 		dateStart: dateStart,
+		currentView: 0,
 		areaDensityOptions:{
 			options:[
 				{
@@ -78,6 +79,10 @@ const store = createStore({
 			previousProductWMSLayer:null,
 			wmsLayers:[],
 			anomalies: {
+				currentAnomaly: {
+					name:["NDVI300V2_LongTermComparisonAnomalyDetector"],
+					id: 12
+				},
 				currentWMSLayer: null,
 				previouWMSLayer: null,
 				wmsLayers: []
@@ -87,8 +92,10 @@ const store = createStore({
 			currentStratification: null,
 			currentStratificationDate:null,
 			info:null,
-			previousStratification: null
-		}
+			previousStratification: null,
+			selectedPolygonId: null
+		},
+		clickedCoordinates: null
 	},
 	mutations: {
 		appendToProductsAnomaliesWMSLayers(state, dt) {
@@ -135,8 +142,15 @@ const store = createStore({
 			state.stratifications.currentStratification = null;
 			state.stratifications.currentStratificationDate = null;
 			state.stratifications.info = null;
+			state.stratifications.selectedPolygon = null;
 			state.stratifications.previousStratification = null;
 			state.areaDensityOptions.currentDensity = null;
+		},
+		clickedCoordinates(state, dt) {
+			state.clickedCoordinates = dt;
+		},
+		selectedPolygon(state, dt) {
+			state.stratifications.selectedPolygonId = dt;
 		},
 		setCategoryInfo(state, dt) {
 			state.categories.info = dt;
@@ -149,6 +163,9 @@ const store = createStore({
 		},
 		setCurrentProduct(state, dt) {
 			state.products.currentProduct = dt;
+		},
+		setCurrentView(state, dt) {
+			state.currentView = dt;
 		},
 		setStratificationAreaDensity(state, dt) {
 			state.areaDensityOptions.currentDensity = dt;
@@ -212,6 +229,14 @@ const store = createStore({
 		categories: (state) => {
 			return state.categories.info;
 		},
+		clickedCoordinates: (state) => {
+			return state.clickedCoordinates;
+		},
+		currentAnomaly: (state) => {
+			if (state.products.anomalies.currentAnomaly == null)
+				return null;
+			return state.products.anomalies.currentAnomaly;
+		},
 		currentProduct: (state) =>{
 			if (state.products.currentProduct == null)
 				return null;
@@ -234,6 +259,9 @@ const store = createStore({
 		},
 		currentStratificationDate: (state) => {
 			return state.stratifications.currentStratificationDate;
+		},
+		currentView: (state) => {
+			return state.currentView;
 		},
 		previousProductAnomalyWMSLayer: (state) => {
 			if (state.products.anomalies.previousWMSLayer == null)
@@ -258,6 +286,9 @@ const store = createStore({
 		},
 		productsAnomaliesWMSLayers: (state) => {
 			return state.products.anomalies.wmsLayers;
+		},
+		selectedPolygon: (state) => {
+			return state.stratifications.selectedPolygonId;
 		},
 		stratifications: (state) => {
 			return state.stratifications.info;

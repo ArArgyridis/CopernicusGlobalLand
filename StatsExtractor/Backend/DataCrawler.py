@@ -39,9 +39,15 @@ def scanDir(dirList, product, found=False):
 
 
 class DataCrawler:
-    def __init__(self, cn, product, useProxy=False):
+    def __init__(self, cn, product, useProxy=False, download=True):
         self._cn = cn
+        self._missingFileLog = "missing_files.txt"
         self.sock = None
+        self._download = download
+        self._outLog = None
+        if not self._download:
+            self._outLog = open(self._missingFileLog, "w")
+
         if useProxy:
             self.sock = socks.socksocket()
             self.sock.set_proxy(
@@ -56,8 +62,10 @@ class DataCrawler:
         self._sshCn.load_system_host_keys()
         self._prodInfo = product
 
+    def __del__(self):
+        self._outLog = None
 
-    def fetchProductFromVITO(self, dir, storageDir):
+    def fetchOrValidateAgainstVITO(self, dir, storageDir):
         if self.sock is None:
             self._sshCn.connect(self._cn.sftpParams["terrascope.be"].host, self._cn.sftpParams["terrascope.be"].port,
                             self._cn.sftpParams["terrascope.be"].userName, self._cn.sftpParams["terrascope.be"].password)
@@ -66,7 +74,6 @@ class DataCrawler:
                                 self._cn.sftpParams["terrascope.be"].userName,
                                 self._cn.sftpParams["terrascope.be"].password, sock=self.sock)
         #product info
-
         detectedProductName = None
         listFiles = None
         i = 0
@@ -115,22 +122,27 @@ class DataCrawler:
                 res = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
                 if res[0][0]:
                     continue
-                #download file if not exists in DB
-                dateInfo = pattern.findall(chk)[0]
-                outFilePath = fl.replace(inProdDir, outProdDir)
-                outFileDir = os.path.split(outFilePath)[0]
-                if not os.path.isdir(outFileDir):
-                    os.makedirs(outFileDir, exist_ok=True)
 
-                #downloading file
-                print("Downloading: ", chk)
-                self._sshCn.open_sftp().get(fl, outFilePath)
+                if not self._download:
+                    self._outLog.write(chk+"\n")
 
-                self._store(["({0})".format(",".join([str(self._prodInfo.id),
+                else:
+                    #download file if not exists in DB
+                    dateInfo = pattern.findall(chk)[0]
+                    outFilePath = fl.replace(inProdDir, outProdDir)
+                    outFileDir = os.path.split(outFilePath)[0]
+                    if not os.path.isdir(outFileDir):
+                        os.makedirs(outFileDir, exist_ok=True)
+
+                    #downloading file
+                    print("Downloading: ", chk)
+                    self._sshCn.open_sftp().get(fl, outFilePath)
+
+                    self._store(["({0})".format(",".join([str(self._prodInfo.id),
                                                       "'{0}'".format(os.path.relpath(outFilePath, storageDir)),
                                                       "'{0}'".format(self._prodInfo._dateptr.format(*dateInfo))]))])
 
-                print("Downloading Finished!")
+                    print("Downloading Finished!")
 
 
     def _store(self, dbData):
@@ -147,7 +159,7 @@ class DataCrawler:
 
         if inDir is None:
             return
-        #inDir = [x[0] for x in os.walk(storageDir) if x[0].endswith(product)][0]
+
         print(inDir)
         files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
         files.sort()
@@ -180,7 +192,7 @@ def main():
 
     if cfg.parse() != 1:
         for pid in Constants.PRODUCT_INFO:
-            obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
+            obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False, True)
             if sys.argv[2] == "disk_import":
                 inDir = cfg.filesystem.imageryPath
                 if Constants.PRODUCT_INFO[pid].productType == "anomaly":
@@ -189,7 +201,7 @@ def main():
             else:
                 if Constants.PRODUCT_INFO[pid].productType != "raw":
                     continue
-                obj.fetchProductFromVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath)
+                obj.fetchOrValidateAgainstVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath)
 
 
 

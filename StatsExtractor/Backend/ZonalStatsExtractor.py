@@ -94,7 +94,6 @@ class GeomProcessor():
         self.__dstResolution = None
         self.__variable = None
         self.__pixelToAreaFunc = None
-        print("all clear!")
 
     def __setPixelToAreaFunc(self):
         tmpData = gdal.Open(self.__srcImages[0][0])
@@ -146,7 +145,7 @@ class GeomProcessor():
         imgIdx = 0
 
         chunkCnt = nThreads
-        if self._rasterFt.shape[1] < chunkCnt:
+        if self._rasterFt.shape[0] < 500 and self._rasterFt.shape[1] < 500:
             chunkCnt = 1
 
         chunks = chunkIt(range(self._rasterFt.shape[1]), chunkCnt)

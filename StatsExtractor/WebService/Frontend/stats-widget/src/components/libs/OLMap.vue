@@ -71,7 +71,8 @@ export default {
 				}),
 			}),
 			selectedFeatureId: null,
-			hoverListener: null
+			hoverListener: null,
+			clickedPointLayerId: null
 		}
 	},
 	props: {
@@ -376,7 +377,7 @@ export default {
 				this.emitMapCoordinates.status = true;
 			}
 		},
-		getMap(){
+		getMap() {
 			return this.map;
 		},
 		highlightOnLayer(id) {

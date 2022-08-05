@@ -39,7 +39,7 @@
 				<button v-for="nav, idx in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActive(idx)" v-bind:id="'chart_'+nav.id">
 			{{nav.title}}
 		</button>
-	</div>	
+			</div>	
 			<div class="dropdown mt-3">
 				<!--<h4> Product Selection</h4>-->
 				Current Product: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductDescription}}</button>
@@ -51,13 +51,13 @@
 		<div class = "container mt-3" v-if="currentProduct != null">
 			<h4>Select Mode</h4>
 			<div class="row gap-2">
-				<div class="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==0 }" id="showStratificationButton" v-on:click=showStratificationMenu(0)>
+				<div class="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==0 }" id="showStratificationButton" v-on:click=showProductOption(0)>
 					Stratification-driven Statistics
 				</div>
-				<div class ="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==1}" id="showRawDataButton" v-on:click=showStratificationMenu(1)>
+				<div class ="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==1}" id="showRawDataButton" v-on:click=showProductOption(1)>
 					Raw Data Visaulization
 				</div>
-				<div class ="col btn btn-secondary " v-bind:class="{ disabled: viewStratification ==2 }" id="showProductAnomalyButton" v-on:click=showStratificationMenu(2)>
+				<div class ="col btn btn-secondary " v-bind:class="{ disabled: viewStratification ==2 }" id="showProductAnomalyButton" v-on:click=showProductOption(2)>
 					Product Anomalies
 				</div>
 			</div>
@@ -255,12 +255,19 @@ export default {
 			get() {
 				return this.$store.getters.productsWMSLayers;
 			}		
+		},
+		viewStratification: {
+			set(val) {
+				this.$store.commit("setCurrentView",val);
+			},
+			get() {
+				return this.$store.getters.currentView;
+			}
 		}
 	},
 	data() {
 		return {
-			dateFormat: "dd MMM yyyy",
-			viewStratification: 0
+			dateFormat: "dd MMM yyyy"
 		}
 	},
 	methods: {
@@ -300,7 +307,7 @@ export default {
 			this.currentProductWMSLayer = key;
 			this.$emit("rawWMSChange");
 		},
-		showStratificationMenu(val) {
+		showProductOption(val) {
 			this.viewStratification = val;
 			this.$emit("switchViewMode", {id:val});
 		},

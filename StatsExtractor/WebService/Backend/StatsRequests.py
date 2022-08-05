@@ -36,7 +36,7 @@ class StatsRequests(GenericRequest):
     def __fetchDashboard(self):
         query =  """
 	    WITH geom AS(
-		SELECT st_asgeojson(geom3857)::json geom
+		SELECT st_asgeojson(geom3857)::json geom, description, stratification_id
 		FROM {0}.stratification_geom sg 
 		WHERE id = {1}
 	),timeline AS(
@@ -49,9 +49,11 @@ class StatsRequests(GenericRequest):
 	SELECT json_build_object(
 	'type', 'Feature',
 	'geometry', geom.geom,
-	'properties', json_build_object('timeline', tml))
+	'properties', json_build_object('timeline', tml, 'description', geom.description, 'strata', s.description))
 	FROM geom
-	JOIN timeline ON true""".format(self._config.statsInfo.schema, self._requestData["options"]["poly_id"], self._requestData["options"]["product_id"])
+	JOIN timeline ON true 
+	JOIN {0}.stratification s ON geom.stratification_id = s.id
+	""".format(self._config.statsInfo.schema, self._requestData["options"]["poly_id"], self._requestData["options"]["product_id"])
         return self.__getResponseFromDB(query)
 
     def __fetchProductInfo(self):
@@ -160,8 +162,18 @@ class StatsRequests(GenericRequest):
         return self.__getResponseFromDB(query)
   
     def __getRawTimeSeriesDataForRegion(self):
-        if self._config.filesystem.imageryPath[-1] != "/":
-            self._config.filesystem.imageryPath += "/"
+        #determine the type of product
+        path = self._config.filesystem.imageryPath
+        query  = """SELECT type 
+                            FROM product_file_description pfd 
+                            JOIN product p ON pfd.product_id = p.id 
+                            WHERE pfd.id = {0}""".format(self._requestData["options"]["product_id"])
+        productType = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)[0][0]
+        if productType == "anomaly":
+            path = self._config.filesystem.anomalyProductsPath
+        
+        if path[-1] != "/":
+            path += "/"
 
         query = """
             SELECT  pfd.variable
@@ -172,11 +184,11 @@ class StatsRequests(GenericRequest):
             FROM {1}.product_file pf 
             JOIN {1}.product_file_description pfd ON pf.product_description_id = pfd.id
             JOIN {1}.product p on pfd.product_id =p.id
-            WHERE date between  '{2}' and '{3}' and product_id  = {4}
-            GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date
-            HAVING pfd.variable != ''""".format(self._config.filesystem.imageryPath,
+            WHERE date between  '{2}' and '{3}' and pfd.id  = {4}
+            GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date""".format(path,
                    self._config.statsInfo.schema, self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
+        
         data = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
 
         obj = PointValueExtractor(data[0],
@@ -219,6 +231,13 @@ class StatsRequests(GenericRequest):
         WHERE p.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2})a
         """.format(self._requestData["options"]["product_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
         return self.__getResponseFromDB(query)
+    
+    def polygonDescription(self):
+        query = """SELECT json_build_object('description',sg.description, 'strata', s.description) response
+                            FROM stratification_geom sg 
+                            JOIN stratification s ON sg.stratification_id = s.id WHERE sg.id={0}
+                        """.format(self._requestData["options"]["poly_id"])
+        return self.__getResponseFromDB(query)
 
     def _processRequest(self):
         ret = None
@@ -232,6 +251,8 @@ class StatsRequests(GenericRequest):
             ret = self.__histogramDataByProductAndPolygon()
         elif self._requestData["request"] == "statsbypolygonanddaterange":
             ret = self.fetchStatsByPolygonAndDateRange()
+        elif self._requestData["request"] == "polygonDescription":
+            ret = self.polygonDescription()
         elif self._requestData["request"] == "productinfo":
             ret = self.__fetchProductInfo()
         elif self._requestData["request"] == "rankstratabydensity":
