@@ -41,7 +41,7 @@ def scanDir(dirList, product, found=False):
 class DataCrawler:
     def __init__(self, cn, product, useProxy=False, download=True):
         self._cn = cn
-        self._missingFileLog = "missing_files.txt"
+        self._missingFileLog = "{0}_missing_files.txt".format(product)
         self.sock = None
         self._download = download
         self._outLog = None
