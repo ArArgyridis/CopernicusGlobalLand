@@ -19,56 +19,63 @@ from Libs.ConfigurationParser import ConfigurationParser
 class DBDeployer(object):
     def __init__(self, cfg, template):
         self._cfg = ConfigurationParser(cfg)
+        self._cfg.parse()
         self._template = template
-        self.__createDBOptions = None
         self.__creationQueries = []
 
-    def __createDBIfNotExists(self, dropDBIfExists):
+    def __createDBIfNotExists(self, dropDBIfExists, createDBOptions):
         if dropDBIfExists:
-            self.__creationQueries.append("DROP DATABASE IF EXISTS {0};".format(self.__createDBOptions.db))
+            self.__creationQueries.append("DROP DATABASE IF EXISTS {0};".format(createDBOptions.db))
         #check if db exists
-        self.__creationQueries.append("CREATE DATABASE {0};".format(self.__createDBOptions.db))
+        self.__creationQueries.append("CREATE DATABASE {0};".format(createDBOptions.db))
 
 
-    def __createUserIfNotExists(self):
+    def __createUserIfNotExists(self, createDBOptions):
         #check if user exists
         res = self._cfg.pgConnections["admin"].fetchQueryResult("""SELECT EXISTS (SELECT FROM pg_catalog.pg_roles
-        WHERE  rolname = '{0}')""".format(self.__createDBOptions.user))
+        WHERE  rolname = '{0}')""".format(createDBOptions.user))
 
         if not res[0][0]:
-            query = "CREATE USER {0}".format(self.__createDBOptions.user)
-            if self.__createDBOptions.password is not None:
-                query += " WITH ENCRYPTED PASSWORD '{0}'".format(self.__createDBOptions.password)
+            query = "CREATE USER {0}".format(createDBOptions.user)
+            if createDBOptions.password is not None:
+                query += " WITH ENCRYPTED PASSWORD '{0}'".format(createDBOptions.password)
             query +=";"
             self.__creationQueries.append(query)
-            self.__creationQueries.append("GRANT ALL ON DATABASE {0} TO USER {1};".format(self.__createDBOptions.db,
-                                                                                          self.__createDBOptions.user))
+            self.__creationQueries.append("GRANT ALL ON DATABASE {0} TO USER {1};".format(createDBOptions.db,
+                                                                                          createDBOptions.user))
 
-    def __loadSchema(self):
+    def __loadSchema(self, createDBOptions):
         cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} < {4}".format(
             self._cfg.pgConnections["admin"].password,
-            self._cfg.pgConnections[self._cfg.statsInfo.connectionId].db,
+            createDBOptions.db,
             self._cfg.pgConnections["admin"].user,
             self._cfg.pgConnections["admin"].host,
             self._template
         )
         os.system(cmd)
 
-    def process(self, dropIfExists=True):
-        self._cfg.parse()
-        self.__createDBOptions = self._cfg.pgConnections[self._cfg.statsInfo.connectionId]
-        self.__createDBIfNotExists(dropIfExists)
-        self.__createUserIfNotExists()
+    def dbInit(self, createDBOptions, dropIfExists):
+        self.__createDBIfNotExists(dropIfExists, createDBOptions)
+        self.__createUserIfNotExists(createDBOptions)
         self._cfg.pgConnections["admin"].executeNoTransaction(self.__creationQueries)
-        self.__loadSchema()
-        session = self._cfg.pgConnections["admin"].getNewSession(self.__createDBOptions.db)
-        schemas = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(
+
+
+    def process(self, dropIfExists=True, createDBOptions=None):
+        if createDBOptions is None:
+            createDBOptions=self._cfg.pgConnections[self._cfg.statsInfo.connectionId]
+
+        self.dbInit(createDBOptions, dropIfExists)
+
+        self.__loadSchema(createDBOptions)
+        session = self._cfg.pgConnections["admin"].getNewSession(createDBOptions.db)
+        schemas = createDBOptions.fetchQueryResult(
             "SELECT schema_name FROM information_schema.schemata", session)
+
         for row in schemas:
             self._cfg.pgConnections["admin"].executeQueries(
-                ["GRANT ALL ON SCHEMA {0} TO {1}".format(row[0], self.__createDBOptions.user),
-                 "GRANT ALL ON ALL TABLES IN SCHEMA {0} TO {1}".format(row[0], self.__createDBOptions.user),
-                 "GRANT ALL ON ALL SEQUENCES IN SCHEMA {0} TO {1};".format(row[0], self.__createDBOptions.user)
+                ["GRANT ALL ON SCHEMA {0} TO {1}".format(row[0], createDBOptions.user),
+                 "GRANT ALL ON ALL TABLES IN SCHEMA {0} TO {1}".format(row[0], createDBOptions.user),
+                 "GRANT ALL ON ALL SEQUENCES IN SCHEMA {0} TO {1};".format(row[0], createDBOptions.user)
                  ], session)
 
 

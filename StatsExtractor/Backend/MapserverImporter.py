@@ -180,8 +180,8 @@ class MapserverImporter(object):
                 if(Constants.PRODUCT_INFO[productKey].productType == "anomaly"):
                     mapservURL = self._config.mapserver.anomaliesWMS
 
-                #mapserv = MapServer(productGroups[productKey][year], mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0], year), outFile)
-                #mapserv.process()
+                mapserv = MapServer(productGroups[productKey][year], mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0], year), outFile)
+                mapserv.process()
 
 
 

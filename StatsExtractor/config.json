@@ -1,7 +1,8 @@
 {
 	"pg_connections": {
 		"admin":{"db":"postgres", "host":"localhost", "port":5432, "user":"postgres", "password":null},
-		"the_localhost":{"db":"jrcstats_test", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"}
+		"the_localhost":{"db":"jrcstats_test", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"},
+		"exportdb":{"db":"jrcstats_export", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"}
 	},
 	"sftp_connections": {
 		"connection_id": {
@@ -20,7 +21,8 @@
 	"statsinfo": {
 		"schema": "public",
 		"tmp_schema": "tmp",
-		"connection_id":"the_localhost"
+		"connection_id":"the_localhost",
+		"export_id":"exportdb"
 	},
 	"filesystem": {
 		"imagery_path": "/home/argyros/Projects/JRC/ExperimentalData/Imagery/",

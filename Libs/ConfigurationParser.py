@@ -110,10 +110,11 @@ class PGOptions(object):
 
 
 class StatsInfo(object):
-    def __init__(self, schema, tmpSchema, connectionId):
+    def __init__(self, schema, tmpSchema, connectionId, exportId):
         self.schema = schema
         self.tmpSchema = tmpSchema
         self.connectionId = connectionId
+        self.exportId = exportId
 
 class SFTPProxy():
     def __init__(self, proxy):
@@ -121,7 +122,6 @@ class SFTPProxy():
         self.user = proxy["user"]
         self.password = proxy["password"]
         self.port = proxy["port"]
-
 
 class SFTPConnectionParams(object):
     def __init__(self, host, userName, password, port, proxy):
@@ -145,19 +145,19 @@ class MapServer(object):
 
 class ConfigurationParser(object):
     def __init__(self, cfgFile):
-        self.__cfgFile = cfgFile
+        self.cfgFile = cfgFile
         self.pgConnections = {}
         self.statsInfo = None
 
     def getFile(self):
-        return self.__cfgFile
+        return self.cfgFile
 
     def parse(self):
         try:
-            if not os.path.isfile(self.__cfgFile):
+            if not os.path.isfile(self.cfgFile):
                 raise FileExistsError
             #loading configuration
-            configData = json.load(open(self.__cfgFile))
+            configData = json.load(open(self.cfgFile))
 
             #importing connections
             for cn in configData["pg_connections"].keys():
@@ -168,7 +168,8 @@ class ConfigurationParser(object):
                                                    configData["pg_connections"][cn]["password"])
             #importing stats info
             self.statsInfo = StatsInfo(configData["statsinfo"]["schema"],
-                                       configData["statsinfo"]["tmp_schema"],configData["statsinfo"]["connection_id"])
+                                       configData["statsinfo"]["tmp_schema"],configData["statsinfo"]["connection_id"],
+                                       configData["statsinfo"]["export_id"])
             #sftp connections
             self.sftpParams = {}
             sPrx = configData["sftp_connections"]
