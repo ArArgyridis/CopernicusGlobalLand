@@ -54,7 +54,7 @@ def processSingleImage(params, relImagePath):
     gdal.SetConfigOption("COMPRESS_OVERVIEW", "DEFLATE")
 
     image = os.path.join(params["dataPath"],relImagePath[0])
-    print(image)
+    #print(image)
 
     dstImg = None
     if params["productInfo"].productType == "raw":
@@ -84,7 +84,6 @@ def processSingleImage(params, relImagePath):
                     print("issue for image: ", dstImg)
         else:
             return
-
 
     elif params["productInfo"].productType == "anomaly": #for now just copy file
         dstImg = os.path.join(params["mapserverPath"], *["anomaly", relImagePath[0]])

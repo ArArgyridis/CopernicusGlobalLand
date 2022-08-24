@@ -116,6 +116,8 @@ export default {
 				
 			this.isLoading = true;
 			let tmpProdId = this.$store.getters.currentProduct.id;
+			this.$refs.diagram.chart.yAxis[0].options.min = 0;
+			this.$refs.diagram.chart.yAxis[0].options.max = 0.9;
 			if (this.$store.getters.currentView == 2) {
 				tmpProdId = this.$store.getters.currentAnomaly;
 				if (tmpProdId == null)

@@ -128,13 +128,12 @@ def computemedian(outImg, imgs, dataPath, startRow, endRow, noDataValue):
 
 
 class LongTermComparisonAnomalyDetector:
-    def __init__(self, productId, dateStart, dateEnd, cfg, id, nThreads = cpu_count() -1):
-        self._productId = productId
+    def __init__(self, dateStart, dateEnd, cfg, anomalyProductId, nThreads = cpu_count() -1):
         self._dateStart = dateStart
         self._dateEnd = dateEnd
         self._cfg = ConfigurationParser(cfg)
         self._cfg.parse()
-        self._anomalyProductId = id
+        self._anomalyProductId = anomalyProductId
         #self._anomalyProductName = anomalyProductName
         self._nThreads = nThreads
         self._images = {}
@@ -159,26 +158,16 @@ class LongTermComparisonAnomalyDetector:
             curDt += timedelta(days=1)
         return curDekads
 
-    def _computeLongTermmedianStd(self, ):
+    def _computeLongTermmedianStd(self, statFiles):
         if os.path.isfile(self._sessionTMPFolder):
             rmtree(self._sessionTMPFolder)
         os.makedirs(self._sessionTMPFolder, exist_ok=True)
-        curDekads = self.__getDekads()
 
-        query = """
-        SELECT pf.rel_file_path
-        FROM product p 
-        JOIN product_file_description pfd  ON p.id = pfd.product_id 
-        JOIN product_file pf ON pfd.id = pf.product_description_id 
-        WHERE 'BioPar_NDVI_STATS_Global' = ANY(p.name)  AND pf.rel_file_path LIKE '%.nc'
-        AND  to_char(pf."date", 'mmdd') IN ({0})""".format(",".join(curDekads))
-        res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
-        ret = [None,None]
-
-        if res != False and len(res) > 0 : #compute the average of the LTSmedian/StDev
+        if len(statFiles) > 0 : #compute the average of the LTSmedian/StDev
             print("Starting computing long term median")
             #open a file to get required info
-            tmpInData = gdal.Open(netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, res[0][0]), "median"))
+            tmpInData = gdal.Open(netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath,
+                                                                statFiles[0]), "median"))
             drv = gdal.GetDriverByName("GTiff")
             ret = [os.path.join(self._sessionTMPFolder, "ltsmedian.tif"),
                         os.path.join(self._sessionTMPFolder, "ltsstd.tif")]
@@ -197,7 +186,7 @@ class LongTermComparisonAnomalyDetector:
 
             step = int(rasterYSize / (self._nThreads))
             threads = []
-            images = [os.path.join(self._cfg.filesystem.imageryPath, k[0]) for k in res]
+            images = [os.path.join(self._cfg.filesystem.imageryPath, k) for k in statFiles]
             #computemedian(ret, images, self._cfg.filesystem.imageryPath, 3000, 4000, noDataValue)
             for prevRow in range(0, rasterYSize - step + 1, step):
                 curRow = prevRow + step
@@ -217,31 +206,43 @@ class LongTermComparisonAnomalyDetector:
         return ret
 
     def process(self):
-            #print("Starting computing anomalies")
+            curDekads = self.__getDekads()
             #check if product already exists
-            query = """SELECT  pf.*
-                    FROM product p 
-                    JOIN product_file_description pfd on p.id = pfd.product_id 
-                    JOIN product_file pf on pfd.id = pf.product_description_id 
-                    WHERE pfd.id = {0}  and date='{1}'""".format(self._anomalyProductId, self._dateStart)
+            query = """
+            WITH anom_product AS(
+	            SELECT pfanom.rel_file_path, '{0}'::date "date_start", '{1}'::date date_end, ltai.*
+	            FROM long_term_anomaly_info ltai 
+	            JOIN product_file_description pfdanom ON ltai.anomaly_product_description_id = pfdanom.id
+	            LEFT JOIN product_file pfanom ON pfanom.product_description_id = pfdanom.id AND pfanom."date" = '{0}' 
+	            WHERE ltai.anomaly_product_description_id = {2} 
+            ),statsfiles AS(
+            	SELECT ARRAY_AGG(pfstats.rel_file_path) statsfiles
+	            FROM anom_product ap 
+	            JOIN product_file_description pfdstats ON ap.statistics_product_description_id = pfdstats.id
+	            JOIN product_file_description pfdanom ON ap.anomaly_product_description_id = pfdanom.id
+	            JOIN product_file pfstats ON pfstats.product_description_id = pfdstats.id 
+	            WHERE to_char(pfstats."date", 'mmdd') IN ({3})
+            ),prodfiles AS(
+	            SELECT ARRAY_AGG(pfcur.rel_file_path) prodfiles, pfdcur.variable  
+	            FROM anom_product ap 
+	            JOIN product_file_description pfdcur ON ap.current_product_description_id = pfdcur.id
+	            JOIN product_file pfcur ON pfcur.product_description_id = pfdcur.id 
+	            WHERE pfcur."date"  >= ap.date_start AND pfcur."date" < ap.date_end
+	            GROUP BY pfdcur.variable 
+            )
+            SELECT ap.rel_file_path, statsfiles, prodfiles, variable
+            FROM anom_product ap
+            JOIN statsfiles ON TRUE
+            JOIN prodfiles ON TRUE """.format(self._dateStart,
+                                              self._dateEnd, self._anomalyProductId, ",".join(curDekads))
             res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(query)
-            #print(query)
-            #print(res)
-            if len(res) > 0:
+
+            if res == 1 or len(res) == 0 or res[0][0] is not None:
                 return
+            print("Starting computing anomalies")
 
             #try:
-            ltsmedian, ltsStd = self._computeLongTermmedianStd()
-
-            #retrieve products from DB
-            productQuery = """SELECT pfd.variable,  pf.rel_file_path, pf.date, pfd.pattern, pfd.TYPES
-                FROM product_file_description pfd 
-                JOIN product_file pf ON pfd.id = pf.product_description_id
-                WHERE pfd.product_id = 1 AND pf."date" >= '{0}' AND pf.date < '{1}'
-                AND  pf.rel_file_path LIKE '%.nc';""".\
-                format( self._dateStart, self._dateEnd)
-            res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].getIteratableResult(productQuery)
-            print("products retrieved")
+            ltsmedian, ltsStd = self._computeLongTermmedianStd(res[0][1])
 
             if ltsmedian is None:
                 return 1
@@ -257,15 +258,14 @@ class LongTermComparisonAnomalyDetector:
             products = []
             print("warping results")
 
-            variable = None
-            for row in res:
-                variable = row[0]
-                tmpProd = os.path.join(self._sessionTMPFolder, row[1])
+            variable = res[0][3]
+            for row in res[0][2]:
+                tmpProd = os.path.join(self._sessionTMPFolder, row)
                 tmpProd = os.path.splitext(tmpProd)[0] + ".tif"
                 tmpDir = os.path.split(tmpProd)[0]
                 os.makedirs(tmpDir, exist_ok=True)
                 products.append(tmpProd)
-                subDt = netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath,row[1]),row[0])
+                subDt = netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath,row),variable)
                 gdal.Warp(tmpProd, subDt, xRes = np.abs(gt[1]), yRes = np.abs(gt[5]),
                          format = "GTiff", outputBounds =[gt[0],yImageMin,xImageMax,gt[3]])
 
@@ -291,7 +291,6 @@ class LongTermComparisonAnomalyDetector:
             outProduct.SetProjection(mn.GetProjection())
             outProduct.SetGeoTransform(mn.GetGeoTransform())
             outProduct.GetRasterBand(1).SetNoDataValue(noDataValue)
-            #outProduct.FlushCache()
             outProduct = None
             #computeAnomaly(outImg, products, ltsmedian, ltsStd, 7000,8000, noDataValue, row[0])
 
@@ -305,7 +304,8 @@ class LongTermComparisonAnomalyDetector:
                     curRow = mn.RasterYSize
                 print(prevRow, curRow)
                 threads.append(Process(target=computeAnomaly,
-                                       args=(outImg, products, ltsmedian, ltsStd, prevRow, curRow, noDataValue, variable)))
+                                       args=(outImg, products, ltsmedian, ltsStd, prevRow, curRow, noDataValue,
+                                             variable)))
                 threads[-1].start()
                 prevRow = curRow
 
@@ -341,7 +341,6 @@ def main():
 
 def run(anomalyProductId, cfg):
 
-
     datePtrn = "%Y-%m-%d"
 
     curTime = datetime.strptime("2020-07-01",datePtrn)
@@ -356,25 +355,16 @@ def run(anomalyProductId, cfg):
                 if curTime.month > 11:
                     d2 = curTime.replace(year = curTime.year+1, month=1, day=1)
                 else:
-                    d2 = curTime.replace(month=curTime.month+1,day=1)
+                    d2 = curTime.replace(month=curTime.month+1, day=1)
             else:
                 d2 = curTime.replace(day=dekads[i+1])
 
             d2 = d2.strftime(datePtrn)
 
-            obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg, anomalyProductId, 11)
+            obj = LongTermComparisonAnomalyDetector(d1, d2, cfg, anomalyProductId)
             obj.process()
         curTime += relDelta
 
-
-    """
-    while (curTime < dateEnd-relDelta):
-        d1 = curTime.strftime(datePtrn)
-        d2 = (curTime+relDelta).strftime(datePtrn)
-        obj = LongTermComparisonAnomalyDetector(1, d1, d2, cfg,1)
-        obj.process()
-        curTime += relDelta
-    """
 
 
 if __name__ == "__main__":
