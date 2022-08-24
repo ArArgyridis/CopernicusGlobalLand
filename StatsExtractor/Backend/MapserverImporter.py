@@ -96,7 +96,7 @@ def processSingleImage(params, relImagePath):
     if params["productInfo"].style is not None:
         applyColorTable(dstImg, params["productInfo"].style)
 
-    print(dstImg)
+    #print(dstImg)
     dstOverviews = dstImg + ".ovr"
     outDt = gdal.Open(dstImg)
     if not os.path.isfile(dstOverviews):
@@ -106,7 +106,8 @@ def processSingleImage(params, relImagePath):
         callbackData = {
             "cnt": 0
         }
-        outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64], callback=myProgress,callback_data=callbackData)
+        outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64], callback=myProgress,
+                             callback_data=callbackData)
         outDt = None
 
     outDt = gdal.Open(dstImg)
