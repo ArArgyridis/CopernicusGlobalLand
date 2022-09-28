@@ -76,10 +76,13 @@ void ProductInfo::loadMetadata() {
     if (firstProductPath.empty())
         return;
 
-    metadata = getNetCDFMetadata(firstProductPath);
-    scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
-    addOffset = std::stod((*metadata)[variable+"#add_offset"]);
-    scaler = &scalerFunc;
+    scaler = &noScalerFunc;
+    if (productType =="raw") {
+        metadata = getNetCDFMetadata(firstProductPath);
+        scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
+        addOffset = std::stod((*metadata)[variable+"#add_offset"]);
+        scaler = &scalerFunc;
+    }
 
     lutProductValues.reserve(minMaxValues[1]-minMaxValues[0]+1);
     lutProductValues.resize(minMaxValues[1]-minMaxValues[0]+1);
@@ -113,7 +116,7 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
                    " SELECT pf.product_description_id, min(pf.id) tid"
                    " FROM product_file_description pfd"
                    " JOIN product_file pf ON pfd.id = pf.product_description_id"
-                   " WHERE pfd.pattern LIKE '%.nc'"
+                   " WHERE pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif'"
                    " GROUP BY pf.product_description_id"
                    " )"
                    "SELECT p.name, p.type, pfd.*, pf.rel_file_path"
@@ -121,7 +124,7 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
                 << " LEFT JOIN "<< cfg->statsInfo.schema <<".product_file_description pfd on p.id = pfd.product_id"
                 <<" LEFT JOIN tmp_file_id tmp ON tmp.product_description_id = pfd.id"
                <<" LEFT JOIN "<< cfg->statsInfo.schema <<".product_file pf ON pf.id = tmp.tid"
-              << " WHERE p.id IN(1) ORDER BY p.id";
+              << " WHERE p.id IN(4) ORDER BY p.id";
 
     std::string query = queryStream.str();
     PGConn::Pointer cn = PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);

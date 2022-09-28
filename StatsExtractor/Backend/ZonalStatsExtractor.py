@@ -327,7 +327,7 @@ class ZonalStatsExtractor():
         self._stratificationType = stratificationType
         self._config = ConfigurationParser(configFile)
 
-    def process(self, nThreads=multiprocessing.cpu_count()-1, productIds=[1,2]):
+    def process(self, nThreads=multiprocessing.cpu_count()-1, productIds=[12,]):
         try:
             self._config.parse()
             Constants.load(self._config.getFile())
@@ -349,7 +349,7 @@ class ZonalStatsExtractor():
                 GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id""".format(prdId,
                                                                         self._stratificationType)
 
-                #print(dataQuery)
+                print(dataQuery)
                 res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(dataQuery,
                                                                                                          session)
                 for row in res:

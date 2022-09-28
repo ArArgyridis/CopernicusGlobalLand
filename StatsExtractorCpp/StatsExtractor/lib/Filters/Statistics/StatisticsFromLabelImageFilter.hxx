@@ -52,7 +52,7 @@ StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::StatisticsFromLabelIma
 
 template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Synthetize() {
-    /*
+
     for (size_t i = 0; i < labels.size(); i++) {
         auto polyStat = (*polyMapStats)[labels[i]];
         for(size_t j = 0; j <threadPolyMapStatsVector.size(); j++) {
@@ -84,7 +84,7 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Synthetize() {
 
         polyStat->computeColors();
     }
-    */
+
 }
 
 template <class TInputImage, class TLabelImage>
@@ -97,7 +97,7 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Reset() {
 
 template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::ThreadedGenerateData(const RegionType &outputRegionForThread, itk::ThreadIdType threadId) {
-/*
+
     typename TInputImage::Pointer rawData = this->GetInputDataImage();
     typename TLabelImage::Pointer labels = this->GetInputLabelImage();
 
@@ -129,7 +129,7 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::ThreadedGenerateD
             }
         }
     }
-    */
+
 
 
 }

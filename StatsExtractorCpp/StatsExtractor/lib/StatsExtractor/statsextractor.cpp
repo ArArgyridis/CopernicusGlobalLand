@@ -144,6 +144,7 @@ void StatsExtractor::process() {
                 stats->SetInputLabels(*labels);
                 stats->SetInputProduct(product.second);
                 stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(4000);
+                //stats->GetStreamer()->SetAutomaticAdaptativeStreaming(256);
                 stats->Update();
                 //stats->GetFilter()->GetOutput()->ReleaseData();
 
