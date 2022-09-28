@@ -112,7 +112,7 @@ export default {
 			});
 		},
 		reset() {
-			this.diagramData = null;
+			this.diagramData = [null, null];
 		},
 		resizeChart() {
 			if (this.diagramTitle != "Dummy Title")

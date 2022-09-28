@@ -51,7 +51,7 @@ export default {
 	computed: {},
 	data() {
 		return {
-			refs: ["PointTimeSeries", "PolygonTimeSeries", "PolygonAreaDensityPieChart"],
+			refs: ["PointTimeSeries",  "PolygonAreaDensityPieChart", "PolygonTimeSeries", "PolygonHistogramData"],
 			curActiveDiagramId: 0,
 			navBarOptions: [
 				{

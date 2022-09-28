@@ -151,18 +151,17 @@ export default {
 			let polyId = this.$store.getters.selectedPolygon;
 			if (polyId == null)
 				return;
+				
 			requests.fetchDashboard(polyId, this.$store.getters.currentProduct.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then( (response) => {
 				let keys = ["map2", "map3"];
 				keys.forEach((key) => {
-					this.vectorLayer = this.$refs[key].createGEOJSONLayerFromString(response.data.data);
-					this.$refs[key].setVisibility(this.vectorLayer, true);
-					this.$refs[key].fitToLayerExtent(this.vectorLayer);
+					let vectorLayer = this.$refs[key].createGEOJSONLayerFromString(response.data.data);
+					this.$refs[key].setVisibility(vectorLayer, true);
+					this.$refs[key].fitToLayerExtent(vectorLayer);
 				});
 				this.region = response.data.data.properties.description;
 				this.strata = response.data.data.properties.strata;
 			});
-			
-			
 		}
 		,setVisibility(vis) {
 			this.showModal  = vis;

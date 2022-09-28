@@ -8,9 +8,9 @@ export default {
 
 
 export default {
-	endpointURL: "http://192.168.2.13/endpoint",
-	wmsURL: "http://192.168.2.13/wms/",
-	anomaliesWMSURL: "http://192.168.2.13/anomalieswms/",
+	endpointURL: "http://localhost/endpoint",
+	wmsURL: "http://localhost/wms/",
+	anomaliesWMSURL: "http://localhost/anomalieswms/",
 	bingKey: "Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl"
 }
 

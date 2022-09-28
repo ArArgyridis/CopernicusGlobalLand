@@ -18,7 +18,7 @@
     "highcharts": "^9.3.2",
     "highcharts-vue": "^1.4.0",
     "html2canvas": "^1.4.1",
-    "ol": "^6.9.0",
+    "ol": "^7.1.0",
     "proj4": "^2.7.5",
     "vue": "^3.0.0",
     "vue-html2canvas": "^0.0.4",

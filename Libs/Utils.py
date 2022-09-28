@@ -114,3 +114,16 @@ def xyToColRow(X, Y, gt):
     row = int((Y - gt[3] - gt[4] / gt[1] * X + gt[0] * gt[4] / gt[1]) / (gt[5] - (gt[2] * gt[4] / gt[1])))
     col = int((X - gt[0] - gt[2] * row) / gt[1])
     return [col, row]
+
+def plainScaller(array, low, high, oldNoDataValue, newNoDataValue=255, mn=0, mx=250):
+    return array
+
+def linearScaller(array, low, high, oldNoDataValue, newNoDataValue=255, mn=0, mx=250):
+    idx = array != oldNoDataValue
+    a = (mx-mn)/(high-low)
+    b = mn-a*low
+    array[idx] = a*array[idx] + b
+
+    array[array == oldNoDataValue] = newNoDataValue
+    return array
+

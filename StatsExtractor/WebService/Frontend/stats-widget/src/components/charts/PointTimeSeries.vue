@@ -168,7 +168,7 @@ export default {
 			this.diagramData = [null, null];
 		},
 		resizeChart() {
-			if (this.diagramTitle != "Dummy Title")
+			//if (this.diagramTitle != "Dummy Title")
 				this.$refs.diagram.chart.reflow();
 		}
 	}

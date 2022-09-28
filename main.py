@@ -36,6 +36,7 @@ def main():
 	if cfg.parse() != 1:
 		while True:
 			for pid in Constants.PRODUCT_INFO:
+				print(pid)
 				inDir = cfg.filesystem.imageryPath
 				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
 					inDir = cfg.filesystem.anomalyProductsPath
@@ -44,15 +45,16 @@ def main():
 
 				obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
 
-				obj.importProductFromLocalStorage(inDir)
+				#obj.importProductFromLocalStorage(inDir)
 				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 				#compute anomalies
 				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
 					print("Computing anomalies!")
 					runLongTermComparisonAnomalyDetector(pid, config)
 
+				#if Constants.PRODUCT_INFO[pid].variable is not None:
 				mapserver = MapserverImporter(config)
-				mapserver.process()
+				mapserver.process(pid)
 
 			#fetching stratifications and compute stats for each strata
 			query = "select description from stratification s "

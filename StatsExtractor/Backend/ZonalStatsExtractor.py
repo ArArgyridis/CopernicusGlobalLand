@@ -277,12 +277,12 @@ class GeomProcessor():
 
         return out
 
-    def process(self, nThreads = 5):
+    def process(self, nThreads = 12):
         self.__setPixelToAreaFunc()
         self.__geomRasterizer()
         if self._rasterFt is not None:
             data = self.__extractStats(self.__valueRange["low"], self.__valueRange["mid"], self.__valueRange["high"], nThreads)
-            self.__storeToDB(data)
+            #self.__storeToDB(data)
 
 def geomProcessor(inImages, poly, productInfo, cfgObj, nThreads):
     inRasterData = gdal.Open(inImages[0][0])
@@ -345,7 +345,7 @@ class ZonalStatsExtractor():
                 JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id = {0} 
                 JOIN product_file pf ON pfd.id = pf.product_description_id 
                 LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id
-                WHERE s.description ='{1}' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL 
+                WHERE sg.id = 47 AND s.description ='{1}' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL 
                 GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id""".format(prdId,
                                                                         self._stratificationType)
 
@@ -396,7 +396,7 @@ def main():
 
     #requirements:
     obj = ZonalStatsExtractor(stratificationType, cfg)
-    obj.process(nThreads=7)
+    obj.process(nThreads=12)
     print("Finished!")
 
 if __name__ == "__main__":

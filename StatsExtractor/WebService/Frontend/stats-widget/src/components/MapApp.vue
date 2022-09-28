@@ -118,29 +118,27 @@ export default {
 				requestedYears.push(i);
 			
 			//available years from db 
-			let availableYears = [];
+			//let availableYears = [];
 			if (this.$store.getters.currentProduct == null)
 				return;
 
-			Object.keys(this.$store.getters.currentProduct.dates).forEach((date) => {
-				date = new Date(date);
-				let tmpYear = date.getFullYear();
-				if (!availableYears.includes(tmpYear))
-					availableYears.push(tmpYear);
-			});
-			requestedYears.forEach(year =>{
-				if (availableYears.includes(year)) {
-					//fetching raw wms layers
-					let productName = this.$store.getters.currentProduct.name;
-					this.$refs.map1.getAvailableWMSLayers(options.wmsURL + productName + "/" + year, this.productZIndex).then((data) => {
-						this.$store.commit("appendToProductsWMSLayers",data);
-					});
-					//fetching anomalies names
-					let anomaliesName = "NDVI300V2_LongTermComparisonAnomalyDetector";
-					this.$refs.map1.getAvailableWMSLayers(options.anomaliesWMSURL + anomaliesName + "/" + year, this.anomaliesZIndex).then((data) => {
-						this.$store.commit("appendToProductsAnomaliesWMSLayers",data);
-					});
-				}
+			let curDate = new Date(Date.UTC(this.$store.getters.dateStart.getFullYear(),this.$store.getters.dateStart.getMonth(), 1));
+			let productName = this.$store.getters.currentProduct.name;
+			
+			let capabilitiesUrls= new Set();
+			
+			for (let i = 0; curDate < this.$store.getters.dateEnd; i++) {
+				let splitDate = curDate.toISOString().split("-");
+				let year = splitDate[0];
+				let month = splitDate[1];
+				capabilitiesUrls.add(options.wmsURL + productName + "/" + year +"/" +month);
+				curDate =  new Date(Date.UTC(this.$store.getters.dateStart.getFullYear(),this.$store.getters.dateStart.getMonth()+i, 1));
+			}
+			
+			capabilitiesUrls.forEach( (url) => {
+				this.$refs.map1.getAvailableWMSLayers(url, this.productZIndex).then((data) => {
+					this.$store.commit("appendToProductsWMSLayers",data);
+				});
 			});
 		},
 		toggleClickOnMap() {
@@ -161,7 +159,10 @@ export default {
 			this.$refs.map1.setVisibility( this.$store.getters.currentProductAnomalyWMSLayer.layerId, true);
 		},
 		updateSelectedPolygon(evt) {
-			this.$store.commit("selectedPolygon", evt.getId());
+			let id = null;
+			if (evt != null)
+				id = evt.getId();
+			this.$store.commit("selectedPolygon", id);
 		},		
 		updateStratificationLayerStyle(){
 			if (this.$store.getters.areaDensity == null)
