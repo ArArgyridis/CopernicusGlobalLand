@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 
 #include "ColorInterpolation.h"
 
@@ -15,13 +16,13 @@ ColorInterpolation::ColorInterpolation(rapidjson::Document &palette) {
         for (size_t i = 0; i < 3; i++)
             tmp[i] = valArray[i].GetInt();
         values.insert(std::pair<size_t, RGBVal>(std::stoi(it->name.GetString()), tmp));
-
     }
+
 
     std::sort(keys.begin(), keys.end());
 }
 
-RGBVal ColorInterpolation::interpolateColor(long double &areaPerc) {
+RGBVal ColorInterpolation::interpolateColor(long double areaPerc) {
     RGBVal ret;
 
     if (areaPerc == keys.front())
@@ -39,7 +40,7 @@ RGBVal ColorInterpolation::interpolateColor(long double &areaPerc) {
         mx = keys[mx];
 
         for (size_t i = 0; i < 3; i++)
-            ret[i] = static_cast<int>( (values[mx][i] - values[mn][i])*(areaPerc-mn)/100 +values[mn][i]);
+            ret[i] = static_cast<int>( (values[mx][i] - values[mn][i])*(areaPerc*100-mn)/100 +values[mn][i]);
 
 
         return ret;

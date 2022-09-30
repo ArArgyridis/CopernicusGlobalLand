@@ -68,10 +68,9 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
     GDALDatasetPtr dataset  = GDALDatasetPtr (ogrdrv->Create( "tmp.shp", 0, 0, 0, GDT_Unknown, nullptr ), GDALClose);
 
     OGRLayer *layer ;
-    OGRGeometryPtr geom = OGRGeometryPtr(new OGRPoint(), OGRGeometryFactory::destroyGeometry);
-
     layer = dataset->CreateLayer("tmpLayer", oSRS.get(), this->geomType);
 
+    OGRGeometryPtr geom = OGRGeometryPtr(new OGRPoint(), OGRGeometryFactory::destroyGeometry);
     if (this->geomType == wkbMultiPolygon)
         geom = OGRGeometryPtr(new OGRMultiPolygon(), OGRGeometryFactory::destroyGeometry);
 
@@ -80,12 +79,11 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
 
     for (std::pair<std::string, size_t>& wktGeom: wktGeoms) {
         OGRFeaturePtr outFt(OGRFeature::CreateFeature(layer->GetLayerDefn()), OGRFeature::DestroyFeature);
-        char *tmpGeom;
-        tmpGeom = new char[wktGeom.first.size()];
-        std::copy(wktGeom.first.begin(), wktGeom.first.end(), tmpGeom);
+
+        std::unique_ptr<const char*> k = std::make_unique<const char*>(const_cast<char*>(wktGeom.first.c_str()));
 
         outFt->SetField(idField.c_str(), static_cast<int>(wktGeom.second));
-        geom->importFromWkt(const_cast<const char**>(reinterpret_cast<char**>(&tmpGeom)));
+        geom->importFromWkt(k.get());
 
         OGREnvelope envlp;
         geom->getEnvelope(&envlp);
@@ -95,10 +93,6 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
                 std::cout << "Polygon with id: " << wktGeom.second <<" falls outside of region bounds. Skipping\n";
                 continue;
             }
-            /*
-            geom = OGRGeometryPtr(geom->Intersection(&maxEnvelopePoly), OGRGeometryFactory::destroyGeometry);
-            geom->getEnvelope(&envlp);
-            */
         }
 
         //skipping geometries if outside maximum envelope or empty
@@ -116,6 +110,7 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
 
         validPolyIds->emplace(wktGeom.second);
         outEnvelope.Merge(envlp);
+        //k = nullptr;
     }
 
     if (layer->GetFeatureCount() > 0) {

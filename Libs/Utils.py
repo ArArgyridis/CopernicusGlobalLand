@@ -58,8 +58,8 @@ def getListOfFiles(dirName):
     return allFiles
 
 def geomRasterizer(rasterExtents, dstResolution, ft, dstOSR):
-        outRasterXSize = int((rasterExtents[1][0] - rasterExtents[0][0]) / dstResolution)
-        outRasterYSize = int((rasterExtents[0][1] - rasterExtents[1][1]) / dstResolution)
+        outRasterXSize = int(np.round((rasterExtents[1][0] - rasterExtents[0][0]) / dstResolution))
+        outRasterYSize = int(np.round((rasterExtents[0][1] - rasterExtents[1][1]) / dstResolution))
         drv = gdal.GetDriverByName("MEM")
 
         print("Poly id: {0}, Output image dimensions: ({1},{2})".format(ft.GetFID(),
@@ -87,6 +87,7 @@ def geomRasterizer(rasterExtents, dstResolution, ft, dstOSR):
         memVLayer = None
         del memVSource
         memVSource = None
+       
         return rasterFt.GetRasterBand(1).ReadAsArray()
 
 

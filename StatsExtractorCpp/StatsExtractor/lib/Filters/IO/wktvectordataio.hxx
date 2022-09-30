@@ -65,6 +65,7 @@ public:
         //anchoring origin to the closet grid edge
         inputImage->TransformPhysicalPointToIndex(originPnt, originIdx);
         inputImage->TransformIndexToPhysicalPoint(originIdx, originPnt);
+
         data->SetOrigin(originPnt);
         data->SetSpacing(inputImage->GetSignedSpacing());
 
@@ -102,14 +103,16 @@ public:
         typename TInputImage::RegionType::IndexType upperLeftIdx, lowerRightIdx;
         upperLeftIdx.Fill(0);
         lowerRightIdx = inputImage->GetLargestPossibleRegion().GetUpperIndex();
+
         itk::Point<double, 2> upperLeft, lowerRight;
         inputImage->TransformIndexToPhysicalPoint(upperLeftIdx, upperLeft);
         inputImage->TransformIndexToPhysicalPoint(lowerRightIdx, lowerRight);
 
-        maxEnvelope.MinX = upperLeft[0];
-        maxEnvelope.MinY = lowerRight[1];
-        maxEnvelope.MaxX = lowerRight[0];
-        maxEnvelope.MaxY = upperLeft[1];
+        maxEnvelope.MinX = upperLeft[0]-inputImage->GetSpacing()[0]/2;
+        maxEnvelope.MinY = lowerRight[1]-inputImage->GetSpacing()[1]/2;
+        maxEnvelope.MaxX = lowerRight[0]+inputImage->GetSpacing()[0]/2;
+        maxEnvelope.MaxY = upperLeft[1]+inputImage->GetSpacing()[1]/2;
+        //std::cout << maxEnvelope.MinX <<","<<maxEnvelope.MaxY<<"\n" <<maxEnvelope.MaxX <<","<<maxEnvelope.MinY <<"\n";
 
         //updating max envelope geometry
         maxEnvelopePoly = envelopeToGeometry(maxEnvelope);

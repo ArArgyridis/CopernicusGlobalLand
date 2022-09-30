@@ -11,19 +11,24 @@
 
 class PolygonStats {
     std::vector<float> histogramRanges;
+    size_t polyID;
+
+    JsonDocumentPtr histogramToJSON();
 
 public:
     using Pointer = std::shared_ptr<PolygonStats>;
     using PolygonStatsMap = std::map<std::size_t, Pointer>;
     using MapPointer = std::shared_ptr<PolygonStatsMap>;
 
-    PolygonStats(ProductInfoPtr prod, size_t histBins=10);
+    PolygonStats(ProductInfoPtr prod, size_t polyID, size_t histBins=10);
     ~PolygonStats();
 
-    static Pointer New(ProductInfoPtr prod, size_t histBins=10);
+    static Pointer New(ProductInfoPtr prod, const size_t &polyID, size_t histBins=10);
     static MapPointer NewPointerMap(const std::vector<size_t> &labels, ProductInfoPtr prod, size_t histBins=10);
     void addToHistogram(float &value);
     void computeColors();
+    void updateDB(size_t& productFileID, Configuration::Pointer cfg);
+
 
 
     long double mean, sd;
@@ -31,6 +36,7 @@ public:
     size_t validCount, totalCount, histogramBins;
     ProductInfoPtr product;
     std::vector<size_t> histogram;
+    RGBVal noValColor, sparseValColor, mildValColor, denseValColor;
 };
 
 #endif // POLYGONSTATS_HXX

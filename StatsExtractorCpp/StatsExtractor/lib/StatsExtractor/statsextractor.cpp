@@ -50,7 +50,7 @@ void StatsExtractor::process() {
                             " JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id =" + pqxx::to_string(product.second->id) +
                 " JOIN product_file pf ON pfd.id = pf.product_description_id"
                 " LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id"
-                " WHERE /*sg.id IN(74,228,47,94,199)*/ sg.id=47 AND  s.description ='"+ stratificationType +"' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id";
+                " WHERE /*sg.id IN(74,228,47,94,199)   sg.id = 74 AND pf.id = 1 AND*/  s.description ='"+ stratificationType +"' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id";
 
 
         //std::cout << query <<"\n";
@@ -58,7 +58,6 @@ void StatsExtractor::process() {
         PGConn::PGRes processInfo = cursor.getNext();
         if (processInfo.empty())
             continue;
-
         //loading image reference
         RawDataImageReaderType::Pointer referenceImageReader = RawDataImageReaderType::New();
         referenceImageReader->SetFileName(product.second->firstProductPath.string());
@@ -79,8 +78,9 @@ void StatsExtractor::process() {
             VectorDataType::Pointer polyData = VectorDataType::New();
             otb::WKTVectorDataIO::Pointer wkt = otb::WKTVectorDataIO::New();
             wkt->SetGeometryMetaData();
+            size_t polyID = row[0].as<size_t>();
             wkt->SetExtentsFromImage<RawDataImageType>(referenceImageReader->GetOutput());
-            wkt->AppendData(row[3].as<std::string>(), row[0].as<size_t>());
+            wkt->AppendData(row[3].as<std::string>(), polyID);
             wkt->Read(polyData);
 
             if(polyData->GetDataTree()->GetRoot()->CountChildren() == 0) {
@@ -105,6 +105,13 @@ void StatsExtractor::process() {
 
             labelImageFilter->SetOutputProjectionRef(referenceImageReader->GetOutput()->GetProjectionRef());
             labelImageFilter->Update();
+/*
+            ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
+            labelWriter->SetFileName("labelImage.tif");
+            labelWriter->SetInput(labelImageFilter->GetOutput());
+            labelWriter->Update();
+*/
+
             std::cout << "Rasterization finished!\n";
             RawDataImageType::RegionType::IndexType originIdx;
 
@@ -125,7 +132,7 @@ void StatsExtractor::process() {
                 */
 
                 boost::filesystem::path relPath = image.GetArray()[0].GetString();
-                std::cout <<"Processing image: " <<relPath <<"(poly id :" << row[0].as<size_t>()  << ")\n";
+                std::cout <<"Processing image: " <<relPath <<"(poly id :" << polyID  << ")\n";
 
                 RawDataImageReaderType::Pointer imgReader= RawDataImageReaderType::New();
                 imgReader->SetFileName(product.second->productAbsPath(relPath).c_str());
@@ -146,6 +153,8 @@ void StatsExtractor::process() {
                 stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(4000);
                 //stats->GetStreamer()->SetAutomaticAdaptativeStreaming(256);
                 stats->Update();
+                stats->GetPolygonStatsByLabel(polyID)->updateDB(imgID, config);
+
                 //stats->GetFilter()->GetOutput()->ReleaseData();
 
                 //empty raw data kept in RAM

@@ -49,12 +49,18 @@ def computeStats(threadID, imageFile, geomMask, chunk, upperLeft, productId, bin
     cntSparse = 0
     cntMid = 0
     cntDense = 0
+    validPixelCnt = 0
+    totalPixelCnt = 0
     for i in chunk:
-        #print("i=",i)
+
         # data row
         dtCol = inRasterData.ReadAsArray(upperLeft[0] + i, upperLeft[1], 1, geomMask.shape[0]).flatten()
-        plCol = geomMask[:,i]#self._rasterFt.ReadAsArray(i, 0, 1, self._rasterFt.RasterYSize)
-        res = dtCol[(dtCol != noDataValue) & (plCol == 1)]
+
+        plCol = geomMask[:,i]
+
+        totalPixelCnt += plCol[plCol != 0].shape[0]
+        res = dtCol[(dtCol != noDataValue) & (plCol != 0)]
+        validPixelCnt += res.shape[0]
         tmpHist = np.histogram(res, bins=10, range=(Constants.PRODUCT_INFO[productId].minValue,
                                                     Constants.PRODUCT_INFO[productId].maxValue))
         hist += tmpHist[0]
@@ -114,7 +120,7 @@ class GeomProcessor():
                 continue
             #cheking which product matches the current image
             xpr = re.compile(Constants.PRODUCT_INFO[self.__product].pattern)
-
+            #print(dt)
             dbVals += "({0},{1},{2},{3},{4},{5},'{6}','{7}','{8}','{9}', '{10}'),"\
                 .format(dt["poly_id"], dt["product_file_id"], dt["no"], dt["sparse"], dt["mid"],dt["dense"], json.dumps(dt["novalcolor"]),
                         json.dumps(dt["sparsevalcolor"]), json.dumps(dt["midvalcolor"]), json.dumps(dt["highvalcolor"]),
@@ -282,7 +288,7 @@ class GeomProcessor():
         self.__geomRasterizer()
         if self._rasterFt is not None:
             data = self.__extractStats(self.__valueRange["low"], self.__valueRange["mid"], self.__valueRange["high"], nThreads)
-            #self.__storeToDB(data)
+            self.__storeToDB(data)
 
 def geomProcessor(inImages, poly, productInfo, cfgObj, nThreads):
     inRasterData = gdal.Open(inImages[0][0])
@@ -327,10 +333,12 @@ class ZonalStatsExtractor():
         self._stratificationType = stratificationType
         self._config = ConfigurationParser(configFile)
 
-    def process(self, nThreads=multiprocessing.cpu_count()-1, productIds=[12,]):
+    def process(self, nThreads=multiprocessing.cpu_count()-1, productIds=[1,]):
         try:
             self._config.parse()
             Constants.load(self._config.getFile())
+            if productIds is None:
+                productIds = Constants.PRODUCT_INFO.keys()
 
             #creating cursor to retrieve polygons and respective images from DB
             session = self._config.pgConnections[self._config.statsInfo.connectionId].getNewSession()
@@ -345,11 +353,11 @@ class ZonalStatsExtractor():
                 JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id = {0} 
                 JOIN product_file pf ON pfd.id = pf.product_description_id 
                 LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id
-                WHERE sg.id = 47 AND s.description ='{1}' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL 
+                WHERE sg.id = 74 AND s.description ='{1}' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL 
                 GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id""".format(prdId,
                                                                         self._stratificationType)
 
-                print(dataQuery)
+                #print(dataQuery)
                 res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(dataQuery,
                                                                                                          session)
                 for row in res:
@@ -396,7 +404,7 @@ def main():
 
     #requirements:
     obj = ZonalStatsExtractor(stratificationType, cfg)
-    obj.process(nThreads=12)
+    obj.process(nThreads=1)
     print("Finished!")
 
 if __name__ == "__main__":

@@ -21,6 +21,10 @@ public:
     /** Creation through object factory macro */
     itkTypeMacro(StreamedStatisticsFromLabelImageFilter, PersistentFilterStreamingDecorator);
 
+    PolygonStats::Pointer GetPolygonStatsByLabel(size_t &label) {
+        return this->GetFilter()->GetPolygonStatsByLabel(label);
+    }
+
     void SetInputDataImage(const TInputImage* image) {
         this->GetFilter()->SetInputDataImage(image);
     }

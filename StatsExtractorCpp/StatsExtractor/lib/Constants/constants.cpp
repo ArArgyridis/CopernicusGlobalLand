@@ -37,23 +37,23 @@ ProductInfo::ProductInfo(PGConn::PGRow row, Configuration::Pointer cfg):scaler(n
 
     if (!row[12].is_null()) {
         novalColorRamp.Parse(row[12].as<std::string>().c_str());
-        noval = ColorInterpolation(novalColorRamp);
+        noVal = ColorInterpolation(novalColorRamp);
     }
 
     if (!row[13].is_null()) {
         sparsevalColorRamp.Parse(row[13].as<std::string>().c_str());
-        sparseval = ColorInterpolation(sparsevalColorRamp);
+        sparseVal = ColorInterpolation(sparsevalColorRamp);
     }
 
 
     if (!row[14].is_null()) {
         midvalColorRamp.Parse(row[14].as<std::string>().c_str());
-        midval = ColorInterpolation(midvalColorRamp);
+        mildVal = ColorInterpolation(midvalColorRamp);
     }
 
     if (!row[15].is_null()) {
         highvalColorRamp.Parse(row[15].as<std::string>().c_str());
-        highval = ColorInterpolation(highvalColorRamp);
+        denseVal = ColorInterpolation(highvalColorRamp);
     }
 
     if (!row[16].is_null())
@@ -72,17 +72,26 @@ ProductInfo::ProductInfo(PGConn::PGRow row, Configuration::Pointer cfg):scaler(n
     loadMetadata();
 }
 
+long double ProductInfo::convertPixelsToArea(long double pixels) {
+    return pixelsToArea(pixels, pixelSize);
+}
+
 void ProductInfo::loadMetadata() {
     if (firstProductPath.empty())
         return;
 
     scaler = &noScalerFunc;
+    metadata = getMetadata(firstProductPath);
     if (productType =="raw") {
-        metadata = getNetCDFMetadata(firstProductPath);
         scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
         addOffset = std::stod((*metadata)[variable+"#add_offset"]);
         scaler = &scalerFunc;
     }
+    if ((*metadata)["MY_UNIT"]== "degree")
+        pixelsToArea = &pixelsToAreaM2Degrees;
+    else
+        pixelsToArea = &pixelsToAreaM2Meters;
+    pixelSize = stof((*metadata)["MY_PIXEL_SIZE"]);
 
     lutProductValues.reserve(minMaxValues[1]-minMaxValues[0]+1);
     lutProductValues.resize(minMaxValues[1]-minMaxValues[0]+1);
@@ -106,6 +115,8 @@ float ProductInfo::scaleValue(float value) {
 }
 
 
+
+
 Constants::Constants() {}
 
 unsigned short Constants::load(Configuration::Pointer cfg) {
@@ -124,7 +135,7 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
                 << " LEFT JOIN "<< cfg->statsInfo.schema <<".product_file_description pfd on p.id = pfd.product_id"
                 <<" LEFT JOIN tmp_file_id tmp ON tmp.product_description_id = pfd.id"
                <<" LEFT JOIN "<< cfg->statsInfo.schema <<".product_file pf ON pf.id = tmp.tid"
-              << " WHERE p.id IN(4) ORDER BY p.id";
+              << " WHERE p.id IN(1) ORDER BY p.id";
 
     std::string query = queryStream.str();
     PGConn::Pointer cn = PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);

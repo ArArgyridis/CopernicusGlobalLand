@@ -4,9 +4,7 @@
 #include <atomic>
 #include <mutex>
 
-using  PGConnType = pqxx::connection;
-using PGConnTypePtr = std::shared_ptr<PGConnType>;
-using PGPoolConnection = std::shared_ptr<std::pair<std::atomic<bool>, PGConnTypePtr>>;
+
 
 template <class T>
 void pgArrayToVector(pqxx::array_parser value, std::vector<T> &vec) {
@@ -17,11 +15,17 @@ void pgArrayToVector(pqxx::array_parser value, std::vector<T> &vec) {
 
 
 class PGConn {
+        using  PGConnType = pqxx::connection;
+        using PGConnTypePtr = std::shared_ptr<PGConnType>;
+        using PGPoolConnection = std::shared_ptr<std::pair<std::atomic<bool>, PGConnTypePtr>>;
+
         static std::mutex poolLock;
         static std::vector<std::vector<PGPoolConnection>> connectionPool;
         static std::string connStr;
-        static bool executeSingleQuery(pqxx::work& work, std::string& query);
+
         PGPoolConnection currentConnection;
+
+        static bool executeSingleQuery(pqxx::work& work, std::string& query);
         static PGPoolConnection getConnection(size_t& id);
         static void releaseConnection(PGPoolConnection cn);
 protected:

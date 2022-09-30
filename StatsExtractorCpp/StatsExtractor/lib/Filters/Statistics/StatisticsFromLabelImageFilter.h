@@ -60,6 +60,8 @@ public:
 
     virtual LabelImagePointer GetInputLabelImage();
 
+    virtual PolygonStats::Pointer GetPolygonStatsByLabel(size_t &label);
+
     virtual void SetInputDataImage(const TInputImage* image);
 
     virtual void SetInputLabelImage(const LabelImageType* image);

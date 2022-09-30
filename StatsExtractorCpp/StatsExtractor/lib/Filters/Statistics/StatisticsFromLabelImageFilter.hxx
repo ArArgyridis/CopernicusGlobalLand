@@ -20,8 +20,13 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputDataImage
     std::vector<double> nullValues;
     otb::ReadNoDataFlags(image->GetImageMetadata(), rawDataNullFlags, nullValues);
     rawDataNullPixel = nullValues[0];
-
 }
+
+template <class TInputImage, class TLabelImage>
+PolygonStats::Pointer StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::GetPolygonStatsByLabel(size_t &label) {
+    return (*this->polyMapStats)[label];
+}
+
 
 template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputLabelImage(const LabelImageType* image) {
@@ -79,10 +84,7 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Synthetize() {
         polyStat->sd = sqrt( polyStat->sd/polyStat->validCount - pow(polyStat->mean, 2));
 
         for (size_t i = 0; i < 4; i++)
-            polyStat->densityArray[i] = 100*pixelsToAreaM2Degrees(polyStat->densityArray[i], this->GetOutput()->GetSpacing()[0])/
-                    pixelsToAreaM2Degrees(static_cast<long double>(polyStat->validCount), this->GetOutput()->GetSpacing()[0]);
-
-        polyStat->computeColors();
+            polyStat->densityArray[i] = pixelsToAreaM2Degrees(polyStat->densityArray[i], this->GetOutput()->GetSpacing()[0]);
     }
 
 }
@@ -110,10 +112,11 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::ThreadedGenerateD
 
         if(label != labelDataNullPixel) {
             (*threadPolygonStats)[label]->totalCount++;
-            if (rawDataIt.Get()!= rawDataNullPixel) {
+            InputPixelType data = rawDataIt.Get();
+            if (data != rawDataNullPixel) {
                 typename PolygonStats::Pointer polyStats = (*threadPolygonStats)[label];
                 (*threadPolygonStats)[label]->validCount++;
-                InputPixelType data = rawDataIt.Get();
+
 
                 auto val = currentProduct->lutProductValues[data-currentProduct->minMaxValues[0]];
                 polyStats->mean += val;

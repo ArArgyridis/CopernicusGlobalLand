@@ -3,7 +3,7 @@
 
 using namespace std;
 
-vector<std::vector<PGPoolConnection>> PGConn::connectionPool;
+vector<std::vector<PGConn::PGPoolConnection>> PGConn::connectionPool;
 mutex PGConn::poolLock;
 string PGConn::connStr;
 
@@ -17,7 +17,7 @@ PGConn::Pointer PGConn::New(size_t id) {
     return std::unique_ptr<PGConn>(new PGConn(id));
 }
 
-PGPoolConnection PGConn::getConnection(size_t &id) {
+PGConn::PGPoolConnection PGConn::getConnection(size_t &id) {
         lock_guard<mutex> lock(poolLock);
         //cout << "Pool size: " << connectionPool.size() << endl;
         for( size_t i = 0; i < connectionPool.size(); i++) {
@@ -95,7 +95,7 @@ PGConn::PGRes PGConn::fetchQueryResult(std::string &query, std::string workName=
         }
 }
 
-PGConnTypePtr PGConn::getCurrentConnection() {
+PGConn::PGConnTypePtr PGConn::getCurrentConnection() {
         return currentConnection->second;
 }
 

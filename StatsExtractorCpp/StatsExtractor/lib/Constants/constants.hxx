@@ -18,8 +18,9 @@ class ProductInfo {
     Configuration::Pointer config;
     void loadMetadata();
     MetadataDictPtr metadata;
-    float scaleFactor, addOffset;
+    float scaleFactor, addOffset, pixelSize;
     float (*scaler)(float, float&, float&);
+    long double (*pixelsToArea)(long double&, float);
 
 public:
     std::string productType, pattern, types, dateptr, variable, style, fileNameCreationPattern;
@@ -30,11 +31,12 @@ public:
     ValueRange valueRange;
     std::array<float, 2> minMaxValues;
     std::vector<float> lutProductValues;
-    ColorInterpolation noval, sparseval, midval, highval;
+    ColorInterpolation noVal, sparseVal, mildVal, denseVal;
 
 
     ProductInfo();
     ProductInfo(PGConn::PGRow row, Configuration::Pointer cfg);
+    long double convertPixelsToArea(long double pixels);
     boost::filesystem::path productAbsPath(boost::filesystem::path &relPath);
     float scaleValue(float value);
 
