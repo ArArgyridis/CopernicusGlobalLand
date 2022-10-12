@@ -4,7 +4,6 @@
 #include <otbImageFileReader.h>
 #include <otbImageFileWriter.h>
 #include <otbExtractROI.h>
-#include <otbOGRVectorDataIO.h>
 #include <otbVectorDataToLabelImageFilter.h>
 #include <otbVectorImage.h>
 #include <rapidjson/document.h>
@@ -13,9 +12,8 @@
 #include "statsextractor.hxx"
 #include "../Constants/constants.hxx"
 #include "../PostgreSQL/pgcursor.hxx"
-#include "../Filters/IO/wktvectordataio.hxx"
+#include "../Filters/StreamedProcessingChainFilter.h"
 #include "../Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h"
-#include <fstream>
 
 
 using labelType = unsigned long;
@@ -24,7 +22,7 @@ const short Dimension = 2;
 using LabelImageType = otb::Image< labelType, Dimension >;
 using RawDataImageType = otb::Image<dataType, Dimension>;
 
-using VectorDataToLabelImageFilterType = otb::VectorDataToLabelImageFilter<VectorDataType, LabelImageType>;
+using VectorDataToLabelImageFilterType = otb::VectorDataToLabelImageFilter<otb::VectorDataType, LabelImageType>;
 using ULongImageReaderType = otb::ImageFileReader<LabelImageType>;
 using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
 
@@ -33,152 +31,81 @@ using RawDataImageWriterType = otb::ImageFileWriter<RawDataImageType>;
 
 
 using StreamedStatisticsType = otb::StreamedStatisticsFromLabelImageFilter<RawDataImageType, LabelImageType>;
-
 using ExtractROIFilter = otb::ExtractROI<RawDataImageType::PixelType, RawDataImageType::PixelType>;
+using ProcessingChainFilter = otb::StreamedProcessingChainFilter<RawDataImageType, otb::VectorDataType>;
 
 
-StatsExtractor::StatsExtractor(Configuration::Pointer cfg, std::string stratificationType):config(cfg), stratificationType(stratificationType) {}
+StatsExtractor::StatsExtractor(Configuration::Pointer cfg, std::string stratificationType):config(cfg), stratification(stratificationType) {}
 
 void StatsExtractor::process() {
     for (auto& product: Constants::productInfo) {
-
         std::cout <<"Retrieving info for product " <<product.second->productNames[0] <<" (id: " << product.second->id <<")\n";
-        std::string query = " SELECT sg.id, pfd.id, ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(pf.rel_file_path, pf.id))) images, ST_ASTEXT(sg.geom) , ST_SRID(sg.geom)"
-                            " FROM stratification s"
-                            " JOIN stratification_geom sg ON s.id = sg.stratification_id"
-                            " JOIN product p ON TRUE"
-                            " JOIN product_file_description pfd ON p.id = pfd.product_id AND pfd.id =" + pqxx::to_string(product.second->id) +
-                " JOIN product_file pf ON pfd.id = pf.product_description_id"
-                " LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id"
-                " WHERE /*sg.id IN(74,228,47,94,199)   sg.id = 74 AND pf.id = 1 AND*/  s.description ='"+ stratificationType +"' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS NULL GROUP BY sg.id, pfd.id ORDER BY pfd.id, sg.id";
 
+        std::string query = "with info as ( "
+                "select sg.id geomid, (JSON_BUILD_ARRAY(pf.rel_file_path, pf.id))::jsonb image "
+                "from stratification s "
+                "join stratification_geom sg on s.id = sg.stratification_id "
+                "join product p on p.id = " + std::to_string(product.first) +
+                "join product_file_description pfd on p.id = pfd.product_id "
+                "join product_file pf on pfd.id = pf.product_description_id "
+                "left join poly_stats ps on ps.poly_id = sg.id AND ps.product_file_id = pf.id "
+                "where s.description  = '" + stratification +
+                "' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS null /*AND sg.id = 199 AND sg.id=74*/"
+                "),extent AS( "
+                "  select  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids "
+                "  from (select distinct geomid from info) a "
+                "  join stratification_geom sg on a.geomid = sg.id "
+                "),images AS( "
+                "  select array_to_json(ARRAY_AGG(DISTINCT image)) images "
+                "  from info)"
+                "select images, geomids, st_xmin(extg), st_ymin(extg), st_xmax(extg), st_ymax(extg), Find_SRID('public', 'stratification_geom', 'geom') "
+                "from extent "
+                "join images on true";
 
-        //std::cout << query <<"\n";
-        PGCursor cursor(Configuration::connectionIds[config->statsInfo.connectionId], query);
-        PGConn::PGRes processInfo = cursor.getNext();
-        if (processInfo.empty())
+        PGConn::Pointer cn = PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
+        PGConn::PGRes processInfo = cn->fetchQueryResult(query, "product info");
+
+        if (processInfo.empty() || processInfo[0][0].is_null() || processInfo[0][1].is_null()) //no data at all, or no polygons, or no images
             continue;
-        //loading image reference
-        RawDataImageReaderType::Pointer referenceImageReader = RawDataImageReaderType::New();
-        referenceImageReader->SetFileName(product.second->firstProductPath.string());
-        referenceImageReader->UpdateOutputInformation();
 
-        //map of images to avoid re-reading metadata
-        //std::map<size_t, RawDataImageReaderType::Pointer> inImagesMap;
+        JsonDocumentPtr  images = std::make_unique<JsonDocument>(), geomIds = std::make_unique<JsonDocument>();
 
-        for (true; !processInfo.empty(); processInfo = cursor.getNext()) {
-            PGConn::PGRow row = processInfo[0];
-            rapidjson::Document images;
-            if (images.Parse(row[2].as<std::string>().c_str()).HasParseError() ) {
-                std::cout << "Unable to parse images or no images found. Continuing\n";
-                continue;
-            }
+        //prepare images
+        images->Parse(processInfo[0][0].as<std::string>().c_str());
+        std::unique_ptr<std::vector<std::pair<size_t, std::string>>> absImagePath=std::make_unique<std::vector<std::pair<size_t, std::string>>>(images->GetArray().Size());
+        size_t i = 0;
+        for (auto& image: images->GetArray()) {
+            boost::filesystem::path relPath = image.GetArray()[0].GetString();
+            (*absImagePath)[i] = std::pair<size_t, std::string>(image.GetArray()[1].GetInt64(), product.second->productAbsPath(relPath).string());
+            boost::filesystem::path tmpPath = product.second->productAbsPath(relPath);
+            i++;
+        }
+        //prepare geomIds
+        geomIds->Parse(processInfo[0][1].as<std::string>().c_str());
 
-            //loading polygon
-            VectorDataType::Pointer polyData = VectorDataType::New();
-            otb::WKTVectorDataIO::Pointer wkt = otb::WKTVectorDataIO::New();
-            wkt->SetGeometryMetaData();
-            size_t polyID = row[0].as<size_t>();
-            wkt->SetExtentsFromImage<RawDataImageType>(referenceImageReader->GetOutput());
-            wkt->AppendData(row[3].as<std::string>(), polyID);
-            wkt->Read(polyData);
-
-            if(polyData->GetDataTree()->GetRoot()->CountChildren() == 0) {
-                std::cout << "No polygons could be used. Continuing\n";
-                continue;
-            }
-
-            otb::WKTVectorDataIO::LabelSetPtr labels = wkt->GetLabels();
-            LabelImageType::SizeType size = wkt->AllignToImage<RawDataImageType>(polyData, referenceImageReader->GetOutput());
-            if (size[0] < 1) {
-                std::cout <<"Polygons fall outside of provided dataset. Continuing\n";
-                continue;
-            }
-            std::cout << "Starting rasterization\n";
-            //rastering polygons and keeping in memory. It is going to be used by all images from now on
-            VectorDataToLabelImageFilterType::Pointer labelImageFilter = VectorDataToLabelImageFilterType::New();
-            labelImageFilter->AddVectorData(polyData);
-            labelImageFilter->SetOutputSize(size);
-            labelImageFilter->SetOutputOrigin(polyData->GetOrigin());
-            labelImageFilter->SetOutputSpacing(polyData->GetSpacing());
-            labelImageFilter->SetBurnAttribute("id");
-
-            labelImageFilter->SetOutputProjectionRef(referenceImageReader->GetOutput()->GetProjectionRef());
-            labelImageFilter->Update();
-/*
-            ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
-            labelWriter->SetFileName("labelImage.tif");
-            labelWriter->SetInput(labelImageFilter->GetOutput());
-            labelWriter->Update();
-*/
-
-            std::cout << "Rasterization finished!\n";
-            RawDataImageType::RegionType::IndexType originIdx;
-
-            referenceImageReader->GetOutput()->TransformPhysicalPointToIndex(polyData->GetOrigin(), originIdx);
-            //computing stats for each image
-
-            for (auto& image:images.GetArray()) {
-                //build absolute path
-                size_t imgID = image.GetArray()[1].GetInt64();
-                /*
-                if (inImagesMap.find(imgID) == inImagesMap.end()) {
-                    boost::filesystem::path relPath = image.GetArray()[0].GetString();
-                    RawDataImageReaderType::Pointer imgReader= RawDataImageReaderType::New();
-                    imgReader->SetFileName(product.second->productAbsPath(relPath).c_str());
-                    //imgReader->UpdateOutputInformation();
-                    inImagesMap.insert(std::pair<size_t, RawDataImageReaderType::Pointer>(imgID, imgReader));
-                }
-                */
-
-                boost::filesystem::path relPath = image.GetArray()[0].GetString();
-                std::cout <<"Processing image: " <<relPath <<"(poly id :" << polyID  << ")\n";
-
-                RawDataImageReaderType::Pointer imgReader= RawDataImageReaderType::New();
-                imgReader->SetFileName(product.second->productAbsPath(relPath).c_str());
-
-                ExtractROIFilter::Pointer roi = ExtractROIFilter::New();
-                roi->SetInput(imgReader->GetOutput());
-                roi->SetStartX(originIdx[0]);
-                roi->SetStartY(originIdx[1]);
-                roi->SetSizeX(labelImageFilter->GetOutput()->GetLargestPossibleRegion().GetSize()[0]);
-                roi->SetSizeY(labelImageFilter->GetOutput()->GetLargestPossibleRegion().GetSize()[1]);
-                roi->UpdateOutputInformation();
-
-                StreamedStatisticsType::Pointer stats = StreamedStatisticsType::New();
-                stats->SetInputDataImage(roi->GetOutput());
-                stats->SetInputLabelImage(labelImageFilter->GetOutput());
-                stats->SetInputLabels(*labels);
-                stats->SetInputProduct(product.second);
-                stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(4000);
-                //stats->GetStreamer()->SetAutomaticAdaptativeStreaming(256);
-                stats->Update();
-                stats->GetPolygonStatsByLabel(polyID)->updateDB(imgID, config);
-
-                //stats->GetFilter()->GetOutput()->ReleaseData();
-
-                //empty raw data kept in RAM
-                //inImagesMap[imgID]->GetOutput()->ReleaseData();
-
-                std::cout << "Finished!\n";
-
-
-
-
-
-            }
-
-
-
-
+        std::unique_ptr<std::vector<size_t>> polyIds = std::make_unique<std::vector<size_t>>(geomIds->GetArray().Size());
+        i = 0;
+        for (auto& id: geomIds->GetArray()) {
+            (*polyIds)[i] = id.GetInt64();
+            i++;
         }
 
+        //prepare envelope
+        OGREnvelope envelope;
+        envelope.MinX = processInfo[0][2].as<double>();
+        envelope.MinY = processInfo[0][3].as<double>();
+        envelope.MaxX = processInfo[0][4].as<double>();
+        envelope.MaxY = processInfo[0][5].as<double>();
 
+        //geometries srid
+        size_t srid = processInfo[0][6].as<size_t>();
 
-
-
-
-
+        ProcessingChainFilter::Pointer processingChain = ProcessingChainFilter::New();
+        processingChain->SetParams(config, product.second, envelope, std::move(absImagePath), std::move(polyIds), srid);
+        processingChain->UpdateOutputInformation();
+        processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(7000);
+        processingChain->Update();
 
     }
 }
+

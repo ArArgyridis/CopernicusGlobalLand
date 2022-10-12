@@ -16,21 +16,24 @@ bool WKTVectorDataIO::CanReadFile(const char*) const {
     return true;
 }
 
-WKTVectorDataIO::LabelSetPtr WKTVectorDataIO::GetLabels() {
+LabelSetPtr WKTVectorDataIO::GetLabels() {
     return this->validPolyIds;
 }
+
+OGREnvelope WKTVectorDataIO::GetOutEnevelope() {
+    return this->outEnvelope;
+}
+
 
 void WKTVectorDataIO::Read(itk::DataObject* datag) {
     VectorDataPointerType data = dynamic_cast<VectorDataType*>(datag);
     // Destroy previous opened data source
 
-    if (!data)
-    {
+    if (!data) {
         itkExceptionMacro(<< "Failed to dynamic cast to otb::VectorData (this should never happen)");
     }
 
     otbMsgDebugMacro(<< "Driver to read: OGR");
-
 
     // Retrieving root node
     DataTreePointerType tree = data->GetDataTree();
@@ -73,6 +76,8 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
     OGRGeometryPtr geom = OGRGeometryPtr(new OGRPoint(), OGRGeometryFactory::destroyGeometry);
     if (this->geomType == wkbMultiPolygon)
         geom = OGRGeometryPtr(new OGRMultiPolygon(), OGRGeometryFactory::destroyGeometry);
+    else if (this->geomType == wkbPolygon)
+        geom = OGRGeometryPtr(new OGRPolygon(), OGRGeometryFactory::destroyGeometry);
 
     OGRFieldDefn oField(idField.c_str(), OFTInteger64);
     layer->CreateField(&oField);
@@ -84,22 +89,22 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
 
         outFt->SetField(idField.c_str(), static_cast<int>(wktGeom.second));
         geom->importFromWkt(k.get());
+        //std::cout <<geom->exportToJson() <<"\n";
 
         OGREnvelope envlp;
         geom->getEnvelope(&envlp);
 
-        if (!maxEnvelope.Contains(envlp)) {
-            if (!maxEnvelope.Intersects(envlp)) {
-                std::cout << "Polygon with id: " << wktGeom.second <<" falls outside of region bounds. Skipping\n";
+        //skipping geometries if empty or outside maximum envelope
+        if (geom->IsEmpty()) {
+                std::cout << "Polygon with id: " << wktGeom.second <<" is empty. Skipping\n";
                 continue;
-            }
         }
 
-        //skipping geometries if outside maximum envelope or empty
-        if(!maxEnvelope.Intersects(envlp) || geom->IsEmpty()) {
-            std::cout << "Polygon with id: " << wktGeom.second <<" falls outside of region bounds. Skipping\n";
+        if ((!maxEnvelope.Intersects(envlp))) {
+            std::cout << "Polygon with id: " << wktGeom.second <<" falls outside of specified bounds. Skipping\n";
             continue;
         }
+
 
         outFt->SetGeometry(geom.get());
 
@@ -108,9 +113,8 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
             continue;
         }
 
-        validPolyIds->emplace(wktGeom.second);
+        validPolyIds->emplace_back(wktGeom.second);
         outEnvelope.Merge(envlp);
-        //k = nullptr;
     }
 
     if (layer->GetFeatureCount() > 0) {
@@ -130,11 +134,12 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
         OGRConversion->ConvertOGRLayerToDataTreeNode(layer, documentPtr);
         data->SetProjectionRef(projectionRef);
 
-        itk::Point<double, 2> originPnt;
+        point2d originPnt;
         originPnt[0] = outEnvelope.MinX;
         originPnt[1] = outEnvelope.MaxY;
 
         data->SetOrigin(originPnt);
+        layer = nullptr;
     }
     wktGeoms.clear();
 };
@@ -147,7 +152,7 @@ void WKTVectorDataIO::SetGeometryMetaData(int epsg, OGRwkbGeometryType type, std
 
 
 //protected
-WKTVectorDataIO::WKTVectorDataIO():epsg(4326), idField("id"), geomType(wkbMultiPolygon){
+WKTVectorDataIO::WKTVectorDataIO():epsg(4326), idField("id"), geomType(wkbPolygon){
     outEnvelope.MinX = outEnvelope.MinY = maxEnvelope.MaxX = maxEnvelope.MaxY = DBL_MAX;
     outEnvelope.MaxX = outEnvelope.MaxY = maxEnvelope.MinX = maxEnvelope.MinY = -DBL_MAX;
 

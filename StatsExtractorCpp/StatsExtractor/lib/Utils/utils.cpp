@@ -5,12 +5,9 @@
 
 
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
-    GDALAllRegister();
-    GDALDatasetPtr tmpDataset =  GDALDatasetPtr(reinterpret_cast<GDALDataset*>(GDALOpenEx( dataPath.string().c_str(),
-                                                                                                                                       GDAL_OF_RASTER, NULL, NULL, NULL )), GDALClose);
-    char** meta = tmpDataset->GetMetadata();
-    //std::unique_ptr<double*> gt = std::unique_ptr<double*>(new double(6));
+    GDALDatasetPtr tmpDataset =  GDALDatasetPtr(reinterpret_cast<GDALDataset*>(GDALOpenEx( dataPath.string().c_str(), GDAL_OF_RASTER, NULL, NULL, NULL )), GDALClose);
 
+    char **meta = tmpDataset->GetMetadata();
 
     MetadataDictPtr bandMetadata = std::make_unique<MetadataDict>();
 
@@ -30,7 +27,7 @@ MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
     }
 
     //adding projection type info
-    const char* proj = tmpDataset->GetProjectionRef();
+    const char* proj =tmpDataset->GetProjectionRef();
     OGRSpatialReference sr;
     sr.importFromWkt(proj);
     (*bandMetadata)["MY_UNIT"] = sr.GetAttrValue("UNIT");
@@ -39,6 +36,7 @@ MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
     double gt[6];
     tmpDataset->GetGeoTransform(gt);
     (*bandMetadata)["MY_PIXEL_SIZE"] = std::to_string(gt[1]);
+    (*bandMetadata)["MY_NO_DATA_VALUE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetNoDataValue());
 
     return bandMetadata;
 }

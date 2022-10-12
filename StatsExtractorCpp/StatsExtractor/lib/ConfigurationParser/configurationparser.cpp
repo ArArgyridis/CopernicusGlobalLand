@@ -39,20 +39,20 @@ unsigned short Configuration::parse() {
         std::string connectionString = connectionStringStream.str();
 
        if (Configuration::connectionIds.find(cn.name.GetString()) == Configuration::connectionIds.end())
-            Configuration::connectionIds[cn.name.GetString()] = PGConn::initConnectionPool(20, connectionString);
+            Configuration::connectionIds[cn.name.GetString()] = PGConn::initConnectionPool(150, connectionString);
     }
 
     //db connection info
-    statsInfo.schema             = cfg["statsinfo"]["schema"].GetString();
+    statsInfo.schema        = cfg["statsinfo"]["schema"].GetString();
     statsInfo.tmpSchema     = cfg["statsinfo"]["tmp_schema"].GetString();
-    statsInfo.connectionId   = cfg["statsinfo"]["connection_id"].GetString();
-    statsInfo.exportId           = cfg["statsinfo"]["export_id"].GetString();
+    statsInfo.connectionId  = cfg["statsinfo"]["connection_id"].GetString();
+    statsInfo.exportId      = cfg["statsinfo"]["export_id"].GetString();
 
     //filesystem
-    filesystem.imageryPath                  = cfg["filesystem"]["imagery_path"].GetString();
-    filesystem.anomalyProductsPath = cfg["filesystem"]["anomaly_products_path"].GetString();
-    filesystem.tmpPath                         = cfg["filesystem"]["tmp_path"].GetString();
-    filesystem.mapserverPath             = cfg["filesystem"]["mapserver_data_path"].GetString();
+    filesystem.imageryPath          = cfg["filesystem"]["imagery_path"].GetString();
+    filesystem.anomalyProductsPath  = cfg["filesystem"]["anomaly_products_path"].GetString();
+    filesystem.tmpPath              = cfg["filesystem"]["tmp_path"].GetString();
+    filesystem.mapserverPath        = cfg["filesystem"]["mapserver_data_path"].GetString();
 
     return 0;
 }

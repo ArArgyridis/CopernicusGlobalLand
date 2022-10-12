@@ -26,7 +26,7 @@ JsonDocumentPtr PolygonStats::histogramToJSON() {
 
 
 
-PolygonStats::PolygonStats(ProductInfoPtr prod, size_t polyID, size_t histBins):polyID(polyID), validCount(0), totalCount(0), histogramBins(histBins), product(prod) {
+PolygonStats::PolygonStats(ProductInfo::Pointer prod, size_t polyID, size_t histBins):polyID(polyID), validCount(0), totalCount(0), histogramBins(histBins), product(prod) {
     mean = sd = 0;
 
     std::fill(densityArray.begin(),densityArray.end(), 0.0);
@@ -47,11 +47,11 @@ PolygonStats::PolygonStats(ProductInfoPtr prod, size_t polyID, size_t histBins):
 
 PolygonStats::~PolygonStats(){};
 
-PolygonStats::Pointer PolygonStats::New(ProductInfoPtr prod, const size_t &polyID, size_t histBins) {
+PolygonStats::Pointer PolygonStats::New(ProductInfo::Pointer prod, const size_t &polyID, size_t histBins) {
     return std::make_shared<PolygonStats>(prod, polyID, histBins);
 }
 
-PolygonStats::MapPointer PolygonStats::NewPointerMap(const std::vector<size_t> &labels, ProductInfoPtr prod, size_t histBins) {
+PolygonStats::MapPointer PolygonStats::NewPointerMap(const std::vector<size_t> &labels, ProductInfo::Pointer prod, size_t histBins) {
     MapPointer myMap = std::make_shared<PolygonStatsMap>();
 
     for(const size_t & id: labels)

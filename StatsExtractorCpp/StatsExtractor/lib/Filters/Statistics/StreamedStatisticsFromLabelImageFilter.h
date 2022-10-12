@@ -33,29 +33,22 @@ public:
         this->GetFilter()->SetInputLabelImage(image);
     }
 
-    void SetInputLabels(const std::set<size_t> &labels) {
+    void SetInputLabels(LabelSetPtr labels) {
         this->GetFilter()->SetInputLabels(labels);
     }
 
-    void SetInputProduct(const ProductInfoPtr product) {
+    void SetInputProduct(const ProductInfo::Pointer product) {
         this->GetFilter()->SetInputProduct(product);
     }
 
 
 protected:
     StreamedStatisticsFromLabelImageFilter() {}
-
     ~StreamedStatisticsFromLabelImageFilter() override {}
 
 private:
     StreamedStatisticsFromLabelImageFilter(const Self&) = delete;
     void operator=(const Self&) = delete;
-
-
-
-
-
-
 };
 }
 #endif //STREAMEDSTATISTICSFROMLABELIMAGEFILTER_H

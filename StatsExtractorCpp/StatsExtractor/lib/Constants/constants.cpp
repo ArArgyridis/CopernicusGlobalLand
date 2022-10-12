@@ -4,7 +4,7 @@
 #include "constants.hxx"
 #include "../PostgreSQL/postgresql.hxx"
 
-std::map<std::size_t, ProductInfoPtr> Constants::productInfo;
+std::map<std::size_t, ProductInfo::Pointer> Constants::productInfo;
 
 ProductInfo::ProductInfo(){}
 
@@ -76,6 +76,10 @@ long double ProductInfo::convertPixelsToArea(long double pixels) {
     return pixelsToArea(pixels, pixelSize);
 }
 
+float ProductInfo::getNoData() {
+    return stof((*metadata)["MY_NO_DATA_VALUE"]);
+}
+
 void ProductInfo::loadMetadata() {
     if (firstProductPath.empty())
         return;
@@ -93,11 +97,10 @@ void ProductInfo::loadMetadata() {
         pixelsToArea = &pixelsToAreaM2Meters;
     pixelSize = stof((*metadata)["MY_PIXEL_SIZE"]);
 
-    lutProductValues.reserve(minMaxValues[1]-minMaxValues[0]+1);
-    lutProductValues.resize(minMaxValues[1]-minMaxValues[0]+1);
+    lutProductValues = std::vector<float>(minMaxValues[1]-minMaxValues[0]+1);
 
-    for (size_t i = 0; i < lutProductValues.size()+1; i++)
-        lutProductValues[i] = scaler(minMaxValues[0]+(int)i, scaleFactor, addOffset);
+    for (size_t i = 0; i < lutProductValues.size(); i++)
+        lutProductValues[i] = scaler(minMaxValues[0]+static_cast<int>(i), scaleFactor, addOffset);
 }
 
 boost::filesystem::path ProductInfo::productAbsPath(boost::filesystem::path &relPath) {

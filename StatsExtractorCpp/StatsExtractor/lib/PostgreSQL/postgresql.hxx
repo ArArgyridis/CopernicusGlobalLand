@@ -21,7 +21,7 @@ class PGConn {
 
         static std::mutex poolLock;
         static std::vector<std::vector<PGPoolConnection>> connectionPool;
-        static std::string connStr;
+        static std::vector<std::string> connStr;
 
         PGPoolConnection currentConnection;
 

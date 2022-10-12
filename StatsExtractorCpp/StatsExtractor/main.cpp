@@ -9,6 +9,7 @@ int main(int argc, char *argv[]) {
         cout << "usage: StatsExtractor configuration_file stratification_description";
         return 1;
     }
+    GDALAllRegister();
 
     std::string cfgFile(argv[1]), stratification(argv[2]);
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(StatsExtractor LANGUAGES CXX)
-add_definitions("-DRAPIDJSON_SCHEMA_USE_INTERNALREGEX=0")
+#add_definitions("-DRAPIDJSON_SCHEMA_USE_INTERNALREGEX=0")
 
 
 
@@ -56,9 +56,13 @@ set (HEADERS
     lib/Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h
     lib/Filters/Statistics/polygonstats.hxx
     lib/Utils/ColorInterpolation.h
-
+    lib/Filters/ProcessingChainFilter.h
+    lib/Filters/ProcessingChainFilter.hxx
+    lib/Filters/StreamedProcessingChainFilter.h
 )
 
+#add_compile_options(-fsanitize=address)
+#add_link_options(-fsanitize=address)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

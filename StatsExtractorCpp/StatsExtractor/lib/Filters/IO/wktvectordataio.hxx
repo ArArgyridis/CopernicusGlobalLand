@@ -48,75 +48,14 @@ public:
     typedef VectorDataType::ConstPointer           VectorDataConstPointerType;
     typedef Superclass::SpacingType                SpacingType;
     typedef Superclass::PointType                  OriginType;
-    typedef std::set<std::size_t>                                 LabelSet;
-    typedef std::shared_ptr<std::set<std::size_t>> LabelSetPtr;
-
-    template <class TInputImage>
-    typename TInputImage::SizeType AllignToImage(itk::DataObject* datag, typename TInputImage::Pointer inputImage) {
-        VectorDataPointerType data = dynamic_cast<VectorDataType*>(datag);
-        typename TInputImage::SpacingType spacing = inputImage->GetSignedSpacing();
-
-        itk::Point<double, 2> originPnt;
-        originPnt[0] = outEnvelope.MinX;
-        originPnt[1] = outEnvelope.MaxY;
-
-        typename TInputImage::IndexType originIdx;
-
-        //anchoring origin to the closet grid edge
-        inputImage->TransformPhysicalPointToIndex(originPnt, originIdx);
-        inputImage->TransformIndexToPhysicalPoint(originIdx, originPnt);
-
-        data->SetOrigin(originPnt);
-        data->SetSpacing(inputImage->GetSignedSpacing());
-
-
-        typename TInputImage::SizeType outSize;
-        outSize[0] = (outEnvelope.MaxX-outEnvelope.MinX)/spacing[0]+1;
-        outSize[1] = (outEnvelope.MaxY-outEnvelope.MinY)/abs(spacing[1])+1;
-
-        //cropping to image region extents
-        typename TInputImage::RegionType outRegion;
-        outRegion.SetIndex(originIdx);
-        outRegion.SetSize(outSize);
-        outRegion.Crop(inputImage->GetLargestPossibleRegion());
-
-        if (!inputImage->GetLargestPossibleRegion().IsInside(outRegion)) {
-            outSize[0] = 0;
-            outSize[1] = 0;
-        }
-        else
-            outSize = outRegion.GetSize();
-
-       return outSize;
-    }
 
     void AppendData(std::string wkt, size_t i);
     void AppendData(std::vector<std::pair<std::string, std::size_t>>& wktVector);
     bool CanReadFile(const char*) const override;
     LabelSetPtr GetLabels();
+    OGREnvelope GetOutEnevelope();
     void Read(itk::DataObject* datag) override;
     void SetGeometryMetaData(int epsg=4326, OGRwkbGeometryType type=wkbMultiPolygon, std::string idField="id");
-
-    template <class TInputImage>
-    void SetExtentsFromImage(typename TInputImage::Pointer inputImage) {
-
-        typename TInputImage::RegionType::IndexType upperLeftIdx, lowerRightIdx;
-        upperLeftIdx.Fill(0);
-        lowerRightIdx = inputImage->GetLargestPossibleRegion().GetUpperIndex();
-
-        itk::Point<double, 2> upperLeft, lowerRight;
-        inputImage->TransformIndexToPhysicalPoint(upperLeftIdx, upperLeft);
-        inputImage->TransformIndexToPhysicalPoint(lowerRightIdx, lowerRight);
-
-        maxEnvelope.MinX = upperLeft[0]-inputImage->GetSpacing()[0]/2;
-        maxEnvelope.MinY = lowerRight[1]-inputImage->GetSpacing()[1]/2;
-        maxEnvelope.MaxX = lowerRight[0]+inputImage->GetSpacing()[0]/2;
-        maxEnvelope.MaxY = upperLeft[1]+inputImage->GetSpacing()[1]/2;
-        //std::cout << maxEnvelope.MinX <<","<<maxEnvelope.MaxY<<"\n" <<maxEnvelope.MaxX <<","<<maxEnvelope.MinY <<"\n";
-
-        //updating max envelope geometry
-        maxEnvelopePoly = envelopeToGeometry(maxEnvelope);
-    }
 
 protected:
     WKTVectorDataIO();

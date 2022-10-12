@@ -14,9 +14,6 @@
 #include "../../Utils/utils.hxx"
 #include "polygonstats.hxx"
 
-
-
-
 namespace otb {
 
 template <class TInputImage, class TLabelImage>
@@ -54,26 +51,15 @@ public:
     typedef typename InputImageType::PixelType                     InputPixelType;
     typedef typename LabelImageType::PixelType                      LabelPixelType;
 
-    //typedef StatisticsAccumulator<RealInputPixelType>              AccumulatorType;
-
     virtual InputImageTypePointer GetInputDataImage();
-
     virtual LabelImagePointer GetInputLabelImage();
-
     virtual PolygonStats::Pointer GetPolygonStatsByLabel(size_t &label);
-
     virtual void SetInputDataImage(const TInputImage* image);
-
     virtual void SetInputLabelImage(const LabelImageType* image);
-
-    virtual void SetInputLabels(const std::set<std::size_t>& labels);
-
-    virtual void SetInputProduct(const ProductInfoPtr product);
-
+    virtual void SetInputLabels(LabelSetPtr labels);
+    virtual void SetInputProduct(const ProductInfo::Pointer product);
     virtual void Reset(void) override;
-
     virtual void Synthetize(void) override;
-
 
 protected:
     StatisticsFromLabelImageFilter();
@@ -89,7 +75,7 @@ private:
     InputPixelType rawDataNullPixel;
     LabelPixelType labelDataNullPixel;
     std::vector<std::size_t> labels;
-    ProductInfoPtr currentProduct;
+    ProductInfo::Pointer currentProduct;
 
 };
 
