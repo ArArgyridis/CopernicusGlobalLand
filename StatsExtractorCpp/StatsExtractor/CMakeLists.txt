@@ -36,28 +36,24 @@ if (OPENMP_FOUND)
 endif()
 
 set(SOURCE
-    lib/PostgreSQL/postgresql.cpp
-    lib/PostgreSQL/pgcursor.cpp
-    lib/ConfigurationParser/configurationparser.cpp
-    lib/Constants/constants.hxx lib/Constants/constants.cpp
-    lib/StatsExtractor/statsextractor.hxx lib/StatsExtractor/statsextractor.cpp
-    lib/Utils/utils.cpp
-    lib/Filters/IO/wktvectordataio.cpp
-    lib/Filters/Statistics/polygonstats.cpp
+    lib/PostgreSQL/PostgreSQL.cpp
+    lib/ConfigurationParser/ConfigurationParser.cpp
+    lib/Constants/Constants.cpp
+    lib/StatsExtractor/StatsExtractor.cpp
+    lib/Utils/Utils.cpp
+    lib/Filters/Statistics/PolygonStats.cpp
     lib/Utils/ColorInterpolation.cpp
 )
 set (HEADERS
-    lib/PostgreSQL/postgresql.hxx
-    lib/PostgreSQL/pgcursor.hxx
-    lib/ConfigurationParser/configurationparser.hxx
-    lib/Constants/constants.hxx lib/Constants/constants.hxx
-    lib/StatsExtractor/statsextractor.hxx lib/StatsExtractor/statsextractor.hxx
-    lib/Utils/utils.hxx
-    lib/Filters/IO/wktvectordataio.hxx
+    lib/PostgreSQL/PostgreSQL.h
+    lib/ConfigurationParser/ConfigurationParser.h
+    lib/Constants/Constants.h
+    lib/StatsExtractor/StatsExtractor.h
+    lib/Utils/Utils.hxx
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.h
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.hxx
     lib/Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h
-    lib/Filters/Statistics/polygonstats.hxx
+    lib/Filters/Statistics/PolygonStats.h
     lib/Filters/IO/VectorWktToLabelImageFilter.h
     lib/Filters/IO/VectorWktToLabelImageFilter.hxx
     lib/Utils/ColorInterpolation.h

@@ -12,33 +12,22 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <gdal_frmts.h>
-#include <iostream>
+#ifndef STATSEXTRACTOR_HXX
+#define STATSEXTRACTOR_HXX
 
-#include "lib/StatsExtractor/StatsExtractor.h"
+#include <boost/filesystem.hpp>
 
-using namespace std;
+#include "../ConfigurationParser/ConfigurationParser.h"
+#include "../Filters/Statistics/StatisticsFromLabelImageFilter.h"
 
-int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        cout << "usage: StatsExtractor configuration_file stratification_description";
-        return 1;
-    }
-    GDALAllRegister();
+class StatsExtractor {
+    Configuration::Pointer config;
+    std::string stratification;
 
-    std::string cfgFile(argv[1]), stratification(argv[2]);
+public:
+    StatsExtractor(Configuration::Pointer cfg, std::string stratificationType);
+    void process();
+    void process(bool k);
+};
 
-    Configuration::Pointer config = Configuration::New(cfgFile);
-    if (config->parse() != 0)
-        return 1;
-
-    if (Constants::load(config) != 0)
-        return 1;
-
-    StatsExtractor extractor(config, stratification);
-    extractor.process();
-
-
-    cout << "Hello World!" << endl;
-    return 0;
-}
+#endif // STATSEXTRACTOR_HXX
