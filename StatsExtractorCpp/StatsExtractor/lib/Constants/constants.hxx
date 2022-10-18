@@ -37,7 +37,7 @@ public:
 
 
     ProductInfo();
-    ProductInfo(PGConn::PGRow row, Configuration::Pointer cfg);
+    ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg);
     long double convertPixelsToArea(long double pixels);
     float getNoData();
     boost::filesystem::path productAbsPath(boost::filesystem::path &relPath);

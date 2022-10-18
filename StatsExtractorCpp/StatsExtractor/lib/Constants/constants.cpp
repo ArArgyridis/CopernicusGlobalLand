@@ -8,9 +8,9 @@ std::map<std::size_t, ProductInfo::Pointer> Constants::productInfo;
 
 ProductInfo::ProductInfo(){}
 
-ProductInfo::ProductInfo(PGConn::PGRow row, Configuration::Pointer cfg):scaler(noScalerFunc), scaleFactor(1), addOffset(0) {
+ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):scaler(noScalerFunc), scaleFactor(1), addOffset(0) {
     auto productNamesArr = row[0].as_array();
-    pgArrayToVector<std::string>(productNamesArr, productNames);
+    PGPool::pgArrayToVector<std::string>(productNamesArr, productNames);
 
     //productNames = row[0].as<pqxx::array_parser>();
     productType = row[1].as<std::string>();
@@ -141,10 +141,10 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
               << " WHERE p.id IN(1) ORDER BY p.id";
 
     std::string query = queryStream.str();
-    PGConn::Pointer cn = PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);
-    PGConn::PGRes res = cn->fetchQueryResult(query, "");
+    PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);
+    PGPool::PGConn::PGRes res = cn->fetchQueryResult(query, "");
     for (size_t i = 0; i < res.size(); i++)
-        Constants::productInfo[res[i][2].as<size_t>()] = std::make_shared<ProductInfo>(PGConn::PGRow(res[i]), cfg);
+        Constants::productInfo[res[i][2].as<size_t>()] = std::make_shared<ProductInfo>(PGPool::PGConn::PGRow(res[i]), cfg);
 
 
     return 0;

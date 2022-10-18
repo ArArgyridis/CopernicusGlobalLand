@@ -4,9 +4,9 @@
 PGCursor::PGCursor() {}
 
 PGCursor::PGCursor(size_t connId, std::string &query, std::string cursorName):cursorPos(0) {
-    cn = PGConn::New(connId);
-    cursorWork=std::make_unique<pqxx::work>(*cn->getCurrentConnection(), cursorName);
-    cursor = std::make_unique<StatelessCursor>(*cursorWork, query, "myCursor", false);
+    cn = PGPool::PGConn::New(connId);
+    //cursorWork=std::make_unique<pqxx::work>(*cn->getConnection(), cursorName);
+    //cursor = std::make_unique<StatelessCursor>(*cursorWork, query, "myCursor", false);
 }
 
 PGCursor::~PGCursor() {
@@ -14,8 +14,8 @@ PGCursor::~PGCursor() {
 }
 
 
-PGConn::PGRes PGCursor::getNext() {
-    PGConn::PGRes result = cursor->retrieve(cursorPos, cursorPos+1);
+PGPool::PGConn::PGRes PGCursor::getNext() {
+    PGPool::PGConn::PGRes result = cursor->retrieve(cursorPos, cursorPos+1);
     cursorPos++;
     return result;
 }

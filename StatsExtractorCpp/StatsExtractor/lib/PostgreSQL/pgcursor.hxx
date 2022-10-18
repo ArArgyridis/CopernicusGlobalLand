@@ -10,14 +10,14 @@ using PGWorkPtr = std::unique_ptr<pqxx::work>;
 class PGCursor {
     StatelessCursorPtr cursor;
     size_t cursorPos;
-    PGConn::Pointer cn;
+    PGPool::PGConn::Pointer cn;
     PGWorkPtr cursorWork;
 public:
     PGCursor();
     PGCursor(size_t connId, std::string& query, std::string cursorName="default cursor");
     ~PGCursor();
 
-    PGConn::PGRes getNext();
+    PGPool::PGConn::PGRes getNext();
 
 };
 

@@ -16,11 +16,11 @@
 #include "../Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h"
 
 
-using labelType = unsigned long;
-using dataType = short int;
-const short Dimension = 2;
-using LabelImageType = otb::Image< labelType, Dimension >;
-using RawDataImageType = otb::Image<dataType, Dimension>;
+using labelType         = unsigned long;
+using dataType          = short int;
+const short Dimension   = 2;
+using LabelImageType    = otb::Image< labelType, Dimension >;
+using RawDataImageType  = otb::Image<dataType, Dimension>;
 
 using VectorDataToLabelImageFilterType = otb::VectorDataToLabelImageFilter<otb::VectorDataType, LabelImageType>;
 using ULongImageReaderType = otb::ImageFileReader<LabelImageType>;
@@ -30,9 +30,9 @@ using RawDataImageReaderType = otb::ImageFileReader<RawDataImageType>;
 using RawDataImageWriterType = otb::ImageFileWriter<RawDataImageType>;
 
 
-using StreamedStatisticsType = otb::StreamedStatisticsFromLabelImageFilter<RawDataImageType, LabelImageType>;
-using ExtractROIFilter = otb::ExtractROI<RawDataImageType::PixelType, RawDataImageType::PixelType>;
-using ProcessingChainFilter = otb::StreamedProcessingChainFilter<RawDataImageType, otb::VectorDataType>;
+using StreamedStatisticsType    = otb::StreamedStatisticsFromLabelImageFilter<RawDataImageType, LabelImageType>;
+using ExtractROIFilter          = otb::ExtractROI<RawDataImageType::PixelType, RawDataImageType::PixelType>;
+using ProcessingChainFilter     = otb::StreamedProcessingChainFilter<RawDataImageType, otb::VectorDataType>;
 
 
 StatsExtractor::StatsExtractor(Configuration::Pointer cfg, std::string stratificationType):config(cfg), stratification(stratificationType) {}
@@ -62,8 +62,8 @@ void StatsExtractor::process() {
                 "from extent "
                 "join images on true";
 
-        PGConn::Pointer cn = PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
-        PGConn::PGRes processInfo = cn->fetchQueryResult(query, "product info");
+        PGPool::PGConn::Pointer cn          = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
+        PGPool::PGConn::PGRes processInfo   = cn->fetchQueryResult(query, "product info");
 
         if (processInfo.empty() || processInfo[0][0].is_null() || processInfo[0][1].is_null()) //no data at all, or no polygons, or no images
             continue;
@@ -76,8 +76,7 @@ void StatsExtractor::process() {
         size_t i = 0;
         for (auto& image: images->GetArray()) {
             boost::filesystem::path relPath = image.GetArray()[0].GetString();
-            (*absImagePath)[i] = std::pair<size_t, std::string>(image.GetArray()[1].GetInt64(), product.second->productAbsPath(relPath).string());
-            boost::filesystem::path tmpPath = product.second->productAbsPath(relPath);
+            (*absImagePath)[i]              = std::pair<size_t, std::string>(image.GetArray()[1].GetInt64(), product.second->productAbsPath(relPath).string());
             i++;
         }
         //prepare geomIds
@@ -103,9 +102,8 @@ void StatsExtractor::process() {
         ProcessingChainFilter::Pointer processingChain = ProcessingChainFilter::New();
         processingChain->SetParams(config, product.second, envelope, std::move(absImagePath), std::move(polyIds), srid);
         processingChain->UpdateOutputInformation();
-        processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(7000);
+        processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(3000);
         processingChain->Update();
-
     }
 }
 

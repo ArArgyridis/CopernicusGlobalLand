@@ -18,10 +18,13 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 
 SET (PQXX_DIR .)
 SET (POSTGRES_DIR .)
+add_subdirectory(fmt)
+
 
 find_package(Threads REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization filesystem)
 find_package(PQXX REQUIRED)
+find_package(fmt)
 
 include_directories(${Boost_INCLUDE_DIRS})
 
@@ -55,6 +58,8 @@ set (HEADERS
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.hxx
     lib/Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h
     lib/Filters/Statistics/polygonstats.hxx
+    lib/Filters/IO/VectorWktToLabelImageFilter.h
+    lib/Filters/IO/VectorWktToLabelImageFilter.hxx
     lib/Utils/ColorInterpolation.h
     lib/Filters/ProcessingChainFilter.h
     lib/Filters/ProcessingChainFilter.hxx
@@ -64,11 +69,11 @@ set (HEADERS
 #add_compile_options(-fsanitize=address)
 #add_link_options(-fsanitize=address)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(${PROJECT_NAME} ${SOURCE} ${HEADERS} "main.cpp" )
-target_link_libraries(${PROJECT_NAME}  ${PQXX_LIBRARIES} ${OTB_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}  ${PQXX_LIBRARIES} ${OTB_LIBRARIES} ${Boost_LIBRARIES} fmt::fmt-header-only)
 
 
 install(TARGETS StatsExtractor

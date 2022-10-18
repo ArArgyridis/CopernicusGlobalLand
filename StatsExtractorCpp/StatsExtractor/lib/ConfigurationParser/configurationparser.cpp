@@ -39,7 +39,7 @@ unsigned short Configuration::parse() {
         std::string connectionString = connectionStringStream.str();
 
        if (Configuration::connectionIds.find(cn.name.GetString()) == Configuration::connectionIds.end())
-            Configuration::connectionIds[cn.name.GetString()] = PGConn::initConnectionPool(150, connectionString);
+            Configuration::connectionIds[cn.name.GetString()] = PGPool::PGConn::initConnectionPool(0, connectionString);
     }
 
     //db connection info

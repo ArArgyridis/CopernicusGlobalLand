@@ -5,6 +5,9 @@
 #include <mutex>
 
 
+namespace PGPool {
+using CnType            = pqxx::connection;
+using CnTypePtr     = std::shared_ptr<CnType>;
 
 template <class T>
 void pgArrayToVector(pqxx::array_parser value, std::vector<T> &vec) {
@@ -15,37 +18,59 @@ void pgArrayToVector(pqxx::array_parser value, std::vector<T> &vec) {
 
 
 class PGConn {
-        using  PGConnType = pqxx::connection;
-        using PGConnTypePtr = std::shared_ptr<PGConnType>;
-        using PGPoolConnection = std::shared_ptr<std::pair<std::atomic<bool>, PGConnTypePtr>>;
 
-        static std::mutex poolLock;
-        static std::vector<std::vector<PGPoolConnection>> connectionPool;
-        static std::vector<std::string> connStr;
+    class PGCountedConnType {
+        CnTypePtr cn;
+        unsigned short count;
+        size_t connId;
+    public:
+        using Pointer   = std::shared_ptr<PGCountedConnType>;
+        PGCountedConnType();
+        PGCountedConnType(size_t& connId);
 
-        PGPoolConnection currentConnection;
+        CnTypePtr getConnection();
+        unsigned short getCount();
+        void reset();
 
-        static bool executeSingleQuery(pqxx::work& work, std::string& query);
-        static PGPoolConnection getConnection(size_t& id);
-        static void releaseConnection(PGPoolConnection cn);
+        static Pointer New();
+        static Pointer New(size_t& connId);
+    };
+
+
+
+    using PGPoolConnection  = std::pair<bool, PGCountedConnType::Pointer>;
+    using PGPoolConnectionPtr = std::shared_ptr<PGPoolConnection>;
+    static std::mutex poolLock;
+    static std::vector<std::vector<PGPoolConnectionPtr>> connectionPool;
+    static std::vector<std::string> connStr;
+
+    PGPoolConnectionPtr currentConnection;
+
+    static bool executeSingleQuery(pqxx::work& work, std::string& query);
+    static PGPoolConnectionPtr createConnection(size_t& id, bool activeFlag=false);
+    static PGPoolConnectionPtr getConnection(size_t& id);
+    static std::string getConnectionString(size_t& id);
+    static void releaseConnection(PGPoolConnectionPtr cn);
+    void reset();
+
 protected:
-        PGConn(size_t id =0);
+    PGConn(size_t id =0);
 
 public:
-        using Pointer = std::unique_ptr<PGConn>;
-        using PGRes = pqxx::result;
-        using PGRow = pqxx::row;
+    using Pointer   = std::unique_ptr<PGConn>;
+    using PGRes     = pqxx::result;
+    using PGRow     = pqxx::row;
 
-        ~PGConn();
-        PGRes fetchQueryResult(std::string& query, std::string workName);
-        PGConnTypePtr getCurrentConnection();
-        void executeQueries(std::shared_ptr<std::vector<std::string>> args);
-        void executeQuery(std::string& query);
-        static size_t initConnectionPool(size_t cons, std::string& conStr);
-        static Pointer New(size_t id =0);
-        static void printConnectionStatus(size_t& id);
+    ~PGConn();
+    PGRes fetchQueryResult(std::string& query, std::string workName="single query");
+    CnTypePtr getRawConnection();
+    void executeQueries(std::shared_ptr<std::vector<std::string>> args);
+    void executeQuery(std::string& query);
+    static size_t initConnectionPool(size_t cons, std::string& conStr);
+    static Pointer New(size_t id =0);
+    static void printConnectionStatus(size_t& id);
 };
-
+}
 
 
 

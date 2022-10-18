@@ -101,7 +101,7 @@ void PolygonStats::updateDB(size_t &productFileID, Configuration::Pointer cfg){
                         " FROM tmp_data tdt"
                         " ON CONFLICT(poly_id, product_file_id) DO NOTHING;";
 
-    PGConn::Pointer cn = PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
+    PGPool::PGConn::Pointer cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
     cn->executeQuery(query);
 }
 

@@ -5,7 +5,7 @@ using namespace otb;
 
 //public
 void WKTVectorDataIO::AppendData(std::string wkt, size_t id) {
-    this->wktGeoms.emplace_back(std::pair<std::string, size_t>(wkt,id));
+    this->wktGeoms.push_back(std::pair<std::string, size_t>(wkt,id));
 }
 
 void WKTVectorDataIO::AppendData(std::vector<std::pair<std::string, std::size_t>>& wktVector) {
@@ -48,6 +48,7 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
         oSRS->exportToWkt(&projectionRefChar);
         projectionRef = projectionRefChar;
         CPLFree(projectionRefChar);
+
         itk::MetaDataDictionary& dict = data->GetMetaDataDictionary();
         itk::EncapsulateMetaData<std::string>(dict, MetaDataKey::ProjectionRefKey, projectionRef);
     }
@@ -55,22 +56,19 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
         otbMsgDevMacro(<< "Can't retrieve the OGRSpatialReference from the shapefile");
     }
 
-    std::string projectionRefWkt = data->GetProjectionRef();
-
-    bool projectionInformationAvailable = !projectionRefWkt.empty();
+    bool projectionInformationAvailable = !projectionRef.empty();
 
     if (projectionInformationAvailable) {
-        otbMsgDevMacro(<< "Projection information : " << projectionRefWkt);
+        otbMsgDevMacro(<< "Projection information : " << projectionRef);
     }
     else {
         otbMsgDevMacro(<< "Projection information unavailable: assuming WGS84");
     }
 
     GDALDriver *ogrdrv= GetGDALDriverManager()->GetDriverByName("MEMORY");
-
     GDALDatasetPtr dataset  = GDALDatasetPtr (ogrdrv->Create( "tmp.shp", 0, 0, 0, GDT_Unknown, nullptr ), GDALClose);
 
-    OGRLayer *layer ;
+    OGRLayer *layer;
     layer = dataset->CreateLayer("tmpLayer", oSRS.get(), this->geomType);
 
     OGRGeometryPtr geom = OGRGeometryPtr(new OGRPoint(), OGRGeometryFactory::destroyGeometry);
@@ -85,19 +83,18 @@ void WKTVectorDataIO::Read(itk::DataObject* datag) {
     for (std::pair<std::string, size_t>& wktGeom: wktGeoms) {
         OGRFeaturePtr outFt(OGRFeature::CreateFeature(layer->GetLayerDefn()), OGRFeature::DestroyFeature);
 
-        std::unique_ptr<const char*> k = std::make_unique<const char*>(const_cast<char*>(wktGeom.first.c_str()));
+        std::unique_ptr<const char *> tmpGeom = std::make_unique<const char*>(const_cast<char*>(wktGeom.first.c_str()));
 
         outFt->SetField(idField.c_str(), static_cast<int>(wktGeom.second));
-        geom->importFromWkt(k.get());
-        //std::cout <<geom->exportToJson() <<"\n";
+        geom->importFromWkt(tmpGeom.get());
 
         OGREnvelope envlp;
         geom->getEnvelope(&envlp);
 
         //skipping geometries if empty or outside maximum envelope
         if (geom->IsEmpty()) {
-                std::cout << "Polygon with id: " << wktGeom.second <<" is empty. Skipping\n";
-                continue;
+            std::cout << "Polygon with id: " << wktGeom.second <<" is empty. Skipping\n";
+            continue;
         }
 
         if ((!maxEnvelope.Intersects(envlp))) {

@@ -11,7 +11,9 @@
 #include <otbVectorDataToLabelImageFilter.h>
 
 #include "Statistics/StreamedStatisticsFromLabelImageFilter.h"
+
 #include "../Utils/utils.hxx"
+#include "IO/VectorWktToLabelImageFilter.hxx"
 
 namespace otb {
 using VectorDataType    = otb::VectorData<double, 2>;
@@ -44,6 +46,7 @@ public:
     using ExtractRawDataROIFilter           = otb::ExtractROI<typename TInputImage::PixelType, typename TInputImage::PixelType>;
     using ExtractLabelDataROIFilter         = otb::ExtractROI<typename LabelImageType::PixelType, typename LabelImageType::PixelType>;
     using StreamedStatisticsType            = otb::StreamedStatisticsFromLabelImageFilter<TInputImage, LabelImageType>;
+    using RasterizerFilter                  = otb::VectorWktToLabelImageFilter<LabelImageType>;
 
     /** Type macro */
     itkNewMacro(Self);
@@ -79,7 +82,7 @@ private:
     LabelSetPtr labels;
     std::mutex readMtx;
     std::string stratification, polyIdsStr;
-
+    //dedicated conncetion for processing
     typename LabelImageType::Pointer rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
 
 

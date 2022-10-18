@@ -1,6 +1,7 @@
 #include <iostream>
 #include "lib/Constants/constants.hxx"
 #include "lib/StatsExtractor/statsextractor.hxx"
+#include <gdal_frmts.h>
 
 using namespace std;
 
