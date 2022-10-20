@@ -65,20 +65,70 @@ PolygonStats::Pointer PolygonStats::New(ProductInfo::Pointer prod, const size_t 
     return std::make_shared<PolygonStats>(prod, polyID, histBins);
 }
 
-PolygonStats::MapPointer PolygonStats::NewPointerMap(const std::vector<size_t> &labels, ProductInfo::Pointer prod, size_t histBins) {
-    MapPointer myMap = std::make_shared<PolygonStatsMap>();
+PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr labels, ProductInfo::Pointer prod, size_t histBins) {
+    PolyStatsMapPtr myMap = std::make_shared<PolyStatsMap>();
 
-    for(const size_t & id: labels)
-        (*myMap)[id] = PolygonStats::New(prod, id, histBins);
+    for(const size_t & id: *labels)
+        myMap->insert(std::pair<size_t, Pointer>(id,PolygonStats::New(prod, id, histBins)));
 
     return myMap;
 }
+
+PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductInfo::Pointer prod, size_t histBins){
+    PolyStatsPerRegionPtr ret = std::make_shared<PolyStatsPerRegion>();
+    for(auto &label:*labels) {
+        PolyStatsArrayPtr k = std::make_shared<PolyStatsArray>(regionCount);
+        for(size_t i = 0; i < regionCount; i++)
+            (*k)[i]=(New(prod, label, histBins));
+        ret->insert(std::pair<size_t, PolyStatsArrayPtr>(label, k));
+    }
+
+    return ret;
+}
+
+
+
+void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination, ProductInfo::Pointer product) {
+
+    for (auto& polyStat: *destination) {
+        auto pos = source->find(polyStat.first);
+        for(size_t i = 0; i < pos->second->size(); i++) {
+            auto regionStat = (*pos->second)[i];
+            if(regionStat->validCount == 0)
+                continue;
+
+            polyStat.second->totalCount += regionStat->totalCount;
+            polyStat.second->validCount += regionStat->validCount;
+            polyStat.second->mean       += regionStat->mean;
+            polyStat.second->sd         += regionStat->sd;
+
+            for (size_t i = 0; i < polyStat.second->densityArray.size(); i++)
+                polyStat.second->densityArray[i] += regionStat->densityArray[i];
+
+            for(size_t i = 0; i <polyStat.second->histogramBins; i++)
+                polyStat.second->histogram[i] += regionStat->histogram[i];
+
+        }
+        polyStat.second->mean /=polyStat.second->validCount;
+        polyStat.second->sd = sqrt( polyStat.second->sd/polyStat.second->validCount - pow(polyStat.second->mean, 2));
+
+        if (polyStat.second->validCount == 0) {
+            std::cout <<"No valid data for polygon: " << polyStat.second->polyID <<"\n";
+            continue;
+        }
+
+        for (size_t i = 0; i < 4; i++)
+            polyStat.second->densityArray[i] = product->convertPixelsToArea(polyStat.second->densityArray[i]);
+        polyStat.second->computeColors();
+    }
+}
+
 
 void PolygonStats::addToHistogram(float &value) {
     bool stop = false;
     for (size_t i = 0; i <histogramBins &&!stop; i++ ) {
         stop = histogramRanges[i] <= value && value <=histogramRanges[i+1];
-        histogram[i] += (int)(stop);
+        histogram[i] += static_cast<int>(stop);
     }
 }
 
@@ -94,19 +144,24 @@ void PolygonStats::computeColors() {
 
 
 
-void PolygonStats::updateDB(size_t &productFileID, Configuration::Pointer cfg){
-    if (validCount == 0)
+void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer cfg, PolyStatsMapPtr polygonData){
+    std::stringstream data;
+    for(auto & polyData:*polygonData) {
+        if(polyData.second->validCount == 0)
+            continue;
+
+        auto hist = polyData.second->histogramToJSON();
+        data  <<"(" << polyData.first <<"," << productFileID <<"," << polyData.second->densityArray[0]/10000 <<"," << polyData.second->densityArray[1]/10000 <<"," << polyData.second->densityArray[2]/10000 <<"," << polyData.second->densityArray[3]/10000
+             <<",'"<<rgbToArrayString(polyData.second->noValColor) <<"','" <<rgbToArrayString(polyData.second->sparseValColor) <<"','" << rgbToArrayString(polyData.second->mildValColor) << "','" << rgbToArrayString(polyData.second->denseValColor) <<"','"
+             << jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
+
+
+    }
+    if (data.tellp() == 0)
         return;
 
-    auto hist = this->histogramToJSON();
-    std::stringstream data;
-
-    data  <<"(" << polyID <<"," << productFileID <<"," << densityArray[0]/10000 <<"," << densityArray[1]/10000 <<"," << densityArray[2]/10000 <<"," << densityArray[3]/10000
-         <<",'"<<rgbToArrayString(noValColor) <<"','" <<rgbToArrayString(sparseValColor) <<"','" << rgbToArrayString(mildValColor) << "','" << rgbToArrayString(denseValColor) <<"','"
-         << jsonToString(*hist) << "'," << totalCount <<"," <<validCount << ")";
-
     std::string query = "WITH tmp_data(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
-                        " noval_color, sparseval_color, midval_color, highval_color, histogram, total_pixels, valid_pixels) AS( VALUES " + data.str() + ")"
+                        " noval_color, sparseval_color, midval_color, highval_color, histogram, total_pixels, valid_pixels) AS( VALUES " + stringstreamToString(data) + ")"
                         " INSERT INTO " + cfg->statsInfo.schema +".poly_stats(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
                         " noval_color, sparseval_color, midval_color, highval_color, histogram, total_pixels, valid_pixels)"
                         " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, tdt.noval_area_ha::double precision, "
@@ -117,6 +172,21 @@ void PolygonStats::updateDB(size_t &productFileID, Configuration::Pointer cfg){
 
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
     cn->executeQuery(query);
+
+
+    /*
+    if (validCount == 0)
+        return;
+
+    auto hist = this->histogramToJSON();
+    std::stringstream data;
+
+    data  <<"(" << polyID <<"," << productFileID <<"," << densityArray[0]/10000 <<"," << densityArray[1]/10000 <<"," << densityArray[2]/10000 <<"," << densityArray[3]/10000
+         <<",'"<<rgbToArrayString(noValColor) <<"','" <<rgbToArrayString(sparseValColor) <<"','" << rgbToArrayString(mildValColor) << "','" << rgbToArrayString(denseValColor) <<"','"
+         << jsonToString(*hist) << "'," << totalCount <<"," <<validCount << ")";
+
+
+    */
 }
 
 

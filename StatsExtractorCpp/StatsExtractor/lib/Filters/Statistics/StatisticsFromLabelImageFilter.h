@@ -35,14 +35,14 @@ class StatisticsFromLabelImageFilter:public PersistentImageFilter<TInputImage, T
 public:
 
     /** Standard Self typedef */
-    typedef StatisticsFromLabelImageFilter        Self;
-    typedef PersistentImageFilter<TInputImage, TInputImage> Superclass;
-    typedef itk::SmartPointer<Self>                                     Pointer;
-    typedef itk::SmartPointer<const Self>                               ConstPointer;
+    using Self          = StatisticsFromLabelImageFilter;
+    using Superclass    = PersistentImageFilter<TInputImage, TInputImage>;
+    using Pointer       = itk::SmartPointer<Self>;
+    using ConstPointer  = itk::SmartPointer<const Self>;
 
-    using  TInputImageConstIterator   =  itk::ImageRegionConstIterator<TInputImage>;
-    using  TInputLabelImageConstIterator     =  itk::ImageRegionConstIterator<TLabelImage>;
-    using OutputIterator                                    =  itk::ImageRegionIterator<TInputImage>;
+    using TInputImageConstIterator          =  itk::ImageRegionConstIterator<TInputImage>;
+    using TInputLabelImageConstIterator     =  itk::ImageRegionConstIterator<TLabelImage>;
+    using OutputIterator                    =  itk::ImageRegionIterator<TInputImage>;
 
 
     /** Method for creation through the object factory. */
@@ -52,27 +52,27 @@ public:
     itkTypeMacro(StreamedStatisticsFromLabelImageFilter, PersistentImageFilter);
 
     /** Image related typedefs. */
-    using InputImageType                              = TInputImage;
-    using InputImageTypePointer                 = typename TInputImage::Pointer ;
+    using InputImageType                    = TInputImage;
+    using InputImageTypePointer             = typename TInputImage::Pointer ;
 
-    typedef itk::VariableLengthVector<long double>                       RealInputPixelType;
-    using FloatInputImageTypePolyMapStats     = typename PolygonStats::MapPointer;
+    using RealInputPixelType                = itk::VariableLengthVector<long double>;
 
-    using LabelImageType                         = TLabelImage;
-    using LabelImagePointer                     = typename TLabelImage::Pointer;
+    using LabelImageType                    = TLabelImage;
+    using LabelImagePointer                 = typename TLabelImage::Pointer;
 
-    typedef typename InputImageType::RegionType                    RegionType;
-    typedef typename InputImageType::PixelType                     InputPixelType;
-    typedef typename LabelImageType::PixelType                      LabelPixelType;
+    using RegionType                        = typename InputImageType::RegionType;
+    using InputPixelType                    = typename InputImageType::PixelType;
+    using LabelPixelType                    = typename LabelImageType::PixelType;
+
 
     virtual InputImageTypePointer GetInputDataImage();
     virtual LabelImagePointer GetInputLabelImage();
-    virtual PolygonStats::Pointer GetPolygonStatsByLabel(size_t &label);
+    virtual void Reset(void) override;
     virtual void SetInputDataImage(const TInputImage* image);
     virtual void SetInputLabelImage(const LabelImageType* image);
-    virtual void SetInputLabels(LabelSetPtr labels);
+    virtual void SetInputLabels(LabelsArrayPtr labels);
     virtual void SetInputProduct(const ProductInfo::Pointer product);
-    virtual void Reset(void) override;
+    virtual void SetPolyStatsPerRegion(const PolygonStats::PolyStatsPerRegionPtr stats, itk::ThreadIdType threadId);
     virtual void Synthetize(void) override;
 
 protected:
@@ -83,14 +83,13 @@ protected:
 private:
     StatisticsFromLabelImageFilter(const Self&) = delete;
     void operator=(const Self&) = delete;
-    FloatInputImageTypePolyMapStats polyMapStats;
-    std::vector<FloatInputImageTypePolyMapStats> threadPolyMapStatsVector;
+    PolygonStats::PolyStatsPerRegionPtr m_PolygonStatsPerRegion;
     std::vector<bool> rawDataNullFlags, labelDataNullFlags;
     InputPixelType rawDataNullPixel;
     LabelPixelType labelDataNullPixel;
-    std::vector<std::size_t> labels;
+    LabelsArrayPtr labels;
     ProductInfo::Pointer currentProduct;
-
+    itk::ThreadIdType parentThreadId;
 };
 
 

@@ -25,10 +25,14 @@ class ITK_EXPORT StreamedProcessingChainFilter: public PersistentFilterStreaming
 public:
     /** Standard Self typedef */
     using Self                      =  StreamedProcessingChainFilter;
-    using Superclass                = PersistentFilterStreamingDecorator<ProcessingChainFilter<TInputImage, TPolygonDataType>> ;
+    using BaseClass                 = ProcessingChainFilter<TInputImage, TPolygonDataType>;
+    using Superclass                = PersistentFilterStreamingDecorator<BaseClass> ;
     using Pointer                   = itk::SmartPointer<Self>;
     using ConstPointer              = itk::SmartPointer<const Self>;
     using TPolygonDataTypePointer   = typename TPolygonDataType::Pointer;
+
+
+
 
     /** Type macro */
     itkNewMacro(Self);
@@ -40,7 +44,7 @@ public:
         this->GetFilter()->UpdateOutputInformation();
     }
 
-    void SetParams(const Configuration::Pointer& config, const ProductInfo::Pointer& product, OGREnvelope &envlp, std::unique_ptr<std::vector<std::pair<size_t, std::string>>> images, std::unique_ptr<std::vector<size_t>> polyIds, size_t& polySRID) {
+    void SetParams(const Configuration::Pointer& config, const ProductInfo::Pointer& product, OGREnvelope &envlp, JsonDocumentPtr images, JsonDocumentPtr polyIds, size_t& polySRID) {
         this->GetFilter()->SetParams(config, product, envlp, std::move(images), std::move(polyIds), polySRID);
     }
 

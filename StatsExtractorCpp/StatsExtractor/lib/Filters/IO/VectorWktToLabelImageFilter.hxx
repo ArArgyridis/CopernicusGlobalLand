@@ -36,7 +36,6 @@ void VectorWktToLabelImageFilter<TOutputImage>::AppendData(std::string wkt, size
         return;
     }
 
-
     burnGeoms.push_back(geom);
     burnValues.emplace_back(static_cast<double>(id));
 }
@@ -52,11 +51,6 @@ void VectorWktToLabelImageFilter<TOutputImage>::SetGeometryMetaData(int epsg, OG
     this->epsg = epsg;
     this->geomType = type;
     this->idField = idField;
-
-    /** creating temporary layer to store geometries */
-
-    OGRSpatialReferencePtr oSRS = std::make_unique<OGRSpatialReference>();
-    srs->importFromEPSG(epsg);
 }
 
 template <class TOutputImage>
@@ -96,8 +90,8 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
     //geoTransform
     itk::VariableLengthVector<double> geoTransform(6);
     geoTransform.Fill(0); //rotation parameters ignored
-    geoTransform[0] = m_OutputOrigin[0] - 0.5 * m_OutputSignedSpacing[0];
-    geoTransform[3] = m_OutputOrigin[1] - 0.5 * m_OutputSignedSpacing[1];
+    geoTransform[0] = m_OutputOrigin[0] - 0.5*m_OutputSignedSpacing[0];
+    geoTransform[3] = m_OutputOrigin[1] - 0.5*m_OutputSignedSpacing[1];
     geoTransform[1] = m_OutputSignedSpacing[0];
     geoTransform[5] = m_OutputSignedSpacing[1];
 
@@ -113,6 +107,7 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
     CSLDestroy(options);
 
 }
+
 template <class TOutputImage>
 void VectorWktToLabelImageFilter<TOutputImage>::GenerateOutputInformation() {
     Superclass::GenerateOutputInformation();
@@ -130,9 +125,7 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateOutputInformation() {
 
 
 template <class TOutputImage>
-VectorWktToLabelImageFilter<TOutputImage>::VectorWktToLabelImageFilter():m_AllTouchedMode(true), m_BackgroundValue(0),m_BandsToBurn(1, 1), epsg(4326), idField("id"), geomType(wkbPolygon) {
-    srs                     = std::make_unique<OGRSpatialReference>();
-}
+VectorWktToLabelImageFilter<TOutputImage>::VectorWktToLabelImageFilter():m_AllTouchedMode(true), m_BackgroundValue(0),m_BandsToBurn(1, 1), epsg(4326), idField("id"), geomType(wkbPolygon) {}
 
 template <class TOutputImage>
 VectorWktToLabelImageFilter<TOutputImage>::~VectorWktToLabelImageFilter() {

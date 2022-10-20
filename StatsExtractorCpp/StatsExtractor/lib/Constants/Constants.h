@@ -33,7 +33,7 @@ class ProductInfo {
     MetadataDictPtr metadata;
     float scaleFactor, addOffset, pixelSize, noData;
     float (*scaler)(float, float&, float&);
-    long double (*pixelsToArea)(long double&, float);
+    long double (*pixelsToArea)(long double&, long double);
 
 public:
     using Pointer = std::shared_ptr<ProductInfo>;

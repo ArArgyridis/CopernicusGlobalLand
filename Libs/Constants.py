@@ -55,7 +55,7 @@ class Constants:
             SELECT p.name, p.type, pfd.*
             FROM {0}.product p 
             LEFT JOIN {0}.product_file_description pfd on p.id = pfd.product_id 
-            WHERE p.id IN(1) ORDER BY p.id -- (pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif') AND """.format(_cfg.statsInfo.schema)
+            WHERE p.id IN(4) ORDER BY p.id -- (pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif') AND """.format(_cfg.statsInfo.schema)
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
 
             if res != 1:

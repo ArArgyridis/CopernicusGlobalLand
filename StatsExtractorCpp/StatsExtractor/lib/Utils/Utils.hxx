@@ -47,18 +47,19 @@ using JsonDocumentPtr   = std::unique_ptr<JsonDocument>;
 using JsonValue     = rapidjson::Value;
 using JsonValuePtr  = std::unique_ptr<JsonValue>;
 
-/** Typedefs for labels */
-using LabelSet      =  std::vector<std::size_t>;
-using LabelSetPtr   = std::shared_ptr<LabelSet>;
-
 /** Double precision Point coordinates */
 using point2d = itk::Point<double, 2>;
 
+/** typedef for labels */
+using LabelsArray       = std::vector<size_t>;
+using LabelsArrayPtr    = std::shared_ptr<LabelsArray>;
+
+/** Image statistics Info */
 
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath);
 OGRPolygon envelopeToGeometry(OGREnvelope& envelope);
-long double pixelsToAreaM2Degrees(long double& pixelCount, float pixelSize);
-long double pixelsToAreaM2Meters(long double& pixelCount, float pixelSize);
+long double pixelsToAreaM2Degrees(long double& pixelCount, long double pixelSize);
+long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize);
 
 
 float noScalerFunc(float x, float& scale, float& offset);
@@ -95,6 +96,6 @@ std::string jsonToString(JSONType& json) {
 }
 
 
-
+std::string stringstreamToString(std::stringstream &stream);
 
 #endif // UTILS_HXX

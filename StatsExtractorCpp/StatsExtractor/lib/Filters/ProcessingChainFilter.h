@@ -50,17 +50,30 @@ public:
     using RegionType                = typename TInputImage::RegionType;
 
 
+    struct ImageInfo {
+        std::string path;
+        PolygonStats::PolyStatsPerRegionPtr regionStatistics;
+        PolygonStats::PolyStatsMapPtr outStats;
+        ImageInfo(std::string path, PolygonStats::PolyStatsPerRegionPtr stats, PolygonStats::PolyStatsMapPtr out):path(path),
+            regionStatistics(stats), outStats(out){}
+    };
+
+    using ImageInfoPtr  = std::shared_ptr<ImageInfo>;
+    using ImagesInfo    = std::map<size_t,ImageInfoPtr>;
+
+
+
     /** typedefs for needed filters */
     using labelType             = unsigned int;
     const short Dimension       = 2;
     using LabelImageType        = Image< labelType, 2 >;
 
-    using VectorDataToLabelImageFilterType  = otb::VectorDataToLabelImageFilter<TPolygonDataType, LabelImageType>;
-    using RawDataImageReaderType            = otb::ImageFileReader<TInputImage>;
-    using ExtractRawDataROIFilter           = otb::ExtractROI<typename TInputImage::PixelType, typename TInputImage::PixelType>;
-    using ExtractLabelDataROIFilter         = otb::ExtractROI<typename LabelImageType::PixelType, typename LabelImageType::PixelType>;
-    using StreamedStatisticsType            = otb::StreamedStatisticsFromLabelImageFilter<TInputImage, LabelImageType>;
-    using RasterizerFilter                  = otb::VectorWktToLabelImageFilter<LabelImageType>;
+    using VectorDataToLabelImageFilterType      = VectorDataToLabelImageFilter<TPolygonDataType, LabelImageType>;
+    using RawDataImageReaderType                = ImageFileReader<TInputImage>;
+    using ExtractRawDataROIFilter               = ExtractROI<typename TInputImage::PixelType, typename TInputImage::PixelType>;
+    using ExtractLabelDataROIFilter             = ExtractROI<typename LabelImageType::PixelType, typename LabelImageType::PixelType>;
+    using StreamedStatisticsType                = StreamedStatisticsFromLabelImageFilter<TInputImage, LabelImageType>;
+    using RasterizerFilter                      = VectorWktToLabelImageFilter<LabelImageType>;
 
     /** Type macro */
     itkNewMacro(Self);
@@ -69,8 +82,9 @@ public:
     itkTypeMacro(ProcessingChainFilter, PersistentImageFilter);
 
     virtual void Reset(void) override;
-    virtual void SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product, OGREnvelope &envlp, std::unique_ptr<std::vector<std::pair<size_t,
-                           std::string>>> images, std::unique_ptr<std::vector<size_t>> polyIds, size_t& polySRID);
+    virtual void SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
+                           OGREnvelope& envlp, JsonDocumentPtr images, JsonDocumentPtr polyIds,
+                           size_t& polSRID);
     virtual void Synthetize(void) override;
 
 
@@ -91,14 +105,16 @@ private:
     Configuration::Pointer config;
     ProductInfo::Pointer product;
     OGREnvelope aoi;
-    std::unique_ptr<std::vector<std::pair<size_t, std::string>>> productImages;
+    ImagesInfo productImages;
     size_t polySRID, repeat;
-    LabelSetPtr labels;
+    LabelsArrayPtr labels;
     std::mutex readMtx;
     std::string stratification, polyIdsStr;
-    //dedicated conncetion for processing
     typename LabelImageType::Pointer rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
 
+    void alignAOIToImage(OGREnvelope& envlp);
+    void prepareImageInfo(JsonDocumentPtr& images);
+    void processGeomIdsAndImages(JsonDocumentPtr& polyIds, JsonDocumentPtr& images);
 
 };
 

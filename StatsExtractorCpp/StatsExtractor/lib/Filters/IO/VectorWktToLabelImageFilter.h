@@ -33,14 +33,14 @@ public:
 
 
     /** Output Image types. */
-      using OutputImagePointer              = typename TOutputImage::Pointer;
-      using OutputSizeType                  = typename TOutputImage::SizeType;
-      using OutputIndexType                 = typename TOutputImage::IndexType;
-      using OutputSpacingType               = typename TOutputImage::SpacingType;
-      using OutputOriginType                = typename TOutputImage::PointType;
-      using OutputImageRegionType           = typename TOutputImage::RegionType;
-      using OutputImagePixelType            = typename  TOutputImage::PixelType;
-      using OutputImageInternalPixelType    = typename TOutputImage::InternalPixelType;
+    using OutputImagePointer              = typename TOutputImage::Pointer;
+    using OutputSizeType                  = typename TOutputImage::SizeType;
+    using OutputIndexType                 = typename TOutputImage::IndexType;
+    using OutputSpacingType               = typename TOutputImage::SpacingType;
+    using OutputOriginType                = typename TOutputImage::PointType;
+    using OutputImageRegionType           = typename TOutputImage::RegionType;
+    using OutputImagePixelType            = typename  TOutputImage::PixelType;
+    using OutputImageInternalPixelType    = typename TOutputImage::InternalPixelType;
 
     /** Macros to create set/get methods for some parameters*/
     itkGetConstReferenceMacro(OutputOrigin, OutputOriginType);
@@ -51,7 +51,6 @@ public:
     itkSetMacro(OutputProjectionRef, std::string);
     itkSetMacro(OutputRegion, OutputImageRegionType);
     itkSetMacro(OutputSignedSpacing, OutputSpacingType);
-
 
 
     /** Run-time type information (and related methods). */
@@ -92,12 +91,8 @@ private:
     OGRwkbGeometryType              geomType;
     OGREnvelope                     outEnvelope, maxEnvelope;
     OGRPolygon                      maxEnvelopePoly;
-    LabelSetPtr                     validPolyIds;
-    OGRSpatialReferencePtr          srs;
+    std::vector<size_t>             validPolyIds;
     std::vector<OGRGeometryH>       burnGeoms;
-
-    std::mutex  mtx;
-
 };
 }
 #endif // VECTORWKTTOLABELIMAGEFILTER_H

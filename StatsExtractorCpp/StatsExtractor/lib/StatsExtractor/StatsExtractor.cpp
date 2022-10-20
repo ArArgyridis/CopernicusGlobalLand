@@ -13,7 +13,7 @@
 */
 
 #include <iostream>
-
+#include <memory>
 #include <otbImage.h>
 #include <otbImageFileReader.h>
 #include <otbImageFileWriter.h>
@@ -63,7 +63,7 @@ void StatsExtractor::process() {
                 "join product_file pf on pfd.id = pf.product_description_id "
                 "left join poly_stats ps on ps.poly_id = sg.id AND ps.product_file_id = pf.id "
                 "where s.description  = '" + stratification +
-                "' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS null /*AND sg.id = 199 AND sg.id=74*/"
+                "' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS null /*AND sg.id = 199 AND sg.id=74 AND pf.id <2*/"
                 "),extent AS( "
                 "  select  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids "
                 "  from (select distinct geomid from info) a "
@@ -81,26 +81,13 @@ void StatsExtractor::process() {
         if (processInfo.empty() || processInfo[0][0].is_null() || processInfo[0][1].is_null()) //no data at all, or no polygons, or no images
             continue;
 
-        JsonDocumentPtr  images = std::make_unique<JsonDocument>(), geomIds = std::make_unique<JsonDocument>();
+        JsonDocumentPtr  images = std::make_unique<JsonDocument>(), polyIds = std::make_unique<JsonDocument>();
 
         //prepare images
         images->Parse(processInfo[0][0].as<std::string>().c_str());
-        std::unique_ptr<std::vector<std::pair<size_t, std::string>>> absImagePath=std::make_unique<std::vector<std::pair<size_t, std::string>>>(images->GetArray().Size());
-        size_t i = 0;
-        for (auto& image: images->GetArray()) {
-            boost::filesystem::path relPath = image.GetArray()[0].GetString();
-            (*absImagePath)[i]              = std::pair<size_t, std::string>(image.GetArray()[1].GetInt64(), product.second->productAbsPath(relPath).string());
-            i++;
-        }
         //prepare geomIds
-        geomIds->Parse(processInfo[0][1].as<std::string>().c_str());
+        polyIds->Parse(processInfo[0][1].as<std::string>().c_str());
 
-        std::unique_ptr<std::vector<size_t>> polyIds = std::make_unique<std::vector<size_t>>(geomIds->GetArray().Size());
-        i = 0;
-        for (auto& id: geomIds->GetArray()) {
-            (*polyIds)[i] = id.GetInt64();
-            i++;
-        }
 
         //prepare envelope
         OGREnvelope envelope;
@@ -113,10 +100,11 @@ void StatsExtractor::process() {
         size_t srid = processInfo[0][6].as<size_t>();
 
         ProcessingChainFilter::Pointer processingChain = ProcessingChainFilter::New();
-        processingChain->SetParams(config, product.second, envelope, std::move(absImagePath), std::move(polyIds), srid);
+        processingChain->SetParams(config, product.second, envelope, std::move(images), std::move(polyIds), srid);
         processingChain->UpdateOutputInformation();
-        processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(3000);
+        processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(7000);
         processingChain->Update();
+
     }
 }
 

@@ -35,12 +35,6 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputDataImage
 }
 
 template <class TInputImage, class TLabelImage>
-PolygonStats::Pointer StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::GetPolygonStatsByLabel(size_t &label) {
-    return (*this->polyMapStats)[label];
-}
-
-
-template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputLabelImage(const LabelImageType* image) {
     this->itk::ProcessObject::SetNthInput(1, const_cast<LabelImageType*>(image));
 
@@ -51,11 +45,9 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputLabelImag
 }
 
 template <class TInputImage, class TLabelImage>
-void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputLabels(LabelSetPtr labels) {
-    this->labels = std::vector<size_t>(labels->begin(), labels->end());
+void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputLabels(LabelsArrayPtr labels) {
+    this->labels = labels;
 }
-
-
 
 template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputProduct(const ProductInfo::Pointer product) {
@@ -65,89 +57,50 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputProduct(c
 }
 
 
+template <class TInputImage, class TLabelImage>
+void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetPolyStatsPerRegion(const PolygonStats::PolyStatsPerRegionPtr stats, itk::ThreadIdType threadId){
+    this->m_PolygonStatsPerRegion = stats;
+    this->parentThreadId = threadId;
+}
 
 template <class TInputImage, class TLabelImage>
 StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::StatisticsFromLabelImageFilter():labelDataNullPixel(0), currentProduct(nullptr) {}
 
 template <class TInputImage, class TLabelImage>
-void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Synthetize() {
-/*
-    for (size_t i = 0; i < labels.size(); i++) {
-        auto polyStat = (*polyMapStats)[labels[i]];
-        for(size_t j = 0; j <threadPolyMapStatsVector.size(); j++) {
-            auto pos = threadPolyMapStatsVector[j]->find(labels[i]);
-
-            if ( pos != threadPolyMapStatsVector[j]->end()) {
-                polyStat->totalCount += pos->second->totalCount;
-                polyStat->validCount += pos->second->validCount;
-                polyStat->mean += pos->second->mean;
-                polyStat->sd += pos->second->sd;
-
-                for (size_t i = 0; i < polyStat->densityArray.size(); i++)
-                    polyStat->densityArray[i] += pos->second->densityArray[i];
-
-                for(size_t i = 0; i <polyStat->histogramBins; i++)
-                    polyStat->histogram[i] += pos->second->histogram[i];
-            }
-        }
-
-        if (polyStat->validCount == 0)
-            continue;
-
-        polyStat->mean /=polyStat->validCount;
-        polyStat->sd = sqrt( polyStat->sd/polyStat->validCount - pow(polyStat->mean, 2));
-
-        for (size_t i = 0; i < 4; i++)
-            polyStat->densityArray[i] = pixelsToAreaM2Degrees(polyStat->densityArray[i], this->GetOutput()->GetSpacing()[0]);
-    }
-    */
-
-}
+void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Synthetize() {}
 
 template <class TInputImage, class TLabelImage>
-void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Reset() {
-
-    this->polyMapStats = PolygonStats::NewPointerMap(labels, currentProduct);
-
-    threadPolyMapStatsVector = std::vector<FloatInputImageTypePolyMapStats>(this->GetNumberOfThreads());
-
-    for (itk::ThreadIdType threadId = 0; threadId < this->GetNumberOfThreads(); threadId++)
-        threadPolyMapStatsVector[threadId] = PolygonStats::NewPointerMap(labels, currentProduct);
-
-}
+void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Reset() {}
 
 template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::ThreadedGenerateData(const RegionType &outputRegionForThread, itk::ThreadIdType threadId) {
-
     typename TInputImage::Pointer rawData = this->GetInputDataImage();
     typename TLabelImage::Pointer labels = this->GetInputLabelImage();
     TInputImageConstIterator rawDataIt(rawData, outputRegionForThread);
     TInputLabelImageConstIterator labelDataIt(labels, outputRegionForThread);
 
-    FloatInputImageTypePolyMapStats threadPolygonStats = threadPolyMapStatsVector[threadId];
-    InputPixelType pixelData;
+    //(*m_PolygonStatsPerRegion)[this->GetNumberOfThreads()*parentThreadId+threadId];
 
     for (rawDataIt.GoToBegin(), labelDataIt.GoToBegin(); !rawDataIt.IsAtEnd(); ++rawDataIt, ++labelDataIt) {
         LabelPixelType label = labelDataIt.Get();
 
         if(label != labelDataNullPixel) {
-            (*threadPolygonStats)[label]->totalCount++;
-             pixelData = rawDataIt.Get();
+            PolygonStats::Pointer polyStats = (*(*m_PolygonStatsPerRegion)[label])[this->GetNumberOfThreads()*parentThreadId+threadId];
+            polyStats->totalCount++;
+            InputPixelType pixelData = rawDataIt.Get();
             if (pixelData != rawDataNullPixel) {
-                typename PolygonStats::Pointer polyStats = (*threadPolygonStats)[label];
-                (*threadPolygonStats)[label]->validCount++;
+                polyStats->validCount++;
+                auto val = currentProduct->lutProductValues[pixelData-currentProduct->minMaxValues[0]];
+                polyStats->mean += val;
+                polyStats->sd += pow(val,2);
 
-                    auto val = currentProduct->lutProductValues[pixelData-currentProduct->minMaxValues[0]];
-                    polyStats->mean += val;
-                    polyStats->sd += pow(val,2);
+                size_t idx = (val <= currentProduct->valueRange.low)*0 +
+                        (currentProduct->valueRange.low <= val && val <= currentProduct->valueRange.mid)*1 +
+                        (currentProduct->valueRange.mid <= val && val <= currentProduct->valueRange.high)*2 +
+                        (val >= currentProduct->valueRange.high)*3;
 
-                    size_t idx = (val <= currentProduct->valueRange.low)*0 +
-                            (currentProduct->valueRange.low <= val && val <= currentProduct->valueRange.mid)*1 +
-                            (currentProduct->valueRange.mid <= val && val <= currentProduct->valueRange.high)*2 +
-                            (val >= currentProduct->valueRange.high)*3;
-
-                    polyStats->densityArray[idx]++;
-                    polyStats->addToHistogram(val);
+                polyStats->densityArray[idx]++;
+                polyStats->addToHistogram(val);
             }
         }
     }

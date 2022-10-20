@@ -32,13 +32,11 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Reset() {
 
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product, OGREnvelope &envlp, std::unique_ptr<std::vector<std::pair<size_t, std::string>>> images,
-                                                                     std::unique_ptr<std::vector<size_t>> polyIds, size_t &polySRID) {
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
+                                                                     OGREnvelope &envlp, JsonDocumentPtr images,
+                                                                     JsonDocumentPtr polyIds, size_t &polySRID) {
     this->config        = config;
     this->product       = product;
-    this->aoi           = envlp;
-    this->productImages = std::move(images);
-    this->labels        = std::move(polyIds);
     this->polySRID      = polySRID;
 
     //setting the reference image as input
@@ -47,49 +45,12 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Confi
     reader->UpdateOutputInformation();
     this->SetNthInput(0, reader->GetOutput());
 
-    //creating polygonId string
-    for (size_t& id :*this->labels)
-        polyIdsStr += std::to_string(id) +",";
-
-    polyIdsStr = polyIdsStr.substr(0, polyIdsStr.length()-1);
-
-    //aligning aoi to image
-    point2d upperLeft, lowerRight;
-    typename TInputImage::IndexType upperLeftIdx, lowerRightIdx;
-    upperLeft[0]    = aoi.MinX;
-    upperLeft[1]    = aoi.MaxY;
-
-    lowerRight[0]   = aoi.MaxX;
-    lowerRight[1]   = aoi.MinY;
-
-
-    //anchoring to indexes
-    TInputImagePointer inputImage = this->GetReferenceImage();
-
-    inputImage->TransformPhysicalPointToIndex(upperLeft, upperLeftIdx);
-    inputImage->TransformPhysicalPointToIndex(lowerRight, lowerRightIdx);
-
-    //getting centroid coordinates
-    inputImage->TransformIndexToPhysicalPoint(upperLeftIdx, upperLeft);
-    inputImage->TransformIndexToPhysicalPoint(lowerRightIdx, lowerRight);
-
-    typename TInputImage::SpacingType spacing;
-    spacing     = inputImage->GetSignedSpacing();
-
-    aoi.MinX    = upperLeft[0] - spacing[0]/2;
-    aoi.MaxY    = upperLeft[1] - abs(spacing[1]/2);
-
-    aoi.MaxX    = lowerRight[0] + spacing[0]/2;
-    aoi.MinY    = lowerRight[1] - abs(spacing[1]/2);
-
-    //get aoi from input image
-    OGREnvelope imageEnvelope = regionToEnvelope<TInputImage>(inputImage, inputImage->GetLargestPossibleRegion());
-
-    //intersect two aois to get the common one-> this is the actual aoi
-    aoi.Intersect(imageEnvelope);
-    //std::cout << aoi.MinX <<"," <<aoi.MinY <<"\n" <<aoi.MaxX <<"," << aoi.MaxY <<"\n";
-
+    this->processGeomIdsAndImages(polyIds, images);
+    this->alignAOIToImage(envlp);
 }
+
+
+
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateInputRequestedRegion() {
@@ -143,7 +104,17 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateOutputInforma
 
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {}
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
+    std::cout <<"COLLAPSING!!!!\n";
+    for(auto &image: productImages) {
+        PolygonStats::collapseData(image.second->regionStatistics, image.second->outStats, this->product);
+        PolygonStats::updateDB(image.first, config, image.second->outStats);
+    }
+    std::cout <<"COLLAPSING Finished!!!!\n";
+
+
+
+}
 
 template <class TInputImage, class TPolygonDataType>
 ProcessingChainFilter<TInputImage, TPolygonDataType>::ProcessingChainFilter() {
@@ -176,25 +147,21 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
     if (labelImage == nullptr)
         return;
 
-    TInputImagePointer out                      = this->GetOutput();
-    TInputImagePointer inputImage               = this->GetReferenceImage();
-    typename TInputImage::SpacingType spacing   = out->GetSignedSpacing();
+    TInputImagePointer out          = this->GetOutput();
+    TInputImagePointer inputImage   = this->GetReferenceImage();
 
     //getting origin idx
     point2d originPnt;
     typename TInputImage::RegionType::IndexType originRawDataIdx;
-    typename LabelImageType::RegionType::IndexType originLabelDataIdx;
 
     out->TransformIndexToPhysicalPoint(outputRegionForThread.GetIndex(), originPnt);
     inputImage->TransformPhysicalPointToIndex(originPnt, originRawDataIdx);
 
-    for(auto& image:*productImages) {
-        std::cout <<"Processing image: " <<image.second << ")\n";
+    for(auto& image:productImages) {
+        std::cout <<"Processing image: " <<image.second->path << ")\n";
 
         typename RawDataImageReaderType::Pointer imgReader= RawDataImageReaderType::New();
-        imgReader->SetFileName(image.second.c_str());
-        imgReader->DebugOff();
-        //imgReader->RemoveAllObservers();
+        imgReader->SetFileName(image.second->path.c_str());
 
         {
             std::lock_guard<std::mutex> lock(readMtx);
@@ -207,27 +174,21 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
         roi->SetStartY(originRawDataIdx[1]);
         roi->SetSizeX(outputRegionForThread.GetSize()[0]);
         roi->SetSizeY(outputRegionForThread.GetSize()[1]);
-        //roi->ReleaseDataFlagOn();
-        roi->DebugOff();
-        roi->Update();
 
         typename StreamedStatisticsType::Pointer stats = StreamedStatisticsType::New();
         stats->SetInputLabels(labels);
         stats->SetInputProduct(product);
+        stats->SetPolyStatsPerRegion(image.second->regionStatistics, threadId);
         stats->SetInputLabelImage(labelImage);
         stats->SetInputDataImage(roi->GetOutput());
-        stats->UpdateOutputInformation();
-        //stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(1280);
-        stats->DebugOff();
+        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(7000);
+
         stats->GlobalWarningDisplayOff();
         stats->Update();
         stats->ReleaseDataFlagOn();
         stats->ResetPipeline();
-        //stats->GetPolygonStatsByLabel(polyID)->updateDB(imgID, config);
     }
 }
-
-
 
 template <class TInputImage, class TPolygonDataType>
 typename ProcessingChainFilter<TInputImage, TPolygonDataType>::LabelImageType::Pointer
@@ -262,8 +223,6 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInput
         return nullptr;
 
     rasterizer->Update();
-
-    //std::cout <<"COUNT: " << rasterizer->GetFeatureCount() <<"\n";
 /*
     using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
     ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
@@ -275,6 +234,77 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInput
 
 }
 
+
+
+template <class TInputImage, class TPolygonDataType>
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::alignAOIToImage(OGREnvelope &envlp){
+    //aligning aoi to image
+    this->aoi = envlp;
+
+    point2d upperLeft, lowerRight;
+    typename TInputImage::IndexType upperLeftIdx, lowerRightIdx;
+    upperLeft[0]    = aoi.MinX;
+    upperLeft[1]    = aoi.MaxY;
+
+    lowerRight[0]   = aoi.MaxX;
+    lowerRight[1]   = aoi.MinY;
+
+
+    //anchoring to indexes
+    TInputImagePointer inputImage = this->GetReferenceImage();
+
+    inputImage->TransformPhysicalPointToIndex(upperLeft, upperLeftIdx);
+    inputImage->TransformPhysicalPointToIndex(lowerRight, lowerRightIdx);
+
+    //getting centroid coordinates
+    inputImage->TransformIndexToPhysicalPoint(upperLeftIdx, upperLeft);
+    inputImage->TransformIndexToPhysicalPoint(lowerRightIdx, lowerRight);
+
+    typename TInputImage::SpacingType spacing;
+    spacing     = inputImage->GetSignedSpacing();
+
+    aoi.MinX    = upperLeft[0] - spacing[0]/2;
+    aoi.MaxY    = upperLeft[1] - abs(spacing[1]/2);
+
+    aoi.MaxX    = lowerRight[0] + spacing[0]/2;
+    aoi.MinY    = lowerRight[1] - abs(spacing[1]/2);
+
+    //get aoi from input image
+    OGREnvelope imageEnvelope = regionToEnvelope<TInputImage>(inputImage, inputImage->GetLargestPossibleRegion());
+
+    //intersect two aois to get the common one-> this is the actual aoi
+    aoi.Intersect(imageEnvelope);
+    //std::cout << aoi.MinX <<"," <<aoi.MinY <<"\n" <<aoi.MaxX <<"," << aoi.MaxY <<"\n";
+}
+
+template <class TInputImage, class TPolygonDataType>
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonDocumentPtr &images) {
+    for (auto & image:images->GetArray()) {
+        boost::filesystem::path relPath = image.GetArray()[0].GetString();
+
+        auto statsStruct = PolygonStats::NewPolyStatsPerRegionMap(pow(this->GetNumberOfThreads(),2),labels, product);
+        auto outputStats = PolygonStats::NewPointerMap(labels, product);
+
+        ImageInfoPtr imgInfo = std::make_shared<ImageInfo>(product->productAbsPath(relPath).string(), statsStruct, outputStats);
+        productImages.insert(std::pair<size_t, ImageInfoPtr>(image.GetArray()[1].GetInt64(),imgInfo));
+    }
+}
+
+
+template <class TInputImage, class TPolygonDataType>
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImages(JsonDocumentPtr &polyIds, JsonDocumentPtr &images) {
+
+    labels = std::make_shared<std::vector<size_t>>(polyIds->GetArray().Size());
+    size_t i = 0;
+    for (auto& id: polyIds->GetArray()) {
+        (*labels)[i] = id.GetInt64();
+        polyIdsStr += std::to_string((*labels)[i]) +",";
+        i++;
+    }
+    polyIdsStr = polyIdsStr.substr(0, polyIdsStr.length()-1);
+    this->prepareImageInfo(images);
+
+}
 }
 
 

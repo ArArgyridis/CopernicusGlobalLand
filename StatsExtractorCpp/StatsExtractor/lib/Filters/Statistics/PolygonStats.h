@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "../../Constants/Constants.h"
+#include "../../Utils/Utils.hxx"
 
 class PolygonStats {
     std::vector<float> histogramRanges;
@@ -30,20 +31,26 @@ class PolygonStats {
     JsonDocumentPtr histogramToJSON();
 
 public:
-    using Pointer = std::shared_ptr<PolygonStats>;
-    using PolygonStatsMap = std::map<std::size_t, Pointer>;
-    using MapPointer = std::shared_ptr<PolygonStatsMap>;
+    using Pointer               = std::shared_ptr<PolygonStats>;
+    using PolyStatsMap          = std::map<std::size_t, Pointer>;
+    using PolyStatsMapPtr       = std::shared_ptr<PolyStatsMap>;
+    using PolyStatsArray        = std::vector<Pointer>;
+    using PolyStatsArrayPtr     = std::shared_ptr<PolyStatsArray>;
+    using PolyStatsPerRegion    = std::map<std::size_t, PolyStatsArrayPtr>;
+    using PolyStatsPerRegionPtr = std::shared_ptr<PolyStatsPerRegion>;
 
     PolygonStats(ProductInfo::Pointer prod, size_t polyID, size_t histBins=10);
     ~PolygonStats();
 
     static Pointer New(ProductInfo::Pointer prod, const size_t &polyID, size_t histBins=10);
-    static MapPointer NewPointerMap(const std::vector<size_t> &labels, ProductInfo::Pointer prod, size_t histBins=10);
+    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr labels, ProductInfo::Pointer prod, size_t histBins=10);
+    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductInfo::Pointer prod, size_t histBins=10);
+
+    static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination, ProductInfo::Pointer product);
+
     void addToHistogram(float &value);
     void computeColors();
-    void updateDB(size_t& productFileID, Configuration::Pointer cfg);
-
-
+    static void updateDB(const size_t& productFileID, Configuration::Pointer cfg, PolyStatsMapPtr polygonData);
 
     long double mean, sd;
     std::array<long double, 4> densityArray;

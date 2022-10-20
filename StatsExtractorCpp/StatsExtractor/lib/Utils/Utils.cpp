@@ -70,10 +70,10 @@ OGRPolygon envelopeToGeometry(OGREnvelope &envelope) {
     return retPoly;
 }
 
-long double pixelsToAreaM2Degrees(long double &pixelCount, float pixelSize) {
+long double pixelsToAreaM2Degrees(long double &pixelCount, long double pixelSize) {
     return pixelCount*1.0*pow(pixelSize*M_PI/180.0*6371000, 2);
 }
-long double pixelsToAreaM2Meters(long double &pixelCount, float pixelSize) {
+long double pixelsToAreaM2Meters(long double &pixelCount, long double pixelSize) {
     return pixelCount*1.0*pixelSize*pixelSize;
 }
 
@@ -100,5 +100,9 @@ float scalerFunc(float x, float& scale, float& offset) {
     return x*scale+offset;
 }
 
-
+std::string stringstreamToString(std::stringstream &stream) {
+        stream.seekp(-1, stream.cur);
+        stream << ' ';
+        return stream.str();
+}
 

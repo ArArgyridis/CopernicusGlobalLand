@@ -47,12 +47,21 @@ public:
         this->GetFilter()->SetInputLabelImage(image);
     }
 
-    void SetInputLabels(LabelSetPtr labels) {
+    void SetInputLabels(LabelsArrayPtr labels) {
         this->GetFilter()->SetInputLabels(labels);
     }
 
     void SetInputProduct(const ProductInfo::Pointer product) {
         this->GetFilter()->SetInputProduct(product);
+    }
+
+    void SetNumberOfThreads(itk::ThreadIdType threadCount) {
+        Superclass::SetNumberOfThreads(threadCount);
+        this->GetFilter()->SetNumberOfThreads(threadCount);
+    }
+
+    void SetPolyStatsPerRegion(const PolygonStats::PolyStatsPerRegionPtr polyStatsPerRegion, itk::ThreadIdType threadId=0) {
+        this->GetFilter()->SetPolyStatsPerRegion(polyStatsPerRegion, threadId);
     }
 
 
