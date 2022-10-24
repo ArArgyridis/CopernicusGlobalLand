@@ -52,10 +52,9 @@ public:
 
     struct ImageInfo {
         std::string path;
-        PolygonStats::PolyStatsPerRegionPtr regionStatistics;
+        std::vector<std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>> tmpRegionData;
         PolygonStats::PolyStatsMapPtr outStats;
-        ImageInfo(std::string path, PolygonStats::PolyStatsPerRegionPtr stats, PolygonStats::PolyStatsMapPtr out):path(path),
-            regionStatistics(stats), outStats(out){}
+        ImageInfo(std::string path,PolygonStats::PolyStatsMapPtr out):path(path), outStats(out){}
     };
 
     using ImageInfoPtr  = std::shared_ptr<ImageInfo>;

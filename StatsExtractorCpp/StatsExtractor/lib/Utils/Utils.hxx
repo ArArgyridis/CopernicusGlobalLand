@@ -88,9 +88,10 @@ OGREnvelope regionToEnvelope(typename TInputImage::Pointer inputImage, typename 
 }
 
 template <class JSONType>
-std::string jsonToString(JSONType& json) {
+std::string jsonToString(JSONType& json, size_t decimalPlaces=2) {
     rapidjson::StringBuffer buf;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
+    writer.SetMaxDecimalPlaces(decimalPlaces);
     json.Accept(writer);
     return  buf.GetString();
 }

@@ -47,6 +47,7 @@ public:
     static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductInfo::Pointer prod, size_t histBins=10);
 
     static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination, ProductInfo::Pointer product);
+    static void finalizeStatistics(PolyStatsMapPtr stats);
 
     void addToHistogram(float &value);
     void computeColors();
@@ -57,7 +58,7 @@ public:
     size_t validCount, totalCount, histogramBins;
     ProductInfo::Pointer product;
     std::vector<size_t> histogram;
-    RGBVal noValColor, sparseValColor, mildValColor, denseValColor;
+    std::vector<RGBVal> densityColors;
 };
 
 #endif // POLYGONSTATS_HXX

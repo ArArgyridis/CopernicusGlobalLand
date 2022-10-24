@@ -79,30 +79,33 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::ThreadedGenerateD
     TInputImageConstIterator rawDataIt(rawData, outputRegionForThread);
     TInputLabelImageConstIterator labelDataIt(labels, outputRegionForThread);
 
-    //(*m_PolygonStatsPerRegion)[this->GetNumberOfThreads()*parentThreadId+threadId];
-
     for (rawDataIt.GoToBegin(), labelDataIt.GoToBegin(); !rawDataIt.IsAtEnd(); ++rawDataIt, ++labelDataIt) {
         LabelPixelType label = labelDataIt.Get();
 
-        if(label != labelDataNullPixel) {
-            PolygonStats::Pointer polyStats = (*(*m_PolygonStatsPerRegion)[label])[this->GetNumberOfThreads()*parentThreadId+threadId];
-            polyStats->totalCount++;
-            InputPixelType pixelData = rawDataIt.Get();
-            if (pixelData != rawDataNullPixel) {
-                polyStats->validCount++;
-                auto val = currentProduct->lutProductValues[pixelData-currentProduct->minMaxValues[0]];
-                polyStats->mean += val;
-                polyStats->sd += pow(val,2);
+        if(label == labelDataNullPixel)
+            continue;
 
-                size_t idx = (val <= currentProduct->valueRange.low)*0 +
-                        (currentProduct->valueRange.low <= val && val <= currentProduct->valueRange.mid)*1 +
-                        (currentProduct->valueRange.mid <= val && val <= currentProduct->valueRange.high)*2 +
-                        (val >= currentProduct->valueRange.high)*3;
+        PolygonStats::Pointer polyStats = (*(*m_PolygonStatsPerRegion)[label])[this->GetNumberOfThreads()*parentThreadId+threadId];
+        polyStats->totalCount++;
+        InputPixelType pixelData = rawDataIt.Get();
 
-                polyStats->densityArray[idx]++;
-                polyStats->addToHistogram(val);
-            }
-        }
+        if (pixelData == rawDataNullPixel)
+            continue;
+
+        polyStats->validCount++;
+        auto val = currentProduct->lutProductValues[pixelData-currentProduct->minMaxValues[0]];
+        polyStats->mean += val;
+        polyStats->sd   += pow(val,2);
+
+        size_t idx = (val <= currentProduct->valueRange.low)*0 +
+                (currentProduct->valueRange.low <= val && val <= currentProduct->valueRange.mid)*1 +
+                (currentProduct->valueRange.mid <= val && val <= currentProduct->valueRange.high)*2 +
+                (val >= currentProduct->valueRange.high)*3;
+
+        polyStats->densityArray[idx]++;
+        polyStats->addToHistogram(val);
+
+
     }
 }
 }

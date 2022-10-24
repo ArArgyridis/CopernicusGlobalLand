@@ -105,14 +105,10 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateOutputInforma
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
-    std::cout <<"COLLAPSING!!!!\n";
-    for(auto &image: productImages) {
-        PolygonStats::collapseData(image.second->regionStatistics, image.second->outStats, this->product);
+    for (auto &image:productImages) {
+        PolygonStats::finalizeStatistics(image.second->outStats);
         PolygonStats::updateDB(image.first, config, image.second->outStats);
     }
-    std::cout <<"COLLAPSING Finished!!!!\n";
-
-
 
 }
 
@@ -125,7 +121,16 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::ProcessingChainFilter() {
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::AfterThreadedGenerateData(){
+    std::cout <<"COLLAPSING!!!!\n";
+    for(auto &image: productImages) {
+        for (itk::ThreadIdType i = 0; i < this->GetNumberOfThreads(); i++)
+            PolygonStats::collapseData(image.second->tmpRegionData[i].second, image.second->outStats, this->product);
+    }
+
+    std::cout <<"COLLAPSING Finished!!!!\n";
+
     repeat++;
+
 }
 
 
@@ -133,6 +138,12 @@ template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::BeforeThreadedGenerateData() {
     Superclass::BeforeThreadedGenerateData();
     std::cout <<"Repeat: " << repeat <<"\n";
+
+
+    for (auto & image: productImages)
+        image.second->tmpRegionData = std::vector<std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>>(this->GetNumberOfThreads());
+
+
 }
 template <class TInputImage, class TPolygonDataType>
 typename TInputImage::Pointer ProcessingChainFilter<TInputImage, TPolygonDataType>::GetReferenceImage() {
@@ -176,12 +187,12 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
         roi->SetSizeY(outputRegionForThread.GetSize()[1]);
 
         typename StreamedStatisticsType::Pointer stats = StreamedStatisticsType::New();
-        stats->SetInputLabels(labels);
+        stats->SetInputLabels(image.second->tmpRegionData[threadId].first);
         stats->SetInputProduct(product);
-        stats->SetPolyStatsPerRegion(image.second->regionStatistics, threadId);
+        stats->SetPolyStatsPerRegion(image.second->tmpRegionData[threadId].second);
         stats->SetInputLabelImage(labelImage);
         stats->SetInputDataImage(roi->GetOutput());
-        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(7000);
+        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(3000);
 
         stats->GlobalWarningDisplayOff();
         stats->Update();
@@ -204,16 +215,25 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInput
 
     std::string query = fmt::format("with region AS( select st_setsrid((st_makeenvelope({0},{1},{2},{3})),4326) bbox) select sg.id, ST_ASTEXT(ST_MULTI(case when st_contains(region.bbox, sg.geom) then sg.geom else st_intersection(sg.geom, region.bbox) end)) geom from stratification_geom sg join region on TRUE where sg.id IN ({4}) AND st_intersects(sg.geom, region.bbox)",
                                     evlp.MinX-spacing[0]/2, evlp.MinY-abs(spacing[1]/2),evlp.MaxX+spacing[0]/2, evlp.MaxY+abs(spacing[1]/2), polyIdsStr);
-    PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
-    PGPool::PGConn::PGRes res = cn->fetchQueryResult(query, "fetching polygon info for thread_"+std::to_string(threadId));
+    PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
+    PGPool::PGConn::PGRes res   = cn->fetchQueryResult(query, "fetching polygon info for thread_"+std::to_string(threadId));
 
     if(res.empty())
         return nullptr;
 
+    //std::cout << query <<"\n";
+
+    LabelsArrayPtr tmpLabels = std::make_shared<std::vector<size_t>>(res.size());
+
+
     RasterizerFilter::Pointer rasterizer = RasterizerFilter::New();
     rasterizer->SetGeometryMetaData(polySRID);
-    for(size_t i = 0; i < res.size(); i++)
-        rasterizer->AppendData(res[i][1].as<std::string>(), res[i][0].as<size_t>());
+    for(size_t i = 0; i < res.size(); i++) {
+        size_t id =  res[i][0].as<size_t>();
+        rasterizer->AppendData(res[i][1].as<std::string>(),id);
+        (*tmpLabels)[i] = id;
+    }
+
 
     rasterizer->SetOutputOrigin(originPnt);
     rasterizer->SetOutputRegion(region);
@@ -221,6 +241,11 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInput
     rasterizer->SetOutputProjectionRef(out->GetProjectionRef());
     if(rasterizer->GetFeatureCount() == 0)
         return nullptr;
+
+    for (auto &image:productImages) {
+        PolygonStats::PolyStatsPerRegionPtr tmpRegionStats = PolygonStats::NewPolyStatsPerRegionMap(this->GetNumberOfThreads(), tmpLabels, product);
+        image.second->tmpRegionData[threadId] = std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>(tmpLabels, tmpRegionStats);
+    }
 
     rasterizer->Update();
 /*
@@ -282,10 +307,9 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(Json
     for (auto & image:images->GetArray()) {
         boost::filesystem::path relPath = image.GetArray()[0].GetString();
 
-        auto statsStruct = PolygonStats::NewPolyStatsPerRegionMap(pow(this->GetNumberOfThreads(),2),labels, product);
         auto outputStats = PolygonStats::NewPointerMap(labels, product);
 
-        ImageInfoPtr imgInfo = std::make_shared<ImageInfo>(product->productAbsPath(relPath).string(), statsStruct, outputStats);
+        ImageInfoPtr imgInfo = std::make_shared<ImageInfo>(product->productAbsPath(relPath).string(), outputStats);
         productImages.insert(std::pair<size_t, ImageInfoPtr>(image.GetArray()[1].GetInt64(),imgInfo));
     }
 }
@@ -298,7 +322,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImag
     size_t i = 0;
     for (auto& id: polyIds->GetArray()) {
         (*labels)[i] = id.GetInt64();
-        polyIdsStr += std::to_string((*labels)[i]) +",";
+        polyIdsStr  += std::to_string((*labels)[i]) +",";
         i++;
     }
     polyIdsStr = polyIdsStr.substr(0, polyIdsStr.length()-1);

@@ -54,7 +54,7 @@ RGBVal ColorInterpolation::interpolateColor(long double areaPerc) {
         mx = keys[mx];
 
         for (size_t i = 0; i < 3; i++)
-            ret[i] = static_cast<int>( (values[mx][i] - values[mn][i])*(areaPerc*100-mn)/100 +values[mn][i]);
+            ret[i] = static_cast<int>( (values[mx][i] - values[mn][i])*(areaPerc-mn)/100 +values[mn][i]);
 
 
         return ret;

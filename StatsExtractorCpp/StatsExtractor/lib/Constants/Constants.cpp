@@ -51,23 +51,23 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):
 
     if (!row[12].is_null()) {
         novalColorRamp.Parse(row[12].as<std::string>().c_str());
-        noVal = ColorInterpolation(novalColorRamp);
+        colorInterpolation[0] = ColorInterpolation(novalColorRamp);
     }
 
     if (!row[13].is_null()) {
         sparsevalColorRamp.Parse(row[13].as<std::string>().c_str());
-        sparseVal = ColorInterpolation(sparsevalColorRamp);
+        colorInterpolation[1] = ColorInterpolation(sparsevalColorRamp);
     }
 
 
     if (!row[14].is_null()) {
         midvalColorRamp.Parse(row[14].as<std::string>().c_str());
-        mildVal = ColorInterpolation(midvalColorRamp);
+        colorInterpolation[2] = ColorInterpolation(midvalColorRamp);
     }
 
     if (!row[15].is_null()) {
         highvalColorRamp.Parse(row[15].as<std::string>().c_str());
-        denseVal = ColorInterpolation(highvalColorRamp);
+        colorInterpolation[3] = ColorInterpolation(highvalColorRamp);
     }
 
     if (!row[16].is_null())

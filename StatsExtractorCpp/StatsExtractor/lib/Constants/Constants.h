@@ -46,7 +46,7 @@ public:
     ValueRange valueRange;
     std::array<float, 2> minMaxValues;
     std::vector<float> lutProductValues;
-    ColorInterpolation noVal, sparseVal, mildVal, denseVal;
+    std::array<ColorInterpolation, 4> colorInterpolation; //0 - no val, 1 - sparce val, 2- mild val, 3- dense val
 
 
     ProductInfo();

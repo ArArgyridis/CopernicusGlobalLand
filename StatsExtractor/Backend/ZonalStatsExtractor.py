@@ -404,7 +404,7 @@ def main():
 
     #requirements:
     obj = ZonalStatsExtractor(stratificationType, cfg)
-    obj.process(nThreads=1)
+    obj.process(nThreads=12)
     print("Finished!")
 
 if __name__ == "__main__":

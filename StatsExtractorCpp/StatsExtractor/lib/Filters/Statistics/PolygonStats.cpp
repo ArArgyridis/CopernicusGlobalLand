@@ -18,7 +18,6 @@
 #include "PolygonStats.h"
 
 JsonDocumentPtr PolygonStats::histogramToJSON() {
-    computeColors();
     //setting histogram Object
     JsonDocumentPtr tmpHistogram = std::make_unique<rapidjson::Document>(rapidjson::kObjectType);
 
@@ -57,6 +56,9 @@ PolygonStats::PolygonStats(ProductInfo::Pointer prod, size_t polyID, size_t hist
     for (size_t i = 0; i < histogramBins+1; i++)
         histogramRanges[i] = product->scaleValue(product->minMaxValues[0] +i*histWidth);
 
+    densityColors = std::vector<RGBVal>(4);
+    for (auto & color: densityColors)
+        color.fill(0);
 }
 
 PolygonStats::~PolygonStats(){};
@@ -89,26 +91,33 @@ PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_
 
 
 void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination, ProductInfo::Pointer product) {
+    if (source == nullptr)
+        return;
 
-    for (auto& polyStat: *destination) {
-        auto pos = source->find(polyStat.first);
-        for(size_t i = 0; i < pos->second->size(); i++) {
-            auto regionStat = (*pos->second)[i];
+    for (auto& pos: *source) {
+        auto polyStat = destination->find(pos.first);
+
+        for(size_t i = 0; i < pos.second->size(); i++) {
+            auto regionStat = (*pos.second)[i];
             if(regionStat->validCount == 0)
                 continue;
 
-            polyStat.second->totalCount += regionStat->totalCount;
-            polyStat.second->validCount += regionStat->validCount;
-            polyStat.second->mean       += regionStat->mean;
-            polyStat.second->sd         += regionStat->sd;
+            polyStat->second->totalCount += regionStat->totalCount;
+            polyStat->second->validCount += regionStat->validCount;
+            polyStat->second->mean       += regionStat->mean;
+            polyStat->second->sd         += regionStat->sd;
 
-            for (size_t i = 0; i < polyStat.second->densityArray.size(); i++)
-                polyStat.second->densityArray[i] += regionStat->densityArray[i];
+            for (size_t i = 0; i < polyStat->second->densityArray.size(); i++)
+                polyStat->second->densityArray[i] += regionStat->densityArray[i];
 
-            for(size_t i = 0; i <polyStat.second->histogramBins; i++)
-                polyStat.second->histogram[i] += regionStat->histogram[i];
-
+            for(size_t i = 0; i <polyStat->second->histogramBins; i++)
+                polyStat->second->histogram[i] += regionStat->histogram[i];
         }
+    }
+}
+
+void PolygonStats::finalizeStatistics(PolyStatsMapPtr stats) {
+    for (auto& polyStat: *stats) {
         polyStat.second->mean /=polyStat.second->validCount;
         polyStat.second->sd = sqrt( polyStat.second->sd/polyStat.second->validCount - pow(polyStat.second->mean, 2));
 
@@ -118,41 +127,31 @@ void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr de
         }
 
         for (size_t i = 0; i < 4; i++)
-            polyStat.second->densityArray[i] = product->convertPixelsToArea(polyStat.second->densityArray[i]);
+            polyStat.second->densityArray[i] = polyStat.second->product->convertPixelsToArea(polyStat.second->densityArray[i]);
         polyStat.second->computeColors();
     }
 }
 
-
 void PolygonStats::addToHistogram(float &value) {
     bool stop = false;
-    for (size_t i = 0; i <histogramBins &&!stop; i++ ) {
-        stop = histogramRanges[i] <= value && value <=histogramRanges[i+1];
+    for (size_t i = 0; i < histogramBins && !stop; i++ ) {
+        stop = histogramRanges[i] <= value && value <= histogramRanges[i+1];
         histogram[i] += static_cast<int>(stop);
     }
 }
 
 void PolygonStats::computeColors() {
     long double area = product->convertPixelsToArea(validCount);
-    noValColor = product->noVal.interpolateColor(densityArray[0]/area);
-    sparseValColor = product->sparseVal.interpolateColor(densityArray[1]/area);
-    mildValColor = product->mildVal.interpolateColor(densityArray[2]/area);
-    denseValColor = product->denseVal.interpolateColor(densityArray[3]/area);
+    for (size_t i = 0; i < densityArray.size(); i++)
+        densityColors[i] = product->colorInterpolation[i].interpolateColor(densityArray[i]/area*100);
 }
-
-
-
-
 
 void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer cfg, PolyStatsMapPtr polygonData){
     std::stringstream data;
     for(auto & polyData:*polygonData) {
-        if(polyData.second->validCount == 0)
-            continue;
-
         auto hist = polyData.second->histogramToJSON();
         data  <<"(" << polyData.first <<"," << productFileID <<"," << polyData.second->densityArray[0]/10000 <<"," << polyData.second->densityArray[1]/10000 <<"," << polyData.second->densityArray[2]/10000 <<"," << polyData.second->densityArray[3]/10000
-             <<",'"<<rgbToArrayString(polyData.second->noValColor) <<"','" <<rgbToArrayString(polyData.second->sparseValColor) <<"','" << rgbToArrayString(polyData.second->mildValColor) << "','" << rgbToArrayString(polyData.second->denseValColor) <<"','"
+             <<",'"<<rgbToArrayString(polyData.second->densityColors[0]) <<"','" <<rgbToArrayString(polyData.second->densityColors[1]) <<"','" << rgbToArrayString(polyData.second->densityColors[2]) << "','" << rgbToArrayString(polyData.second->densityColors[3]) <<"','"
              << jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
 
 
@@ -172,21 +171,6 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer 
 
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
     cn->executeQuery(query);
-
-
-    /*
-    if (validCount == 0)
-        return;
-
-    auto hist = this->histogramToJSON();
-    std::stringstream data;
-
-    data  <<"(" << polyID <<"," << productFileID <<"," << densityArray[0]/10000 <<"," << densityArray[1]/10000 <<"," << densityArray[2]/10000 <<"," << densityArray[3]/10000
-         <<",'"<<rgbToArrayString(noValColor) <<"','" <<rgbToArrayString(sparseValColor) <<"','" << rgbToArrayString(mildValColor) << "','" << rgbToArrayString(denseValColor) <<"','"
-         << jsonToString(*hist) << "'," << totalCount <<"," <<validCount << ")";
-
-
-    */
 }
 
 
