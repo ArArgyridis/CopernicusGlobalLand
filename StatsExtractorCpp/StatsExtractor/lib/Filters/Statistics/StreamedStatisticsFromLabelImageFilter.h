@@ -39,8 +39,12 @@ public:
         return this->GetFilter()->GetPolygonStatsByLabel(label);
     }
 
-    void SetInputDataImage(const TInputImage* image) {
-        this->GetFilter()->SetInputDataImage(image);
+    void SetConfig (const Configuration::Pointer cfg) {
+        this->GetFilter()->SetConfig(cfg);
+    }
+
+    void SetInputDataImage(const TInputImage* image, size_t imageId) {
+        this->GetFilter()->SetInputDataImage(image, imageId);
     }
 
     void SetInputLabelImage(const TLabelImage* image){
@@ -60,10 +64,13 @@ public:
         this->GetFilter()->SetNumberOfThreads(threadCount);
     }
 
-    void SetPolyStatsPerRegion(const PolygonStats::PolyStatsPerRegionPtr polyStatsPerRegion, itk::ThreadIdType threadId=0) {
-        this->GetFilter()->SetPolyStatsPerRegion(polyStatsPerRegion, threadId);
+    void SetParentRegionId(const size_t parentRegionId) {
+        this->GetFilter()->SetParentRegionId(parentRegionId);
     }
 
+    void SetParentThreadId(const itk::ThreadIdType threadId) {
+        this->GetFilter()->SetParentThreadId(threadId);
+    }
 
 protected:
     StreamedStatisticsFromLabelImageFilter() {}

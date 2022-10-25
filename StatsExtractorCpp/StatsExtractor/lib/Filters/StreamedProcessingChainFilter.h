@@ -40,6 +40,10 @@ public:
     /** Creation through object factory macro */
     itkTypeMacro(StreamedStatisticsFromLabelImageFilter, PersistentFilterStreamingDecorator);
 
+    bool ValidAOI() {
+        return this->GetFilter()->ValidAOI();
+    }
+
     void UpdateOutputInformation() override {
         this->GetFilter()->UpdateOutputInformation();
     }

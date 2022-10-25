@@ -31,8 +31,6 @@ ColorInterpolation::ColorInterpolation(rapidjson::Document &palette) {
             tmp[i] = valArray[i].GetInt();
         values.insert(std::pair<size_t, RGBVal>(std::stoi(it->name.GetString()), tmp));
     }
-
-
     std::sort(keys.begin(), keys.end());
 }
 
@@ -55,7 +53,6 @@ RGBVal ColorInterpolation::interpolateColor(long double areaPerc) {
 
         for (size_t i = 0; i < 3; i++)
             ret[i] = static_cast<int>( (values[mx][i] - values[mn][i])*(areaPerc-mn)/100 +values[mn][i]);
-
 
         return ret;
     }

@@ -137,8 +137,6 @@ float ProductInfo::scaleValue(float value) {
 Constants::Constants() {}
 
 unsigned short Constants::load(Configuration::Pointer cfg) {
-
-
     std::stringstream queryStream;
     queryStream << "WITH tmp_file_id AS("
                    " SELECT pf.product_description_id, min(pf.id) tid"

@@ -24,6 +24,7 @@
 #include <itkImageRegionConstIterator.h>
 #include <itkImageRegionIterator.h>
 
+#include "../../ConfigurationParser/ConfigurationParser.h"
 #include "../../Constants/Constants.h"
 #include "../../Utils/Utils.hxx"
 #include "PolygonStats.h"
@@ -64,15 +65,17 @@ public:
     using InputPixelType                    = typename InputImageType::PixelType;
     using LabelPixelType                    = typename LabelImageType::PixelType;
 
+    itkSetMacro(Config, Configuration::Pointer);
+    itkSetMacro(ParentRegionId, size_t);
+    itkSetMacro(ParentThreadId, itk::ThreadIdType);
 
     virtual InputImageTypePointer GetInputDataImage();
     virtual LabelImagePointer GetInputLabelImage();
     virtual void Reset(void) override;
-    virtual void SetInputDataImage(const TInputImage* image);
+    virtual void SetInputDataImage(const TInputImage* image, size_t imageId);
     virtual void SetInputLabelImage(const LabelImageType* image);
     virtual void SetInputLabels(LabelsArrayPtr labels);
     virtual void SetInputProduct(const ProductInfo::Pointer product);
-    virtual void SetPolyStatsPerRegion(const PolygonStats::PolyStatsPerRegionPtr stats, itk::ThreadIdType threadId);
     virtual void Synthetize(void) override;
 
 protected:
@@ -83,13 +86,15 @@ protected:
 private:
     StatisticsFromLabelImageFilter(const Self&) = delete;
     void operator=(const Self&) = delete;
-    PolygonStats::PolyStatsPerRegionPtr m_PolygonStatsPerRegion;
     std::vector<bool> rawDataNullFlags, labelDataNullFlags;
     InputPixelType rawDataNullPixel;
     LabelPixelType labelDataNullPixel;
     LabelsArrayPtr labels;
-    ProductInfo::Pointer currentProduct;
-    itk::ThreadIdType parentThreadId;
+    ProductInfo::Pointer product;
+    itk::ThreadIdType m_ParentThreadId;
+    Configuration::Pointer m_Config;
+    size_t m_ParentRegionId, imageId;
+    PolygonStats::PolyStatsPerRegionPtr perRegionStats;
 };
 
 

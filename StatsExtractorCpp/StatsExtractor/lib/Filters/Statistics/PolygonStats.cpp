@@ -152,7 +152,7 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer 
         auto hist = polyData.second->histogramToJSON();
         data  <<"(" << polyData.first <<"," << productFileID <<"," << polyData.second->densityArray[0]/10000 <<"," << polyData.second->densityArray[1]/10000 <<"," << polyData.second->densityArray[2]/10000 <<"," << polyData.second->densityArray[3]/10000
              <<",'"<<rgbToArrayString(polyData.second->densityColors[0]) <<"','" <<rgbToArrayString(polyData.second->densityColors[1]) <<"','" << rgbToArrayString(polyData.second->densityColors[2]) << "','" << rgbToArrayString(polyData.second->densityColors[3]) <<"','"
-             << jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
+                                                                                                                                                                                                                                                                     << jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
 
 
     }
@@ -161,16 +161,47 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer 
 
     std::string query = "WITH tmp_data(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
                         " noval_color, sparseval_color, midval_color, highval_color, histogram, total_pixels, valid_pixels) AS( VALUES " + stringstreamToString(data) + ")"
-                        " INSERT INTO " + cfg->statsInfo.schema +".poly_stats(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
-                        " noval_color, sparseval_color, midval_color, highval_color, histogram, total_pixels, valid_pixels)"
-                        " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, tdt.noval_area_ha::double precision, "
-                        " tdt.sparse_area_ha::double precision, tdt.mid_area_ha::double precision, tdt.dense_area_ha::double precision,"
-                        " noval_color::jsonb, sparseval_color::jsonb, midval_color::jsonb, highval_color::jsonb, histogram::jsonb, total_pixels::bigint, valid_pixels::bigint"
-                        " FROM tmp_data tdt"
-                        " ON CONFLICT(poly_id, product_file_id) DO NOTHING;";
+                                                                                                                                                                        " INSERT INTO " + cfg->statsInfo.schema +".poly_stats(poly_id, product_file_id, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
+                                                                                                                                                                                                                 " noval_color, sparseval_color, midval_color, highval_color, histogram, total_pixels, valid_pixels)"
+                                                                                                                                                                                                                 " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, tdt.noval_area_ha::double precision, "
+                                                                                                                                                                                                                 " tdt.sparse_area_ha::double precision, tdt.mid_area_ha::double precision, tdt.dense_area_ha::double precision,"
+                                                                                                                                                                                                                 " noval_color::jsonb, sparseval_color::jsonb, midval_color::jsonb, highval_color::jsonb, histogram::jsonb, total_pixels::bigint, valid_pixels::bigint"
+                                                                                                                                                                                                                 " FROM tmp_data tdt"
+                                                                                                                                                                                                                 " ON CONFLICT(poly_id, product_file_id) DO NOTHING;";
 
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
     cn->executeQuery(query);
 }
+
+
+void PolygonStats::updateDBTmp(const size_t &productFileID, size_t& regionId, Configuration::Pointer cfg, PolyStatsMapPtr polygonData) {
+    std::stringstream data;
+
+    for(auto & polyData:*polygonData) {
+        auto hist = polyData.second->histogramToJSON();
+        data  <<"(" << polyData.first << "," << productFileID << "," <<regionId << "," << polyData.second->mean <<"," <<polyData.second->sd <<"," << polyData.second->densityArray[0]/10000 <<","
+             << polyData.second->densityArray[1]/10000 <<"," << polyData.second->densityArray[2]/10000 <<"," << polyData.second->densityArray[3]/10000 <<",'"
+             << jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
+
+
+    }
+
+    if (data.tellp() == 0)
+        return;
+
+    std::string query = "WITH tmp_data(poly_id, product_file_id, region_id, mean, sd, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
+                        " histogram, total_pixels, valid_pixels) AS( VALUES " + stringstreamToString(data) + ")" +
+            " INSERT INTO tmp.poly_stats_per_region(poly_id, product_file_id, region_id, mean, sd, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
+            "  histogram, total_pixels, valid_pixels)"
+            " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, region_id::bigint, mean::double precision, sd::double precision, tdt.noval_area_ha::double precision,"
+            " tdt.sparse_area_ha::double precision, tdt.mid_area_ha::double precision, tdt.dense_area_ha::double precision,"
+            " histogram::jsonb, total_pixels::bigint, valid_pixels::bigint"
+            " FROM tmp_data tdt"
+            " ON CONFLICT(poly_id, product_file_id, region_id) DO NOTHING;";
+
+    PGPool::PGConn::Pointer cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
+    cn->executeQuery(query);
+}
+
 
 

@@ -52,13 +52,13 @@ public:
 
     struct ImageInfo {
         std::string path;
-        std::vector<std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>> tmpRegionData;
-        PolygonStats::PolyStatsMapPtr outStats;
-        ImageInfo(std::string path,PolygonStats::PolyStatsMapPtr out):path(path), outStats(out){}
+        //std::vector<std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>> tmpRegionData;
+        //PolygonStats::PolyStatsMapPtr outStats;
+        ImageInfo(std::string path,PolygonStats::PolyStatsMapPtr out):path(path){}
     };
 
     using ImageInfoPtr  = std::shared_ptr<ImageInfo>;
-    using ImagesInfo    = std::map<size_t,ImageInfoPtr>;
+    using ImagesInfo    = std::map<size_t,std::string>;
 
 
 
@@ -80,11 +80,13 @@ public:
     /** Creation through object factory macro */
     itkTypeMacro(ProcessingChainFilter, PersistentImageFilter);
 
+
     virtual void Reset(void) override;
     virtual void SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
                            OGREnvelope& envlp, JsonDocumentPtr images, JsonDocumentPtr polyIds,
                            size_t& polSRID);
     virtual void Synthetize(void) override;
+    bool ValidAOI();
 
 
 protected:
@@ -101,15 +103,21 @@ protected:
     void ThreadedGenerateData(const RegionType& outputRegionForThread, itk::ThreadIdType threadId) override;
 
 private:
+    struct RegionData {
+      LabelImageType::Pointer labelImage=nullptr;
+      LabelsArrayPtr labels=nullptr;
+    };
+
+
     Configuration::Pointer config;
     ProductInfo::Pointer product;
     OGREnvelope aoi;
     ImagesInfo productImages;
-    size_t polySRID, repeat;
+    size_t polySRID, currentRegionId;
     LabelsArrayPtr labels;
     std::mutex readMtx;
-    std::string stratification, polyIdsStr;
-    typename LabelImageType::Pointer rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
+    std::string stratification, polyIdsStr, imageIdsStr;
+    RegionData rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
 
     void alignAOIToImage(OGREnvelope& envlp);
     void prepareImageInfo(JsonDocumentPtr& images);

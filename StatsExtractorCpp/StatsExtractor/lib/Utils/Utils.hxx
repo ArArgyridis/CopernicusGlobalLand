@@ -96,7 +96,6 @@ std::string jsonToString(JSONType& json, size_t decimalPlaces=2) {
     return  buf.GetString();
 }
 
-
 std::string stringstreamToString(std::stringstream &stream);
 
 #endif // UTILS_HXX

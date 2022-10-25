@@ -26,7 +26,13 @@ namespace otb {
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::Reset() {
-    repeat = 0;
+    currentRegionId = 1;
+
+    //cleaning up temporary info for respective product/stratification
+    //std::string query = "DELETE FROM tmp.poly_stats_per_region WHERE poly_id IN ("+polyIdsStr +") AND product_file_id IN (" + imageIdsStr +");";
+    std::string query = "TRUNCATE tmp.poly_stats_per_region RESTART IDENTITY;";
+    PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
+    cn->executeQuery(query);
 }
 
 
@@ -50,6 +56,48 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Confi
 }
 
 
+template <class TInputImage, class TPolygonDataType>
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
+    //insert polygon data & fetch area info to compute colors
+    std::string query = "SELECT clms_UpdatePolygonStats(); "
+            "SELECT id, poly_id, product_file_id,"
+            " CASE WHEN valid_pixels = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,"
+            " CASE WHEN valid_pixels = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,"
+            " CASE WHEN valid_pixels = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,"
+            " CASE WHEN valid_pixels = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense"
+            " FROM poly_stats ps WHERE noval_color IS NULL;";
+
+    PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
+    PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
+    std::stringstream data;
+
+    for (auto row: res) {
+        data <<"(" << row[0] <<"," << row[1] <<"," << row[2] <<",";
+        for (size_t i = 0; i< product->colorInterpolation.size(); i++) {
+            RGBVal color = product->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
+            data << "'" << rgbToArrayString(color) << "',";
+        }
+        data.seekp(-1,data.cur);
+        data <<"),";
+    }
+
+    if (data.tellp() == 0)
+        return;
+
+    query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color) VALUES " + stringstreamToString(data)
+            + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color; ";
+    cn->executeQuery(query);
+
+
+
+}
+
+template <class TInputImage, class TPolygonDataType>
+bool ProcessingChainFilter<TInputImage, TPolygonDataType>::ValidAOI() {
+    return !(aoi.MaxX == 0 && aoi.MinX == 0 && aoi.MinY == 0 && aoi.MaxY == 0);
+}
+
+
 
 
 template <class TInputImage, class TPolygonDataType>
@@ -66,8 +114,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateInputRequeste
 
     requestedRegion.SetIndex(originIdx);
     inputImage->SetRequestedRegion(requestedRegion);
-
-
 }
 
 
@@ -77,7 +123,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateOutputInforma
 
     TInputImagePointer inputImage = this->GetReferenceImage(), out = this->GetOutput();
     typename TInputImage::SpacingType spacing = inputImage->GetSignedSpacing();
-
 
     point2d originPnt;
     typename TInputImage::IndexType originIdx;
@@ -102,49 +147,22 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateOutputInforma
 
 }
 
-
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
-    for (auto &image:productImages) {
-        PolygonStats::finalizeStatistics(image.second->outStats);
-        PolygonStats::updateDB(image.first, config, image.second->outStats);
-    }
-
-}
-
-template <class TInputImage, class TPolygonDataType>
-ProcessingChainFilter<TInputImage, TPolygonDataType>::ProcessingChainFilter() {
+ProcessingChainFilter<TInputImage, TPolygonDataType>::ProcessingChainFilter():currentRegionId(1) {
     this->SetNumberOfRequiredInputs(1);
 }
 
-
-
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::AfterThreadedGenerateData(){
-    std::cout <<"COLLAPSING!!!!\n";
-    for(auto &image: productImages) {
-        for (itk::ThreadIdType i = 0; i < this->GetNumberOfThreads(); i++)
-            PolygonStats::collapseData(image.second->tmpRegionData[i].second, image.second->outStats, this->product);
-    }
-
-    std::cout <<"COLLAPSING Finished!!!!\n";
-
-    repeat++;
-
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::AfterThreadedGenerateData() {
+    currentRegionId++;
 }
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::BeforeThreadedGenerateData() {
     Superclass::BeforeThreadedGenerateData();
-    std::cout <<"Repeat: " << repeat <<"\n";
-
-
-    for (auto & image: productImages)
-        image.second->tmpRegionData = std::vector<std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>>(this->GetNumberOfThreads());
-
-
+    std::cout <<"Processing Region with id: " << currentRegionId <<"\n";
 }
+
 template <class TInputImage, class TPolygonDataType>
 typename TInputImage::Pointer ProcessingChainFilter<TInputImage, TPolygonDataType>::GetReferenceImage() {
     return static_cast<TInputImage*>(this->ProcessObject::GetInput(0));
@@ -153,9 +171,8 @@ typename TInputImage::Pointer ProcessingChainFilter<TInputImage, TPolygonDataTyp
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(const RegionType& outputRegionForThread, itk::ThreadIdType threadId) {
-
-    typename LabelImageType::Pointer labelImage = this->rasterizer(outputRegionForThread, threadId);
-    if (labelImage == nullptr)
+    RegionData regionData = this->rasterizer(outputRegionForThread, threadId);
+    if (regionData.labelImage == nullptr)
         return;
 
     TInputImagePointer out          = this->GetOutput();
@@ -169,15 +186,17 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
     inputImage->TransformPhysicalPointToIndex(originPnt, originRawDataIdx);
 
     for(auto& image:productImages) {
-        std::cout <<"Processing image: " <<image.second->path << ")\n";
+
+        std::cout <<"Processing image: " <<image.second << ")\n";
 
         typename RawDataImageReaderType::Pointer imgReader= RawDataImageReaderType::New();
-        imgReader->SetFileName(image.second->path.c_str());
+        imgReader->SetFileName(image.second.c_str());
 
         {
             std::lock_guard<std::mutex> lock(readMtx);
             imgReader->UpdateOutputInformation();
         }
+
         typename ExtractRawDataROIFilter::Pointer roi = ExtractRawDataROIFilter::New();
 
         roi->SetInput(imgReader->GetOutput());
@@ -187,12 +206,14 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
         roi->SetSizeY(outputRegionForThread.GetSize()[1]);
 
         typename StreamedStatisticsType::Pointer stats = StreamedStatisticsType::New();
-        stats->SetInputLabels(image.second->tmpRegionData[threadId].first);
         stats->SetInputProduct(product);
-        stats->SetPolyStatsPerRegion(image.second->tmpRegionData[threadId].second);
-        stats->SetInputLabelImage(labelImage);
-        stats->SetInputDataImage(roi->GetOutput());
-        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(3000);
+        stats->SetConfig(config);
+        stats->SetInputLabels(regionData.labels);
+        stats->SetInputLabelImage(regionData.labelImage);
+        stats->SetParentRegionId(currentRegionId);
+        stats->SetParentThreadId(threadId);
+        stats->SetInputDataImage(roi->GetOutput(), image.first);
+        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(6000);
 
         stats->GlobalWarningDisplayOff();
         stats->Update();
@@ -202,9 +223,10 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
 }
 
 template <class TInputImage, class TPolygonDataType>
-typename ProcessingChainFilter<TInputImage, TPolygonDataType>::LabelImageType::Pointer
-ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId) {
+ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId) {
     //converting region to extent
+    RegionData ret;
+
     TInputImagePointer out = this->GetOutput();
     point2d originPnt;
     out->TransformIndexToPhysicalPoint(region.GetIndex(), originPnt);
@@ -212,20 +234,15 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInput
     OGREnvelope evlp = regionToEnvelope<TInputImage>(out, region);
     typename TInputImage::SpacingType spacing = out->GetSignedSpacing();
     //loading polygons from DB
-
     std::string query = fmt::format("with region AS( select st_setsrid((st_makeenvelope({0},{1},{2},{3})),4326) bbox) select sg.id, ST_ASTEXT(ST_MULTI(case when st_contains(region.bbox, sg.geom) then sg.geom else st_intersection(sg.geom, region.bbox) end)) geom from stratification_geom sg join region on TRUE where sg.id IN ({4}) AND st_intersects(sg.geom, region.bbox)",
                                     evlp.MinX-spacing[0]/2, evlp.MinY-abs(spacing[1]/2),evlp.MaxX+spacing[0]/2, evlp.MaxY+abs(spacing[1]/2), polyIdsStr);
     PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     PGPool::PGConn::PGRes res   = cn->fetchQueryResult(query, "fetching polygon info for thread_"+std::to_string(threadId));
 
     if(res.empty())
-        return nullptr;
-
-    //std::cout << query <<"\n";
+        return ret;
 
     LabelsArrayPtr tmpLabels = std::make_shared<std::vector<size_t>>(res.size());
-
-
     RasterizerFilter::Pointer rasterizer = RasterizerFilter::New();
     rasterizer->SetGeometryMetaData(polySRID);
     for(size_t i = 0; i < res.size(); i++) {
@@ -234,18 +251,12 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInput
         (*tmpLabels)[i] = id;
     }
 
-
     rasterizer->SetOutputOrigin(originPnt);
     rasterizer->SetOutputRegion(region);
     rasterizer->SetOutputSignedSpacing(spacing);
     rasterizer->SetOutputProjectionRef(out->GetProjectionRef());
     if(rasterizer->GetFeatureCount() == 0)
-        return nullptr;
-
-    for (auto &image:productImages) {
-        PolygonStats::PolyStatsPerRegionPtr tmpRegionStats = PolygonStats::NewPolyStatsPerRegionMap(this->GetNumberOfThreads(), tmpLabels, product);
-        image.second->tmpRegionData[threadId] = std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>(tmpLabels, tmpRegionStats);
-    }
+        return ret;
 
     rasterizer->Update();
 /*
@@ -255,11 +266,11 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInput
     labelWriter->SetInput(rasterizer->GetOutput());
     labelWriter->Update();
 */
-    return rasterizer->GetOutput();
+    ret.labelImage = rasterizer->GetOutput();
+    ret.labels = tmpLabels;
 
+    return ret;
 }
-
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::alignAOIToImage(OGREnvelope &envlp){
@@ -297,21 +308,22 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::alignAOIToImage(OGREn
     //get aoi from input image
     OGREnvelope imageEnvelope = regionToEnvelope<TInputImage>(inputImage, inputImage->GetLargestPossibleRegion());
 
-    //intersect two aois to get the common one-> this is the actual aoi
-    aoi.Intersect(imageEnvelope);
-    //std::cout << aoi.MinX <<"," <<aoi.MinY <<"\n" <<aoi.MaxX <<"," << aoi.MaxY <<"\n";
+    //when data fall completely outside of product aoi
+    if (!aoi.Intersects(imageEnvelope))
+        aoi.MinX = aoi.MaxY = aoi.MaxX = aoi.MinY = 0;
+    else //intersect two aois to get the common one-> this is the actual aoi
+        aoi.Intersect(imageEnvelope);
 }
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonDocumentPtr &images) {
     for (auto & image:images->GetArray()) {
+        size_t imageId = image.GetArray()[1].GetInt64();
         boost::filesystem::path relPath = image.GetArray()[0].GetString();
-
-        auto outputStats = PolygonStats::NewPointerMap(labels, product);
-
-        ImageInfoPtr imgInfo = std::make_shared<ImageInfo>(product->productAbsPath(relPath).string(), outputStats);
-        productImages.insert(std::pair<size_t, ImageInfoPtr>(image.GetArray()[1].GetInt64(),imgInfo));
+        productImages.insert(std::pair<size_t, std::string>(imageId,product->productAbsPath(relPath).string()));
+        imageIdsStr += std::to_string(imageId)+",";
     }
+    imageIdsStr = imageIdsStr.substr(0, imageIdsStr.length()-1);
 }
 
 
@@ -327,7 +339,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImag
     }
     polyIdsStr = polyIdsStr.substr(0, polyIdsStr.length()-1);
     this->prepareImageInfo(images);
-
 }
 }
 
