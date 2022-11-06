@@ -26,7 +26,7 @@
 					v-on:stratificationAreaDensityChange="updateStratificationLayerStyle()"
 					v-on:closeLeftPanel="toggleLeft()"
 					v-on:anomalyWMSChange="updateProductAnomalyWMSVisibility()"
-			/>
+			/><!--- v-on:currentProductAnomalyChange=""-->
 		</div>
 		<div class="noPadding hidden">
 		<!--<button class="btn btn-secondary mt-3" v-on:click="showDashboard()"> Show Region Dashboard</button>-->
@@ -74,6 +74,7 @@ export default {
 	computed: {
 		clickedCoordinates: {
 			get() {
+
 				return this.$store.getters.clickedCoordinates();
 			},
 			set(dt) {
@@ -154,6 +155,11 @@ export default {
 			this.$store.commit("clearProducts");
 			requests.fetchProductInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.activeCategory.id).then((response)=>{
 				this.$store.commit("setProducts", response.data.data);
+				if (this.$store.getters.products != null) {
+					this.$store.commit("setCurrentProduct", 0);
+					this.updateAll();
+					this.$store.commit("setCurrentProductWMSLayer", 0);
+				}
 			});
 		},
 		updateStratificationInfo() {
@@ -161,6 +167,22 @@ export default {
 			requests.fetchStratificationInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.currentProduct.id).then((response)=>{
 				this.$store.commit("setStratifications", response.data.data);
 				this.$refs.mapApp.refreshStratifications();
+				if (this.$store.getters.currentStratification == null)
+					this.$store.commit("setCurrentStratification", 0);
+					
+				this.updateStratificationLayerVisibility();
+				
+				if (this.$store.getters.currentStratification.dates != null) {
+					if (this.$store.getters.currentStratificationDate == null) {
+						let tmpDates = Object.keys(this.$store.getters.currentStratification.dates).reverse();
+						this.$store.commit("setCurrentStratificationDate", tmpDates[0]);
+					}
+					/*
+					if (this.$store.getters.areaDensity == null)
+						this.$store.commit("setStratificationAreaDensity",2);
+					this.updateStratificationLayerStyle();
+					*/
+				}
 			});
 		},/*
 		updateStratificationPolygonInfo(evt) {				
@@ -181,12 +203,7 @@ export default {
 		updateStratificationLayerVisibility() {
 			this.setRightPanelVisibility(false);
 			this.$refs.mapApp.updateStratificationLayerVisibility();
-			/*
-			if (this.currentStratificationPolygonId != null) {
-				this.$refs.rightPanel.updateHistogramChart(this.currentStratificationPolygonId);
-				this.setRightPanelVisibility(true);
-			}
-			*/
+			this.updateStratificationLayerStyle();
 		},
 		updateAll() {
 			this.setRightPanelVisibility(false);

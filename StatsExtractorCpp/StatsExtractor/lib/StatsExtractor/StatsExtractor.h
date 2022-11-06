@@ -25,7 +25,7 @@ class StatsExtractor {
     std::string stratification;
 
 public:
-    StatsExtractor(Configuration::Pointer cfg, std::string stratificationType);
+    StatsExtractor(Configuration::Pointer& cfg, std::string stratificationType);
     void process();
     void process(bool k);
 };

@@ -35,6 +35,39 @@ function computeDescription(str, val1, val2) {
 		return "Dense (greater than " + val1 +  ")";
 }
 
+let productsProps = {
+	currentProduct: null,
+	info:[],
+	productsViewInfo:{}
+}
+
+
+let productViewProps = {
+	anomalies: {
+		current: null,
+		previous: null,
+		next: null,
+		info: [],
+		layers:[]
+	},
+	clickedCoordinates: null, 
+	density: null,
+	rawWMS: {
+		current: null,
+		previous: null,
+		next: null,
+		layers:[]
+	},
+	stratification: {
+		current: null,
+		date: null,
+		previous: null,
+		next:null,
+		info: [],
+		selectedPolygonId: null,
+		layers:[]
+	}
+};
 
 const store = createStore({
 	state: {
@@ -64,55 +97,34 @@ const store = createStore({
 					description:"Dense",
 					color_col: "highval_color"
 				}
-			],
-			areaDensity: null
+			]
 		},
 		categories: {
 			info: null,
 			current: null,
-			previous: null
-		},
-		products: {
-			currentProduct: null,
-			currentProductWMSLayer:null,
-			info:null,
-			previousProductWMSLayer:null,
-			wmsLayers:[],
-			anomalies: {
-				currentAnomaly: {
-					name:["NDVI300V2_LongTermComparisonAnomalyDetector"],
-					id: 12
-				},
-				currentWMSLayer: null,
-				previouWMSLayer: null,
-				wmsLayers: []
-			}
-		},
-		stratifications:{
-			currentStratification: null,
-			currentStratificationDate:null,
-			info:null,
-			previousStratification: null,
-			selectedPolygonId: null
-		},
-		clickedCoordinates: null
+			previous: null,
+			products:[]
+		}
+		/*
+
+		*/
 	},
 	mutations: {
 		appendToProductsAnomaliesWMSLayers(state, dt) {
-			state.products.anomalies.wmsLayers = state.products.anomalies.wmsLayers.concat(dt);
-			state.products.anomalies.wmsLayers = state.products.anomalies.wmsLayers.sort( function(a, b) {
+			let layers = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies.layers;
+			layers = layers.concat(dt);
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies.layers = layers.sort( function(a, b) {
 				let keyA = a.title,
 				keyB = b.title;
 				if (keyA < keyB) return 1;
 				if (keyA > keyB) return -1;
 				return 0;
 			});
-		},		
+		},
 		appendToProductsWMSLayers(state, dt) {
-			state.products.wmsLayers = state.products.wmsLayers.concat(dt);
-			state.products.wmsLayers = state.products.wmsLayers.sort( function(a, b) {
-				let keyA = a.title,
-				keyB = b.title;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.layers = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.layers.concat(dt);
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.layers = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.layers.sort( function(a, b) {
+				let keyA = a.title, keyB = b.title;
 				if (keyA < keyB) return 1;
 				if (keyA > keyB) return -1;
 				return 0;
@@ -125,50 +137,46 @@ const store = createStore({
 			state.categories.info[state.categories.current].active = true;
 		},
 		clearProducts(state) {
-			state.products.info=null;
-			state.products.currentProduct=null;
+			state.categories.products[state.categories.current].info=[];
+			state.categories.products[state.categories.current].currentProduct=null;
+			state.categories.products[state.categories.current].productsViewInfo = {};
 		},
 		clearProductsWMSLayers(state) {
-			state.products.wmsLayers = [];		
-			state.products.currentProductWMSLayer = null;
-			state.products.previousProductWMSLayer = null;
+			if(state.categories.products[state.categories.current].info != null && state.categories.products[state.categories.current].currentProduct in state.categories.products[state.categories.current].info)
+				state.categories.products[state.categories.current].info[state.categories.products[state.categories.current].currentProduct].rawWMS = JSON.parse(JSON.stringify(productViewProps.rawWMS));
 		},
 		clearProductsAnomalyWMSLayers(state) {
-			state.products.anomalies.wmsLayers = [];
-			state.products.anomalies.currentWMSLayer = null;
-			state.products.anomalies.previousWMSLayer = null;
-		},
-		clearStratifications(state) {
-			state.stratifications.currentStratification = null;
-			state.stratifications.currentStratificationDate = null;
-			state.stratifications.info = null;
-			state.stratifications.selectedPolygon = null;
-			state.stratifications.previousStratification = null;
-			state.areaDensityOptions.currentDensity = null;
+			if(state.categories.products[state.categories.current].info != null && state.categories.products[state.categories.current].currentProduct in state.categories.products[state.categories.current].info)
+				state.categories.products[state.categories.current].info[state.categories.products[state.categories.current].currentProduct].anomalies = JSON.parse(JSON.stringify(productViewProps.anomalies));
+			
 		},
 		clickedCoordinates(state, dt) {
-			state.clickedCoordinates = dt;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.clickedCoordinates = dt;
 		},
 		selectedPolygon(state, dt) {
-			state.stratifications.selectedPolygonId = dt;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.selectedPolygonId = dt;
 		},
 		setCategoryInfo(state, dt) {
 			state.categories.info = dt;
-			let cont = true;
-			for (let i = 0; i < dt.length && cont; i++)
-				if (dt[i].active) {
+			for (let i = 0; i < dt.length; i++) {
+				if (dt[i].active) 
 					state.categories.current = i;
-					cont = false;
-				}
+				state.categories.products[i] =  JSON.parse(JSON.stringify(productsProps));
+			}
 		},
 		setCurrentProduct(state, dt) {
-			state.products.currentProduct = dt;
+			state.categories.products[state.categories.current].currentProduct = dt;
+			if ( !(dt in state.categories.products[state.categories.current].productsViewInfo))
+				state.categories.products[state.categories.current].productsViewInfo[dt] = JSON.parse(JSON.stringify(productViewProps));
+		},
+		setCurrentProductAnomaly(state, dt) {
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies.current = dt;
 		},
 		setCurrentView(state, dt) {
 			state.currentView = dt;
 		},
 		setStratificationAreaDensity(state, dt) {
-			state.areaDensityOptions.currentDensity = dt;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].density = dt;
 		},
 		setDateStart(state, dt) {
 			state.dateStart = dt;
@@ -177,31 +185,31 @@ const store = createStore({
 			state.dateEnd = dt;
 		},
 		setCurrentProductAnomalyWMSLayer(state, dt) {
-			state.products.anomalies.previousWMSLayer = state.products.anomalies.currentWMSLayer;
-			state.products.anomalies.currentWMSLayer = dt;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies.previous = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies.current;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies.current = dt;
 		},
 		setCurrentProductWMSLayer(state, dt) {
-			state.products.previousProductWMSLayer = state.products.currentProductWMSLayer;
-			state.products.currentProductWMSLayer = dt;			
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.previous = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.current;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.current = dt;		
 		},
 		setCurrentStratification(state, dt) {
-			state.stratifications.previousStratification = state.stratifications.currentStratification;
-			state.stratifications.currentStratification = dt;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.previous = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.current;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.current = dt;		
 		},	
 		setCurrentStratificationDate(state, dt) {
-			state.stratifications.currentStratificationDate = dt;
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.date = dt;
 		},
 		setProducts(state, dt) {
-			state.products.info = dt;
+			state.categories.products[state.categories.current].info = dt;
 		},
 		setStratifications(state, dt) {
 			let ret = [];
 			dt.forEach((stratification) => {
 					ret.push({...stratification, ...{maxZoom: 14, layerId: null}});
 			});
-			state.stratifications.info = ret;
-		}
 
+			state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.info = ret;
+		}
 	},
 	getters: {
 		areaDensityOptions: (state) => {
@@ -222,76 +230,83 @@ const store = createStore({
 			return state.categories.info[state.categories.current];
 		},		
 		areaDensity: (state) => {
-			if (state.areaDensityOptions.currentDensity == null)
+			if (state.categories.products[state.categories.current].info == null || !(state.categories.products[state.categories.current].currentProduct in state.categories.products[state.categories.current].info))
 				return null;
-			return state.areaDensityOptions.options[state.areaDensityOptions.currentDensity];
+			return state.areaDensityOptions.options[state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].density];
 		},
+		allProductsData:(state) => {
+			return state.categories.products;
+		},		
 		categories: (state) => {
 			return state.categories.info;
 		},
 		clickedCoordinates: (state) => {
-			return state.clickedCoordinates;
+			return state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.clickedCoordinates;
 		},
-		currentAnomaly: (state) => {
-			if (state.products.anomalies.currentAnomaly == null)
-				return null;
-			return state.products.anomalies.currentAnomaly;
+		currentProductAnomaly: (state) => {
+			let anomalies = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies;
+			return anomalies.info[anomalies.current];
 		},
 		currentProduct: (state) =>{
-			if (state.products.currentProduct == null)
+			if (state.categories.info == null || (state.categories.products[state.categories.current].currentProduct == null))
 				return null;
-			return state.products.info[state.products.currentProduct];
+			return state.categories.products[state.categories.current].info[state.categories.products[state.categories.current].currentProduct];
+		},
+		currentProductAnomalies: (state) => {
+			return state.categories.products[state.categories.current].info[state.categories.products[state.categories.current].currentProduct].anomaly_info;
 		},
 		currentProductAnomalyWMSLayer: (state) => {
-			if (state.products.anomalies.currentWMSLayer == null)
-				return null;
-			return state.products.anomalies.wmsLayers[state.products.anomalies.currentWMSLayer];
+			let anomalies =  state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies;
+			return  anomalies.layers[ anomalies.current];
 		},
 		currentProductWMSLayer: (state) => {
-			if(state.products.currentProductWMSLayer == null)
+			if (state.categories.info == null || !(state.categories.products[state.categories.current].currentProduct in state.categories.products[state.categories.current].info))
 				return null;
-			return state.products.wmsLayers[state.products.currentProductWMSLayer];
+			
+			let rawWMS = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS;
+			return rawWMS.layers[rawWMS.current];
 		},
 		currentStratification: (state)=> {
-			if(state.stratifications.currentStratification == null)
+			if (state.categories.info == null || !(state.categories.products[state.categories.current].currentProduct in state.categories.products[state.categories.current].info))
 				return null;
-			return state.stratifications.info[state.stratifications.currentStratification];
+			
+			let stratification = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification;
+			return stratification.info[stratification.current];
 		},
 		currentStratificationDate: (state) => {
-			return state.stratifications.currentStratificationDate;
+			return state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.date;
 		},
 		currentView: (state) => {
 			return state.currentView;
 		},
 		previousProductAnomalyWMSLayer: (state) => {
-			if (state.products.anomalies.previousWMSLayer == null)
-				return null;
-			return state.products.anomalies.wmsLayers[state.products.anomalies.previousWMSLayer];
+			let anomalies =  state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies;
+			return  anomalies.layers[ anomalies.previous];
 		},
 		previousProductWMSLayer: (state) => {
-			if (state.products.previousProductWMSLayer == null)
-				return null;
-			return state.products.wmsLayers[state.products.previousProductWMSLayer];
+			let rawWMS = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS;
+			return rawWMS.layers[rawWMS.previous];
 		},
 		previousStratification: (state) => {
-			if(state.stratifications.previousStratification == null)
-				return null;
-			return state.stratifications.info[state.stratifications.previousStratification];
+			let stratification = state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification;
+			return stratification.info[stratification.previous];
 		},
 		products:(state)=> {
-			return state.products.info;
+			if (state.categories.products.length == 0 )
+				return null;
+			return state.categories.products[state.categories.current].info;
 		},
 		productsWMSLayers: (state) => {
-			return state.products.wmsLayers;
+			return state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].rawWMS.layers;
 		},
 		productsAnomaliesWMSLayers: (state) => {
-			return state.products.anomalies.wmsLayers;
+			return state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].anomalies.layers;
 		},
 		selectedPolygon: (state) => {
-			return state.stratifications.selectedPolygonId;
+			return state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.selectedPolygonId;
 		},
 		stratifications: (state) => {
-			return state.stratifications.info;
+			return state.categories.products[state.categories.current].productsViewInfo[state.categories.products[state.categories.current].currentProduct].stratification.info;
 		}
 	}
 });

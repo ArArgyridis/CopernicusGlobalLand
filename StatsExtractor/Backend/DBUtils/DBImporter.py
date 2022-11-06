@@ -17,10 +17,11 @@ sys.path.extend(['../../../'])
 from Libs.ConfigurationParser import ConfigurationParser
 
 class DBImporter:
-    def __init__(self, shpFile, dstTable, descriptor, configFile):
+    def __init__(self, shpFile, dstTable, descriptor, descriptionColumn, configFile,):
         self.__file = shpFile
         self.__tmpTable = dstTable
         self.__descriptor = descriptor
+        self.__descriptionColumn = descriptionColumn
         self.__geomColumn = "geom"
         self.__configuration = ConfigurationParser(configFile)
 
@@ -28,7 +29,7 @@ class DBImporter:
     def __executeOGRCommand(self):
         code = 0
         try:
-            cmd = """ogr2ogr -overwrite -f "PostgreSQL" PG:"{0}" -nlt PROMOTE_TO_MULTI {1} -lco GEOMETRY_NAME={3} -nln {2}""".format(
+            cmd = """ogr2ogr -overwrite -f "PostgreSQL" PG:"{0}" -nlt PROMOTE_TO_MULTI "{1}" -lco GEOMETRY_NAME={3} -nln {2}""".format(
                 self.__configuration.pgConnections[self.__configuration.statsInfo.connectionId].getConnectionString(),
                 self.__file, "{0}.{1}".format(self.__configuration.statsInfo.tmpSchema,
                                               self.__tmpTable), self.__geomColumn)
@@ -45,31 +46,21 @@ class DBImporter:
         #fetching table columns
         try:
             session = self.__configuration.pgConnections[self.__configuration.statsInfo.connectionId].getNewSession()
-            query = """ 
-            SELECT column_name FROM information_schema.columns
-            WHERE table_schema = '{0}'
-            AND table_name   = '{1}'
-            AND column_name not in ('ogc_fid', 'id', '{2}');""".format(self.__configuration.statsInfo.tmpSchema,
-                                                                       self.__tmpTable, self.__geomColumn)
 
-            cols = self.__configuration.pgConnections[self.__configuration.statsInfo.connectionId].fetchQueryResult(query,
-                                                                                                               session)
-            if cols is None:
-                raise pg.ProgrammingError
+            print("""INSERT INTO {0}.stratification (description) VALUES ('{1}') ON CONFLICT(description) 
+                       DO NOTHING;""".format(self.__configuration.statsInfo.schema, self.__descriptor))
 
-            metaDataStr = ''
-            for col in cols:
-                metaDataStr += "'{0}',{0},".format(col[0])
 
             queries = ["DELETE FROM {0}.stratification where description = '{1}';".format(
                 self.__configuration.statsInfo.schema, self.__descriptor),
             """INSERT INTO {0}.stratification (description) VALUES ('{1}') ON CONFLICT(description) 
             DO NOTHING;""".format(self.__configuration.statsInfo.schema, self.__descriptor),
 
-            """ INSERT INTO {0}.stratification_geom (stratification_id, geom, geom3857, metadata) SELECT s.id, {2},
-             st_transform({2}, 3857), json_build_object({3}) FROM {4}.{5} JOIN {0}.stratification s 
-             ON s.description= '{1}'; """.format(self.__configuration.statsInfo.schema,self.__descriptor,
-                    self.__geomColumn, metaDataStr[0:-1], self.__configuration.statsInfo.tmpSchema, self.__tmpTable),
+            """ INSERT INTO {0}.stratification_geom (stratification_id, geom, geom3857, description) SELECT s.id, ST_Transform({2},4326),
+             ST_Transform({2}, 3857), {3} FROM {4}.{5} JOIN {0}.stratification s 
+             ON s.description= '{1}'; """.format(self.__configuration.statsInfo.schema,self.__descriptor,self.__geomColumn,
+                                                 self.__descriptionColumn,
+                                                 self.__configuration.statsInfo.tmpSchema, self.__tmpTable),
             """DROP TABLE {0}.{1}""".format(self.__configuration.statsInfo.tmpSchema, self.__tmpTable)
             ]
             code = self.__configuration.pgConnections[self.__configuration.statsInfo.connectionId].executeQueries(queries, session)
@@ -97,6 +88,7 @@ class DBImporter:
                 if code != 0:
                     raise
             print("Process completed successfully!!")
+
         except:
             print("Unable to complete import process. Exiting")
 
@@ -105,13 +97,14 @@ class DBImporter:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
-        print("Usage: python DBImporter.py shpfile, tmptablename, identifier, config_file")
+    if len(sys.argv) < 6:
+        print("Usage: python DBImporter.py shpfile, tmptablename, identifier, column_with_description_name, config_file")
     shpFile = sys.argv[1]
     dstTable = sys.argv[2]
     descriptor = sys.argv[3]
-    config = sys.argv[4]
+    descriptionColumn = sys.argv[4]
+    config = sys.argv[5]
 
 
-    obj = DBImporter(shpFile, dstTable, descriptor, config)
+    obj = DBImporter(shpFile, dstTable, descriptor, descriptionColumn, config)
     obj.process()

@@ -84,25 +84,9 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::ThreadedGenerateD
         if(label == labelDataNullPixel)
             continue;
 
-        PolygonStats::Pointer polyStats = (*(*perRegionStats)[label])[threadId];
-        polyStats->totalCount++;
         InputPixelType pixelData = rawDataIt.Get();
-
-        if (pixelData == rawDataNullPixel)
-            continue;
-
-        polyStats->validCount++;
-        auto val = product->lutProductValues[pixelData-product->minMaxValues[0]];
-        polyStats->mean += val;
-        polyStats->sd   += pow(val,2);
-
-        size_t idx = (val <= product->valueRange.low)*0 +
-                (product->valueRange.low <= val && val <= product->valueRange.mid)*1 +
-                (product->valueRange.mid <= val && val <= product->valueRange.high)*2 +
-                (val >= product->valueRange.high)*3;
-
-        polyStats->densityArray[idx]++;
-        polyStats->addToHistogram(val);
+        PolygonStats::Pointer polyStats = (*(*perRegionStats)[label])[threadId];
+        polyStats->updateStats<InputPixelType, LabelPixelType>(pixelData);
     }
 }
 }

@@ -53,18 +53,20 @@ def main():
 					runLongTermComparisonAnomalyDetector(pid, config)
 
 				#if Constants.PRODUCT_INFO[pid].variable is not None:
-				mapserver = MapserverImporter(config)
-				mapserver.process(pid)
+				#mapserver = MapserverImporter(config)
+				#mapserver.process(pid)
 
 			#fetching stratifications and compute stats for each strata
+			"""
 			query = "select description from stratification s "
 			print("Extracting statistics")
+			
 			res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
 			if res != 1:
 				for row in res:
 					obj = ZonalStatsExtractor(row[0], config)
 					obj.process(productIds=[ Constants.PRODUCT_INFO[pid].id for pid in Constants.PRODUCT_INFO])
-
+			"""
 			print("process completed! Waiting....")
 			sleep(43200)
 			#sleep(1)

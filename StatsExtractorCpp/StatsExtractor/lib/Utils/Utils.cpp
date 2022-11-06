@@ -52,6 +52,7 @@ MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
     (*bandMetadata)["MY_PIXEL_SIZE"] = std::to_string(gt[1]);
     (*bandMetadata)["MY_NO_DATA_VALUE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetNoDataValue());
 
+    meta = nullptr;
     return bandMetadata;
 }
 

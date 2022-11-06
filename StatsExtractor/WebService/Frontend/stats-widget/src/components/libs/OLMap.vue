@@ -255,14 +255,11 @@ export default {
 		},
 		createVectorTileLayer(params){
 			let tmpSource = new VectorTileSource({
-				declutter: true,
-				renderMode: 'vector',
 				format: new MVT(),
+				url: params.url,
 				maxZoom:params.maxZoom,
-				url: params.url			
 			})
 			return this.__addVectorTileLayerToMap(tmpSource, params.zIndex);
-		
 		},		
 		clearMeasurements() {
 			this.clearVectorLayer(this.measurementInteraction.layer);
@@ -528,7 +525,8 @@ export default {
 		__addVectorTileLayerToMap(source, zIndex=null) {
 			let tmpLayer = new VectorTileLayer({
 				source: source,
-				declutter: true
+				declutter: true,
+				renderMode: "vector"
 			});
 			return this.__addGenericLayer(tmpLayer, zIndex);
 			

@@ -39,12 +39,12 @@ public:
     using PolyStatsPerRegion    = std::map<std::size_t, PolyStatsArrayPtr>;
     using PolyStatsPerRegionPtr = std::shared_ptr<PolyStatsPerRegion>;
 
-    PolygonStats(ProductInfo::Pointer prod, size_t polyID, size_t histBins=10);
+    PolygonStats(ProductInfo::Pointer prod, size_t polyID);
     ~PolygonStats();
 
-    static Pointer New(ProductInfo::Pointer prod, const size_t &polyID, size_t histBins=10);
-    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr labels, ProductInfo::Pointer prod, size_t histBins=10);
-    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductInfo::Pointer prod, size_t histBins=10);
+    static Pointer New(ProductInfo::Pointer& prod, const size_t& polyID);
+    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr& labels, ProductInfo::Pointer& prod);
+    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr& labels, ProductInfo::Pointer& prod);
 
     static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination, ProductInfo::Pointer product);
     static void finalizeStatistics(PolyStatsMapPtr stats);
@@ -56,11 +56,40 @@ public:
 
 
     long double mean, sd;
+    float min, max;
     std::array<long double, 4> densityArray;
-    size_t validCount, totalCount, histogramBins;
+    size_t validCount, totalCount;
     ProductInfo::Pointer product;
     std::vector<size_t> histogram;
     std::vector<RGBVal> densityColors;
+    template <class InputPixelType, class LabelPixelType>
+    inline void updateStats(InputPixelType& pixelData) { //apply it on valid polygon pixels!
+        totalCount++;
+
+        if (pixelData == static_cast<InputPixelType>(this->product->getNoData()))
+            return;
+
+        validCount++;
+
+        auto val = product->lutProductValues[pixelData-product->minMaxValues[0]];
+        mean += val;
+        sd   += pow(val,2);
+
+        if (min > val)
+            min = val;
+
+        if (max < val)
+            max = val;
+
+        size_t idx = (val <= product->valueRange.low)*0 +
+                (product->valueRange.low <= val && val < product->valueRange.mid)*1 +
+                (product->valueRange.mid <= val && val < product->valueRange.high)*2 +
+                (val >= product->valueRange.high)*3;
+
+        this->densityArray[idx]++;
+        this->addToHistogram(val);
+    }
+
 };
 
 #endif // POLYGONSTATS_HXX

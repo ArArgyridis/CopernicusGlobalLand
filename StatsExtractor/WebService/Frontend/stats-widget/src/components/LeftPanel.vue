@@ -71,13 +71,12 @@
 				</div>
 				
 				<!-- STRATIFICATION DATE-->
-				<div class="mt-2" v-if="currentStratificationName != 'Select stratification'">Select date: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationDate}} </button>
+				<div class="mt-2" v-if="currentStratificationName != 'Select stratification'">Select date: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationDate.substring(0,10)}} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
-					<li v-for ="(date, key) in stratificationDates" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratificationDate(date)"><a class="dropdown-item">{{date}}</a></li>
+					<li v-for ="(date, key) in stratificationDates" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratificationDate(date)"><a class="dropdown-item">{{date.substring(0,10)}}</a></li>
 					</ul>
 				</div>
 				
-				<!--v-if="currentAreaDensity != 'Select Area Density'"-->
 				<!-- AREA DENSITY-->
 				<div class="mt-2" v-if="currentStratificationDate != 'Select date'">
 					Area Density <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentAreaDensity}}</button>
@@ -97,6 +96,15 @@
 			
 			<!-- WMS ANOMALY DATA LAYER-->
 			<div class= "mt-3" v-if="viewStratification==2">
+				<div>
+				Anomaly Algorithm: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomaly}}</button>
+				<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+					<li v-for ="(anomaly, key) in currentProductAnomalies" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentProductAnomaly(key)"><a class="dropdown-item">{{anomaly.description}}</a></li>
+				</ul>
+				</div>
+			
+			
+				
 				Current Anomaly WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomalyWMSLayer}}</button>
 				<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(wms, key) in wmsAnomalyLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentAnomalyWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
@@ -144,6 +152,21 @@ export default {
 			set(val){
 				this.$store.commit("setCurrentProduct", val);
 				this.$emit("currentProductChange");
+			}
+		},
+		currentProductAnomaly: {
+			get() {
+				if (this.$store.getters.currentProductAnomaly == null)
+					return "No Anomaly Selected";
+				return  this.$store.getters.currentProductAnomaly.description;
+			},
+			set(val) {
+				this.$store.commit("setCurrentProductAnomaly",val);
+			}
+		},
+		currentProductAnomalies: {
+			get() {
+				return this.$store.getters.currentProductAnomalies;
 			}
 		},
 		currentProductAnomalyWMSLayer: {
@@ -241,8 +264,7 @@ export default {
 					if (keyA > keyB) return 1;
 					return 0;
 				});
-				for(let i = 0; i < tmpDates.length; i++)
-					tmpDates[i] = tmpDates[i].substring(0,10);
+				tmpDates.reverse();
 				return tmpDates;
 			}
 		},
@@ -289,6 +311,10 @@ export default {
 		setCurrentProduct(key) {
 			this.currentProduct = key;
 		},
+		setCurrentProductAnomaly(key) {
+			this.currentProductAnomaly = key;
+			this.$emit("currentProductAnomalyChange");
+		},
 		setCurrentStratification(key) {
 			this.currentStratification = key;
 		},
@@ -315,7 +341,9 @@ export default {
 			if (id == null)
 				return;
 			this.$store.commit("changeCategory", id);
-			this.$emit("updateProducts");
+			
+			if (this.$store.getters.products==null || this.$store.getters.products.length == 0)
+				this.$emit("updateProducts");
 		}
 	},
 	mounted() {

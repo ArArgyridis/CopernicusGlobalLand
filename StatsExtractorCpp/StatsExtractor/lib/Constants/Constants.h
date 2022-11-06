@@ -43,11 +43,11 @@ public:
     boost::filesystem::path rootPath, firstProductPath;
     std::vector<std::string> productNames;
     size_t id;
+    unsigned short histogramBins;
     ValueRange valueRange;
     std::array<float, 2> minMaxValues;
     std::vector<float> lutProductValues;
     std::array<ColorInterpolation, 4> colorInterpolation; //0 - no val, 1 - sparce val, 2- mild val, 3- dense val
-
 
     ProductInfo();
     ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg);
@@ -55,7 +55,6 @@ public:
     float getNoData();
     boost::filesystem::path productAbsPath(boost::filesystem::path &relPath);
     float scaleValue(float value);
-
 };
 
 class Constants {

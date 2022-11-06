@@ -61,6 +61,7 @@ unsigned short Configuration::parse() {
     statsInfo.tmpSchema     = cfg["statsinfo"]["tmp_schema"].GetString();
     statsInfo.connectionId  = cfg["statsinfo"]["connection_id"].GetString();
     statsInfo.exportId      = cfg["statsinfo"]["export_id"].GetString();
+    statsInfo.memoryMB      = cfg["statsinfo"]["available_memory_mb"].GetInt();
 
     //filesystem
     filesystem.imageryPath          = cfg["filesystem"]["imagery_path"].GetString();

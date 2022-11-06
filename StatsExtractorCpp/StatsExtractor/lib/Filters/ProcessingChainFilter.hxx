@@ -29,13 +29,10 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Reset() {
     currentRegionId = 1;
 
     //cleaning up temporary info for respective product/stratification
-    //std::string query = "DELETE FROM tmp.poly_stats_per_region WHERE poly_id IN ("+polyIdsStr +") AND product_file_id IN (" + imageIdsStr +");";
     std::string query = "TRUNCATE tmp.poly_stats_per_region RESTART IDENTITY;";
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     cn->executeQuery(query);
 }
-
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
@@ -59,15 +56,17 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Confi
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     //insert polygon data & fetch area info to compute colors
-    std::string query = "SELECT clms_UpdatePolygonStats(); "
-            "SELECT id, poly_id, product_file_id,"
-            " CASE WHEN valid_pixels = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,"
-            " CASE WHEN valid_pixels = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,"
-            " CASE WHEN valid_pixels = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,"
-            " CASE WHEN valid_pixels = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense"
+    std::string query = "SELECT clms_UpdatePolygonStats(); ";
+    PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
+    cn->executeQuery(query);
+
+    query = "SELECT id, poly_id, product_file_id,"
+            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,"
+            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,"
+            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,"
+            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense"
             " FROM poly_stats ps WHERE noval_color IS NULL;";
 
-    PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
     std::stringstream data;
 
@@ -87,18 +86,12 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color) VALUES " + stringstreamToString(data)
             + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color; ";
     cn->executeQuery(query);
-
-
-
 }
 
 template <class TInputImage, class TPolygonDataType>
 bool ProcessingChainFilter<TInputImage, TPolygonDataType>::ValidAOI() {
     return !(aoi.MaxX == 0 && aoi.MinX == 0 && aoi.MinY == 0 && aoi.MaxY == 0);
 }
-
-
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateInputRequestedRegion() {
@@ -115,7 +108,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateInputRequeste
     requestedRegion.SetIndex(originIdx);
     inputImage->SetRequestedRegion(requestedRegion);
 }
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateOutputInformation() {
@@ -159,7 +151,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::AfterThreadedGenerate
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::BeforeThreadedGenerateData() {
-    Superclass::BeforeThreadedGenerateData();
     std::cout <<"Processing Region with id: " << currentRegionId <<"\n";
 }
 
@@ -213,7 +204,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
         stats->SetParentRegionId(currentRegionId);
         stats->SetParentThreadId(threadId);
         stats->SetInputDataImage(roi->GetOutput(), image.first);
-        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(6000);
+        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB/(this->GetNumberOfThreads()*2));
 
         stats->GlobalWarningDisplayOff();
         stats->Update();

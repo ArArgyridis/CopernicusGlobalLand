@@ -60,29 +60,37 @@ class StatsRequests(GenericRequest):
         query = """
         WITH dt AS( 
         	SELECT distinct p.id, p.name[1], pfd.description pdescription, pf."date",  s.description sdescription,
-        	ARRAY[pfd.min_prod_value, pfd.low_value, pfd.mid_value, pfd.high_value, pfd.max_prod_value] value_ranges
+        	ARRAY[pfd.min_prod_value, pfd.low_value, pfd.mid_value, pfd.high_value, pfd.max_prod_value] value_ranges,
+        	anomaly_info.anomaly_info
 	        FROM {0}.poly_stats ps 
 	        JOIN {0}.stratification_geom sg ON ps.poly_id = sg.id
 	        JOIN {0}.stratification s ON sg.stratification_id = s.id
 	        JOIN {0}.product_file pf ON ps.product_file_id = pf.id
                 JOIN {0}.product_file_description pfd on pf.product_description_id  = pfd.id
                 JOIN {0}.product p ON pfd.product_id = p.id
+                JOIN(
+                	SELECT ltai.current_product_description_id raw_product_id, (ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_OBJECT('id', pfd.id, 'description', pfd.description, 'key', p.name[1] ) ORDER BY pfd.id )))::jsonb anomaly_info
+                	FROM   {0}.long_term_anomaly_info ltai
+                	JOIN {0}.product_file_description pfd ON ltai.anomaly_product_description_id = pfd.id
+                	JOIN   {0}.product p ON pfd.product_id = p.id
+                	GROUP BY  ltai.current_product_description_id            
+                ) anomaly_info ON p.id = anomaly_info.raw_product_id
 	        WHERE pf."date" between '{1}' and '{2}' AND p.category_id = {3}
         )
         SELECT  ARRAY_TO_JSON(ARRAY_AGG(JSON_build_object('id', a.id, 'name', a.name, 'description', 
-        a.pdescription, 'dates', a.res, 'value_ranges', a.value_ranges)ORDER BY name)) 
+        a.pdescription, 'dates', a.res, 'value_ranges', a.value_ranges, 'anomaly_info', a.anomaly_info )ORDER BY name)) 
         FROM(
 	        SELECT a.id, a.name, a.pdescription, JSON_OBJECT_AGG(a.date, avail_strats) res,
-	        a.value_ranges
+	        a.value_ranges, a.anomaly_info
 	        FROM ( 
 		        SELECT dt.id, dt.name, dt.pdescription, dt.date, 
 		        ARRAY_TO_JSON(array_agg(dt.sdescription order by dt.sdescription)) avail_strats,
-		        dt.value_ranges
+		        dt.value_ranges, dt.anomaly_info
 		        FROM dt
-		        GROUP BY dt.id, dt.name, dt.pdescription, dt.date, dt.value_ranges
+		        GROUP BY dt.id, dt.name, dt.pdescription, dt.date, dt.value_ranges, dt.anomaly_info
 	        )a
 	        GROUP BY a.id, a.name, a.pdescription,
-                a.value_ranges
+                a.value_ranges, a.anomaly_info
         ) a""".format(self._config.statsInfo.schema, self._requestData["options"]["dateStart"],
               self._requestData["options"]["dateEnd"], self._requestData["options"]["category_id"])
         return self.__getResponseFromDB(query)
@@ -129,7 +137,6 @@ class StatsRequests(GenericRequest):
             ORDER BY poly_id
         )a;""".format(self._config.statsInfo.schema, self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
-        print(query)
         return self.__getResponseFromDB(query)
   
     def __fetchStratificationInfo(self):
@@ -292,7 +299,6 @@ if __name__ == "__main__":
     if len(dt) > 0:
         dt = dt[0]
         from osgeo import ogr
-        print(dt)
         defn = ogr.FeatureDefn()
         defn.SetGeomType(ogr.wkbMultiPolygon)
         dstSRS = osr.SpatialReference()

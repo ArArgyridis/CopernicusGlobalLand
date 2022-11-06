@@ -22,7 +22,7 @@ std::map<std::size_t, ProductInfo::Pointer> Constants::productInfo;
 
 ProductInfo::ProductInfo(){}
 
-ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):scaler(noScalerFunc), scaleFactor(1), addOffset(0) {
+ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):scaler(noScalerFunc), scaleFactor(1), addOffset(0), variable("NODATA") {
     auto productNamesArr = row[0].as_array();
     PGPool::pgArrayToVector<std::string>(productNamesArr, productNames);
 
@@ -32,9 +32,9 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):
     if (productType == "anomaly")
         rootPath = cfg->filesystem.anomalyProductsPath;
 
-    id = row[2].as<size_t>();
+    id      = row[2].as<size_t>();
     pattern = row[3].as<std::string>();
-    types = row[4].as<std::string>();
+    types   = row[4].as<std::string>();
     dateptr = row[5].as<std::string>();
 
     if (!row[6].is_null())
@@ -59,7 +59,6 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):
         colorInterpolation[1] = ColorInterpolation(sparsevalColorRamp);
     }
 
-
     if (!row[14].is_null()) {
         midvalColorRamp.Parse(row[14].as<std::string>().c_str());
         colorInterpolation[2] = ColorInterpolation(midvalColorRamp);
@@ -79,10 +78,15 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):
     if (!row[19].is_null())
         fileNameCreationPattern = row[19].as<std::string>();
 
-    if (!row[20].is_null()) {
-        boost::filesystem::path relPath = row[20].as<std::string>();
+    if (!row[20].is_null())
+        histogramBins = row[20].as<unsigned short>();
+
+    if (!row[21].is_null()) {
+        boost::filesystem::path relPath = row[21].as<std::string>();
         firstProductPath =productAbsPath(relPath);
+
     }
+
     loadMetadata();
 }
 
@@ -91,7 +95,7 @@ long double ProductInfo::convertPixelsToArea(long double pixels) {
 }
 
 float ProductInfo::getNoData() {
-    return stof((*metadata)["MY_NO_DATA_VALUE"]);
+    return noData;
 }
 
 void ProductInfo::loadMetadata() {
@@ -100,27 +104,37 @@ void ProductInfo::loadMetadata() {
 
     scaler = &noScalerFunc;
     metadata = getMetadata(firstProductPath);
+
     if (productType =="raw") {
         scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
         addOffset = std::stod((*metadata)[variable+"#add_offset"]);
         scaler = &scalerFunc;
     }
+
+    noData = stof((*metadata)["MY_NO_DATA_VALUE"]);
+
     if ((*metadata)["MY_UNIT"]== "degree")
         pixelsToArea = &pixelsToAreaM2Degrees;
     else
         pixelsToArea = &pixelsToAreaM2Meters;
+
     pixelSize = stof((*metadata)["MY_PIXEL_SIZE"]);
 
     lutProductValues = std::vector<float>(minMaxValues[1]-minMaxValues[0]+1);
+    size_t i;
+    #pragma omp parallel shared(lutProductValues,minMaxValues, scaleFactor, addOffset) private(i)
+    {
+        #pragma omp for
+        for (i = 0; i < lutProductValues.size(); i++)
+            lutProductValues[i] = scaler(minMaxValues[0]+static_cast<int>(i), scaleFactor, addOffset);
 
-    for (size_t i = 0; i < lutProductValues.size(); i++)
-        lutProductValues[i] = scaler(minMaxValues[0]+static_cast<int>(i), scaleFactor, addOffset);
+    }
 }
 
 boost::filesystem::path ProductInfo::productAbsPath(boost::filesystem::path &relPath) {
     boost::filesystem::path retPath;
     if(productType == "raw")
-        retPath = std::string("NETCDF:") + (rootPath/relPath).string() +":"+variable;
+        retPath = std::string("NETCDF:") + (rootPath/relPath).string() + ":" + variable;
     else
         retPath = rootPath/relPath;
 
@@ -155,9 +169,10 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
     std::string query = queryStream.str();
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query, "");
-    for (size_t i = 0; i < res.size(); i++)
-        Constants::productInfo[res[i][2].as<size_t>()] = std::make_shared<ProductInfo>(PGPool::PGConn::PGRow(res[i]), cfg);
 
+    for (size_t i = 0; i < res.size(); i++)
+        Constants::productInfo.insert(std::make_pair<size_t, ProductInfo::Pointer>(res[i][2].as<size_t>(),
+                                      std::make_shared<ProductInfo>(PGPool::PGConn::PGRow(res[i]), cfg)));
 
     return 0;
 }

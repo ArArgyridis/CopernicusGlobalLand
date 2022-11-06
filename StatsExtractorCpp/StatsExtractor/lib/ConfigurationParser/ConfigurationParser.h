@@ -21,6 +21,7 @@
 
 struct StatsInfo {
     std::string schema, tmpSchema, connectionId, exportId;
+    size_t memoryMB;
 };
 
 struct SFTPProxy {
