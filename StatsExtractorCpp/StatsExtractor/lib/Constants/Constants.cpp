@@ -164,7 +164,7 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
                 << " LEFT JOIN "<< cfg->statsInfo.schema <<".product_file_description pfd on p.id = pfd.product_id"
                 <<" LEFT JOIN tmp_file_id tmp ON tmp.product_description_id = pfd.id"
                <<" LEFT JOIN "<< cfg->statsInfo.schema <<".product_file pf ON pf.id = tmp.tid"
-              << " WHERE p.id IN(1) ORDER BY p.id";
+              << " WHERE p.id IN(1,4) ORDER BY p.id";
 
     std::string query = queryStream.str();
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);
