@@ -13,7 +13,7 @@
 """
 
 import sys, re, os, numpy as np, pandas as pd
-sys.path.extend(['../../../'])
+sys.path.extend(['../../']) #to properly import modules from other dirs
 
 from osgeo import gdal, osr
 from Libs.Utils import xyToColRow, scaleValue, getListOfFiles
@@ -122,7 +122,7 @@ class PointValueExtractor():
             print("Unable to extract statistics. Exiting")
             ret = None
 
-        self._movingAverage(ret)
+        #self._movingAverage(ret)
         return ret
 
 def main():

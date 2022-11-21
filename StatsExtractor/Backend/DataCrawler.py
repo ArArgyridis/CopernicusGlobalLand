@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os,paramiko,re,socks,sys
-sys.path.extend(['../../']) #to properly import modules from other dirs
+sys.path.extend(['../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Constants import Constants
 

@@ -17,7 +17,7 @@ from osgeo import gdal, osr
 from concurrent.futures import ProcessPoolExecutor
 gdal.SetConfigOption("COMPRESS_OVERVIEW", "DEFLATE")
 
-sys.path.extend(['../../']) #to properly import modules from other dirs
+sys.path.extend(['../']) #to properly import modules from other dirs
 
 from Libs.MapServer import MapServer, LayerInfo
 from Libs.Utils import getImageExtent, netCDFSubDataset, plainScaller, linearScaller
@@ -127,8 +127,11 @@ def processSingleImage(params, relImagePath):
 
     ptr = re.compile(params["productInfo"].pattern)
     date = params["productInfo"].createDate(ptr.findall(os.path.split(relImagePath[0])[1])[0])
-    return LayerInfo(dstImg, "{0}_{1}".format(date[0:10], params["productInfo"].variable), "EPSG:4326",
-                     None,None, getImageExtent(dstImg), date, params["productInfo"].id)
+    layerName = "{0}_{1}".format(date[0:10], params["productInfo"].variable)
+    if params["productInfo"].productType == "anomaly":
+        layerName = date[0:10]
+        
+    return LayerInfo(dstImg, layerName, "EPSG:4326", None,None, getImageExtent(dstImg), date, params["productInfo"].id)
 
 
 class MapserverImporter(object):
@@ -162,11 +165,8 @@ class MapserverImporter(object):
             if result is not None:
                 self._layerInfo.append(result)
 
-
-
     def process(self, productId):
         productGroups = dict()
-        #for productId in Constants.PRODUCT_INFO:
         #print(Constants.PRODUCT_INFO[productId].productType)
         query = """SELECT rel_file_path, date FROM product_file WHERE product_description_id = {0} 
         ORDER BY rel_file_path""".format(productId)

@@ -37,6 +37,7 @@ endif()
 
 set(SOURCE
     lib/PostgreSQL/PostgreSQL.cpp
+    lib/PostgreSQL/PGCursor.cpp
     lib/ConfigurationParser/ConfigurationParser.cpp
     lib/Constants/Constants.cpp
     lib/StatsExtractor/StatsExtractor.cpp
@@ -46,6 +47,7 @@ set(SOURCE
 )
 set (HEADERS
     lib/PostgreSQL/PostgreSQL.h
+    lib/PostgreSQL/PGCursor.h
     lib/ConfigurationParser/ConfigurationParser.h
     lib/Constants/Constants.h
     lib/StatsExtractor/StatsExtractor.h

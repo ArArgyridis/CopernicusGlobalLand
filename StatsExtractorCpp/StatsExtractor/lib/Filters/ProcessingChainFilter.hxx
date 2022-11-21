@@ -21,6 +21,7 @@
 #include "fmt/format.h"
 #include "ProcessingChainFilter.h"
 #include "../Constants/Constants.h"
+#include "../PostgreSQL/PGCursor.h"
 
 namespace otb {
 
@@ -67,25 +68,39 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
             " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense"
             " FROM poly_stats ps WHERE noval_color IS NULL;";
 
-    PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
-    std::stringstream data;
+    PGPool::PGCursor cur(Configuration::connectionIds[config->statsInfo.connectionId], query);
 
-    for (auto row: res) {
-        data <<"(" << row[0] <<"," << row[1] <<"," << row[2] <<",";
-        for (size_t i = 0; i< product->colorInterpolation.size(); i++) {
-            RGBVal color = product->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
-            data << "'" << rgbToArrayString(color) << "',";
+    std::stringstream data;
+    PGPool::PGConn::PGRes res = cur.getNext();
+
+    unsigned short check = 0;
+    while(!res.empty()) {
+
+        for (auto row: res) {
+            data <<"(" << row[0] <<"," << row[1] <<"," << row[2] <<",";
+            for (size_t i = 0; i< product->colorInterpolation.size(); i++) {
+                RGBVal color = product->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
+                data << "'" << rgbToArrayString(color) << "',";
+            }
+            data.seekp(-1,data.cur);
+            data <<"),";
+            check++;
         }
-        data.seekp(-1,data.cur);
-        data <<"),";
+        if (check >= 10000) {
+            query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color) VALUES " + stringstreamToString(data)
+                    + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color; ";
+            cn->executeQuery(query);
+            data.str(std::string());
+            check = 0;
+        }
+        res = cur.getNext();
     }
 
-    if (data.tellp() == 0)
-        return;
-
-    query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color) VALUES " + stringstreamToString(data)
-            + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color; ";
-    cn->executeQuery(query);
+    if (check > 0) {
+        query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color) VALUES " + stringstreamToString(data)
+                + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color; ";
+        cn->executeQuery(query);
+    }
 }
 
 template <class TInputImage, class TPolygonDataType>
@@ -161,7 +176,8 @@ typename TInputImage::Pointer ProcessingChainFilter<TInputImage, TPolygonDataTyp
 
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(const RegionType& outputRegionForThread, itk::ThreadIdType threadId) {
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(const RegionType& outputRegionForThread,
+                                                                                itk::ThreadIdType threadId) {
     RegionData regionData = this->rasterizer(outputRegionForThread, threadId);
     if (regionData.labelImage == nullptr)
         return;
@@ -205,11 +221,12 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
         stats->SetParentThreadId(threadId);
         stats->SetInputDataImage(roi->GetOutput(), image.first);
         stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB/(this->GetNumberOfThreads()*2));
-
+        stats->GetStreamer()->SetReleaseDataFlag(true);
         stats->GlobalWarningDisplayOff();
-        stats->Update();
         stats->ReleaseDataFlagOn();
+        stats->Update();
         stats->ResetPipeline();
+
     }
 }
 
@@ -250,7 +267,7 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData ProcessingChain
         return ret;
 
     rasterizer->Update();
-/*
+    /*
     using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
     ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
     labelWriter->SetFileName(std::to_string(repeat) + "_"+std::to_string(threadId) + "labelImage_v2.tif");

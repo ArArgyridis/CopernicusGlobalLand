@@ -183,7 +183,7 @@ PGConn::PGPoolConnectionPtr PGConn::createConnection(size_t& id, bool activeFlag
 
 void PGConn::releaseConnection(PGPoolConnectionPtr cn) {
     lock_guard<mutex> lock(poolLock);
-    if (cn->second->getCount() > 10)
+    if (cn->second->getCount() > 1)
         cn->second->reset();
     cn->first = false;
     //std::cout <<"count: " << cn->second->getCount() <<"\n";
