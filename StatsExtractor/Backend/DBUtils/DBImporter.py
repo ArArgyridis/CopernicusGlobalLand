@@ -13,7 +13,7 @@
 """
 
 import json,  os, psycopg2 as pg, subprocess, sys
-sys.path.extend(['../../'])
+sys.path.extend(['../../../'])
 from Libs.ConfigurationParser import ConfigurationParser
 
 class DBImporter:

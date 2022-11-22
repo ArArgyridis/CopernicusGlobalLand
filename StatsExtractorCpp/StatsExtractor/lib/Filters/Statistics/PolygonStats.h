@@ -66,7 +66,6 @@ public:
     inline void updateStats(InputPixelType& pixelData) { //apply it on valid polygon pixels!
         totalCount++;
 
-
         if (pixelData == static_cast<InputPixelType>(this->product->getNoData()))
             return;
 

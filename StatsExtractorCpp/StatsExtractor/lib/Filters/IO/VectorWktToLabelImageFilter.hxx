@@ -21,22 +21,23 @@
 namespace otb {
 template <class TOutputImage>
 void VectorWktToLabelImageFilter<TOutputImage>::AppendData(std::string wkt, size_t id) {
-    if (wkt.length() == 0) {
+
+    OGRGeometryH geom;
+    if (this->geomType == wkbMultiPolygon)
+        geom = new OGRMultiPolygon();
+    else if (this->geomType == wkbPolygon)
+        geom = new OGRPolygon();
+
+    std::unique_ptr<const char*> tmpGeom = std::make_unique<const char*>(const_cast<char*>(wkt.c_str()));
+    reinterpret_cast<OGRGeometry*>(geom)->importFromWkt(tmpGeom.get());
+    //skipping geometries if empty or outside maximum envelope
+    if (reinterpret_cast<OGRGeometry*>(geom)->IsEmpty()) {
         std::cout << "Polygon with id: " << id <<" is empty. Skipping\n";
         return;
     }
 
-    if (this->geomType == wkbMultiPolygon)
-        burnGeoms.push_back(new OGRMultiPolygon());
-    else if (this->geomType == wkbPolygon)
-        burnGeoms.push_back(new OGRPolygon());
-
-    const char *l = wkt.c_str();
-    const char **k = &l;
-    reinterpret_cast<OGRGeometry*>(burnGeoms.back())->importFromWkt(k);
+    burnGeoms.push_back(geom);
     burnValues.emplace_back(static_cast<double>(id));
-    k = nullptr;
-    l = nullptr;
 }
 
 template <class TOutputImage>
@@ -130,7 +131,7 @@ template <class TOutputImage>
 VectorWktToLabelImageFilter<TOutputImage>::~VectorWktToLabelImageFilter() {
     //close geometries
     for (auto& geom: burnGeoms)
-        OGRGeometryFactory::destroyGeometry(reinterpret_cast<OGRGeometry*>(geom));
+        OGRFeature::DestroyFeature(reinterpret_cast<OGRFeature*>(geom));
 }
 
 

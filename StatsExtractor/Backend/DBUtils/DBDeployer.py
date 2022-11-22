@@ -13,7 +13,7 @@
 """
 
 import sys, os
-sys.path.extend(['../../']) #to properly import modules from other dirs
+sys.path.extend(['../../../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 
 class DBDeployer(object):

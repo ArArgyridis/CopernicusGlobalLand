@@ -16,7 +16,7 @@
 #define STREAMEDPROCESSINGCHAINFILTER_H
 
 #include <otbPersistentFilterStreamingDecorator.h>
-#include <iostream>
+
 #include "ProcessingChainFilter.hxx"
 
 namespace otb {
@@ -56,9 +56,7 @@ public:
 protected:
     StreamedProcessingChainFilter() {}
 
-    ~StreamedProcessingChainFilter() override {
-        std::cout <<"DESTROYEEEDDDDD\n";
-    }
+    ~StreamedProcessingChainFilter() override {}
 
 private:
     StreamedProcessingChainFilter(const Self&) = delete;

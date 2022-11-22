@@ -63,7 +63,7 @@ void StatsExtractor::process() {
                 " JOIN product_file pf ON pfd.id = pf.product_description_id "
                 " LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id"
                 " WHERE s.description  = '" + stratification +
-                "' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS null /*AND sg.id = 199 AND sg.id=74 AND pf.id IN(1,71, 466927)*/"
+                "' AND ((p.type='raw'AND pfd.variable IS NOT NULL) OR p.type='anomaly') AND ps.id IS null /*AND sg.id = 199 AND sg.id=74 AND pf.id IN(1,71, 405809)*/"
                 "),extent AS( "
                 "  SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids"
                 "  FROM (SELECT distinct geomid FROM info) a"
@@ -104,11 +104,11 @@ void StatsExtractor::process() {
         processingChain->UpdateOutputInformation();
         processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
         processingChain->UpdateOutputInformation();
-        processingChain->ReleaseDataFlagOn();
 
         if (processingChain->ValidAOI())
             processingChain->Update();
 
+        processingChain->ReleaseDataFlagOn();
         processingChain->ResetPipeline();
     }
 }
