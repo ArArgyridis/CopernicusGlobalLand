@@ -21,7 +21,7 @@
 		<div class="border border-2 rounded">
 			<div class="m-3 border border-2 rounded">
 				<div class="container">
-					<h4> Select Date Range</h4>
+					<h4>Analysis Date Range</h4>
 					<div class="row">
 						<div class ="col text-end align-middle">Starting Date:</div>
 						<div class ="col text-start"><Datepicker v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
@@ -36,9 +36,7 @@
 			</div>
 			<!-- CLMS PRODUCT CATEGORIES-->
 			<div class="row nav nav-tabs">
-				<button v-for="nav, idx in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActive(idx)" v-bind:id="'chart_'+nav.id">
-			{{nav.title}}
-		</button>
+				<button v-for="nav, idx in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActive(idx)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
 			</div>	
 			<div class="dropdown mt-3">
 				<!--<h4> Product Selection</h4>-->
@@ -48,69 +46,79 @@
 				</ul>
 			</div>
 		</div>
-		<div class = "container mt-3" v-if="currentProduct != null">
-			<h4>Select Mode</h4>
-			<div class="row gap-2">
-				<div class="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==0 }" id="showStratificationButton" v-on:click=showProductOption(0)>
-					Stratification-driven Statistics
-				</div>
-				<div class ="col btn btn-secondary" v-bind:class="{ disabled: viewStratification ==1}" id="showRawDataButton" v-on:click=showProductOption(1)>
-					Raw Data Visaulization
-				</div>
-				<div class ="col btn btn-secondary " v-bind:class="{ disabled: viewStratification ==2 }" id="showProductAnomalyButton" v-on:click=showProductOption(2)>
-					Product Anomalies
-				</div>
-			</div>
-			<div class = "mt-3" v-if="viewStratification==0">			
-				<!--STRATIFICATION -->
-				<div>
-					Current stratification: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
-					<ul id="stratificationDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(stratification, key) in stratifications" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratification(key)"><a class="dropdown-item">{{stratification.name}}</a></li>
-					</ul>
-				</div>
-				
-				<!-- STRATIFICATION DATE-->
-				<div class="mt-2" v-if="currentStratificationName != 'Select stratification'">Select date: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationDate.substring(0,10)}} </button>
-					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
-					<li v-for ="(date, key) in stratificationDates" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratificationDate(date)"><a class="dropdown-item">{{date.substring(0,10)}}</a></li>
-					</ul>
-				</div>
-				
-				<!-- AREA DENSITY-->
-				<div class="mt-2" v-if="currentStratificationDate != 'Select date'">
-					Area Density <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentAreaDensity}}</button>
-					<ul id="currentAreaDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-						<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(key)"><a class="dropdown-item">{{densityType.description}}</a></li>
-					</ul>
-				</div>
-			</div>		
+		<div class = "container mt-3 ml-3 mr-3" v-if="currentProduct != null">
+			<h4>View Mode</h4>
 			
-			<!-- WMS RAW DATA LAYER-->
-			<div class= "mt-3" v-if="viewStratification==1">
-				Current WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductWMSLayer}}</button>
-				<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(wms, key) in wmsLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
-				</ul>
+			<div class="row nav nav-tabs">
+				<button v-for="nav, idx in viewModes" v-bind:key="idx" class="col-sm nav-link text-muted text-center" v-bind:class="{active: viewMode == idx}" v-on:click="showProductOption(idx)" v-bind:id="'viewmode_'+idx">{{nav}}</button>
+			</div>	
+	
+			<div  class="mt-3" v-if="viewMode==0"><!--STRATIFICATION -->
+				<div class="row">
+					<div class="col d-flex justify-content-end my-auto align-items-center">Stratification:</div>
+					<div class="col d-flex justify-content-start">
+						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
+						<ul id="stratificationDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+							<li v-for ="(stratification, key) in stratifications" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentStratification(key)"><a class="dropdown-item">{{stratification.name}}</a></li>
+						</ul>
+					</div>
+				</div>
+				<div class="row mt-2" v-if="currentStratificationName != 'Select stratification'">
+					<div class="col d-flex justify-content-end my-auto align-items-center">View Date:</div>
+					<div class="col d-flex justify-content-start">
+						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationDate.substring(0,10)}} </button>
+						<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
+							<li v-for ="(date, idx) in stratificationDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="setCurrentStratificationDate(idx)"><a class="dropdown-item">{{date.substring(0,10)}}</a></li>
+						</ul>
+					</div>
+				</div>
+				<div v-if="currentStratificationDate != 'Select date'">
+				<div class="row mt-2">
+					<div class="col d-flex justify-content-end my-auto align-items-center">Region Coverage Percentage for Density:</div>
+					<div class="col d-flex justify-content-start">
+						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentAreaDensity}}</button>
+							<ul id="currentAreaDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+								<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(key)"><a class="dropdown-item">{{densityType.description}}</a></li>
+							</ul>
+							
+					</div>
+					<DensityLegend class="mt-3" ref="densityLegend"/>
+				</div>
+				</div>
+	
 			</div>
 			
-			<!-- WMS ANOMALY DATA LAYER-->
-			<div class= "mt-3" v-if="viewStratification==2">
-				<div>
-				Anomaly Algorithm: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomaly}}</button>
-				<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(anomaly, key) in currentProductAnomalies" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentProductAnomaly(key)"><a class="dropdown-item">{{anomaly.description}}</a></li>
-				</ul>
+			<div class= "row mt-3 align-items-center" v-if="viewMode==1"> <!-- WMS RAW DATA LAYER-->
+				<div class="col d-inline-flex justify-content-end my-auto align-items-center">Current WMS Layer:</div>
+				<div class="col d-flex justify-content-start">
+					<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductWMSLayer}}</button>
+					<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+						<li v-for ="(wms, key) in wmsLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
+					</ul>
 				</div>
-			
-			
-				
-				Current Anomaly WMS Layer: <button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomalyWMSLayer}}</button>
-				<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(wms, key) in wmsAnomalyLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentAnomalyWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
-				</ul>
 			</div>
 			
+			<div v-if="viewMode==2"><!-- WMS ANOMALY DATA LAYER-->
+				<div class= "row mt-3 align-items-center" >
+					<div class="col d-inline-flex justify-content-end my-auto align-items-center">Anomaly Algorithm:</div>
+					<div class="col d-flex justify-content-start">
+						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomaly.description}}</button>
+						<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+							<li v-for ="(anomaly, key) in currentProductAnomalies" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentProductAnomaly(key)"><a class="dropdown-item">{{anomaly.description}}</a></li>
+						</ul>
+					</div>
+				</div>
+				
+				<div class= "row mt-3 align-items-center" >
+					<div class="col d-inline-flex justify-content-end my-auto align-items-center">Current WMS Layer:</div>
+					<div class="col d-flex justify-content-start">
+						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentProductAnomalyWMSLayer}}</button>
+						<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+							<li v-for ="(wms, key) in wmsAnomalyLayers" v-bind:key="key" v-bind:value="key"  v-on:click="setCurrentAnomalyWMS(key)"><a class="dropdown-item">{{wms.title}}</a></li>
+						</ul>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>
@@ -122,11 +130,14 @@
 import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import requests from '../libs/js/requests.js';
+import utils from "../libs/js/utils.js";
+import DensityLegend from "./libs/DensityLegend.vue";
 
 export default {
 	name: 'Left Panel',
 	components: {
-		Datepicker
+		Datepicker,
+		DensityLegend
 	},
 	props: {},
 	computed: {
@@ -142,6 +153,7 @@ export default {
 			get() {
 				if (this.currentProduct == null)
 					return "Select Product";
+				utils.computeDensityDescription;
 				return this.$store.getters.currentProduct.description;
 			}
 		},
@@ -157,8 +169,8 @@ export default {
 		currentProductAnomaly: {
 			get() {
 				if (this.$store.getters.currentProductAnomaly == null)
-					return "No Anomaly Selected";
-				return  this.$store.getters.currentProductAnomaly.description;
+					return {description: "No Algorithm Selected"};
+				return  this.$store.getters.currentProductAnomaly;
 			},
 			set(val) {
 				this.$store.commit("setCurrentProductAnomaly",val);
@@ -193,7 +205,10 @@ export default {
 			get() {
 				if (this.$store.getters.areaDensity == null)
 					return "Select Area Density";
-				return this.$store.getters.areaDensity.description;
+				let id = this.$store.getters.areaDensity.id;
+				let description = this.$store.getters.areaDensity.description;
+				let valueRanges = this.$store.getters.currentProduct.value_ranges;
+				return utils.computeDensityDescription(description, valueRanges[id], valueRanges[id+1]);
 			},
 			set(val) {
 				this.$store.commit("setStratificationAreaDensity",val);
@@ -256,16 +271,7 @@ export default {
 		},
 		stratificationDates:{
 			get() {
-				let tmpDates = Object.keys(this.$store.getters.currentStratification.dates);
-				tmpDates.sort( function(a, b) {
-					let keyA = a.title,
-					keyB = b.title;
-					if (keyA < keyB) return -1;
-					if (keyA > keyB) return 1;
-					return 0;
-				});
-				tmpDates.reverse();
-				return tmpDates;
+				return this.$store.getters.currentStratification.dates;
 			}
 		},
 		wmsAnomalyLayers: {
@@ -278,7 +284,7 @@ export default {
 				return this.$store.getters.productsWMSLayers;
 			}		
 		},
-		viewStratification: {
+		viewMode: {
 			set(val) {
 				this.$store.commit("setCurrentView",val);
 			},
@@ -289,7 +295,8 @@ export default {
 	},
 	data() {
 		return {
-			dateFormat: "dd MMM yyyy"
+			dateFormat: "dd MMM yyyy",
+			viewModes: ["Statistics By Stratification", "Raw Data", "Anomalies"]
 		}
 	},
 	methods: {
@@ -320,6 +327,7 @@ export default {
 		},
 		setStratificationAreaDensity(key) {
 			this.currentAreaDensity = key;
+			this.$refs.densityLegend.refresh();
 			this.$emit("stratificationAreaDensityChange");
 		},
 		setCurrentStratificationDate(key) {
@@ -334,7 +342,7 @@ export default {
 			this.$emit("rawWMSChange");
 		},
 		showProductOption(val) {
-			this.viewStratification = val;
+			this.viewMode = val;
 			this.$emit("switchViewMode", {id:val});
 		},
 		switchActive(id) {
@@ -381,5 +389,21 @@ h3 {
 	max-height:30vh;
 	overflow-y: scroll;
 }
+
+.legend{
+	width: 100%;
+	height: 100px;
+	position: relative;
+
+}
+.legendColor {
+	background-image: linear-gradient(to right, #F7FCF5 0%, #C9EAC2 25%, #7BC77C 50%, #2A924B 75%, #00441B 100%);
+}
+.legendColor:empty::after{
+	content: ".";
+	visibility:hidden;
+}
+
+
 
 </style>

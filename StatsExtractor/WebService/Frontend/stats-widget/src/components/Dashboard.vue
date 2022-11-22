@@ -25,7 +25,7 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<p>default footer</p>
+					<!--<p>default footer</p>-->
 					<button class="btn btn-secondary modal-default-button" v-on:click="setVisibility(false)">OK</button>
 					<button class="btn btn-primary modal-default-button" v-on:click="print()"> Print</button>
 				</div>

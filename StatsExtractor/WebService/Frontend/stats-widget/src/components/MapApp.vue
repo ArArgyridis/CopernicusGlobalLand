@@ -14,6 +14,7 @@
 <template>
 	<OLMap id="map1" v-bind:center=[0,0] v-bind:zoom=2 v-bind:bingKey=bingKey v-bind:epsg=projectEPSG  ref="map1" class="map" 
 		v-on:featureClicked="updateSelectedPolygon($event)"
+		v-on:mapCoordinate="moveMarker($event)"
 	/>
 </template>
 
@@ -21,7 +22,7 @@
 import OLMap from './libs/OLMap.vue';
 import requests from '../libs/js/requests.js';
 import options from "../libs/js/options.js";
-import {Fill, Stroke, Style } from 'ol/style';
+import {Fill, Stroke, Style, Icon } from 'ol/style';
 
 export default {
 	name: 'MapApp'
@@ -30,11 +31,13 @@ export default {
 			activeWMSLayer: null,
 			bingId: null,
 			clickedPointLayerId: null,
+			pointerLayerId: null,
 			bingKey: options.bingKey,
 			projectEPSG: "EPSG:3857",
 			productZIndex: 1,
 			stratificationZIndex: 2,
-			anomaliesZIndex: 3
+			anomaliesZIndex: 3,
+			markerZIndex: 4,
 		}
 	},	
 	props: {},
@@ -61,8 +64,8 @@ export default {
 				return;
 			
 			this.$store.getters.allProductsData.forEach((product) => {
-				Object.keys((product.productsViewInfo)).forEach( (prodId) => {
-						product.productsViewInfo[prodId].stratification.info.forEach((stratification) => {
+				Object.keys((product.viewInfo)).forEach( (prodId) => {
+						product.viewInfo[prodId].stratification.info.forEach((stratification) => {
 							this.$refs.map1.removeLayer(stratification.layerId);
 						});
 				});
@@ -76,11 +79,11 @@ export default {
 		clearWMSLayers(){
 			if (this.$store.getters.currentProduct == null)
 				return;
-		
+
 			//remove wms layers from map
 			this.$store.getters.allProductsData.forEach((product) => {
-				Object.keys((product.productsViewInfo)).forEach( (prodId) => {
-						product.productsViewInfo[prodId].rawWMS.layers.forEach((wms) => {
+				Object.keys((product.viewInfo)).forEach( (prodId) => {
+						product.viewInfo[prodId].rawWMS.layers.forEach((wms) => {
 							this.$refs.map1.removeLayer(wms.layerId);
 						});
 				});
@@ -88,8 +91,8 @@ export default {
 			
 			//removing anomaly wms layers from map
 			this.$store.getters.allProductsData.forEach((product) => {
-				Object.keys((product.productsViewInfo)).forEach( (prodId) => {
-						product.productsViewInfo[prodId].anomalies.layers.forEach((wms) => {
+				Object.keys((product.viewInfo)).forEach( (prodId) => {
+						product.viewInfo[prodId].anomalies.layers.forEach((wms) => {
 							this.$refs.map1.removeLayer(wms.layerId);
 						});
 				});
@@ -97,6 +100,21 @@ export default {
 		},
 		emit(eventName, data) {
 			this.$emit(eventName, data);
+		},
+		moveMarker(evt) {
+			if(this.clickedPointLayerId == null)
+				this.clickedPointLayerId = this.$refs.map1.createEmptyVectorLayer(this.markerZIndex);
+			
+			this.$refs.map1.setVisibility(this.clickedPointLayerId, true);
+			this.$refs.map1.clearVectorLayer(this.clickedPointLayerId);
+			this.$refs.map1.addPointToLayer(this.clickedPointLayerId, 2, evt.coordinate[0], evt.coordinate[1],  {icon:	new Icon({
+					anchor: [0.3, 1.0],
+						anchorXUnits: 'fraction',
+						anchorYUnits: 'fraction',
+						src: "/assets/marker.png",
+						scale: 0.02
+					})
+			});
 		},
 		refreshCurrentStratificationStyle(){
 			this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId).changed();
@@ -128,18 +146,41 @@ export default {
 			let curDate = new Date(Date.UTC(this.$store.getters.dateStart.getFullYear(),this.$store.getters.dateStart.getMonth(), 1));
 			let productName = this.$store.getters.currentProduct.name;
 			
-			let capabilitiesUrls= new Set();
+			let productCapabilitiesURLs= new Set();
 			for (let i = 0; curDate < this.$store.getters.dateEnd; i++) {
 				let splitDate = curDate.toISOString().split("-");
 				let year = splitDate[0];
 				let month = splitDate[1];
-				capabilitiesUrls.add(options.wmsURL + productName + "/" + year +"/" +month);
+				productCapabilitiesURLs.add(options.wmsURL + productName + "/" + year +"/" +month);
 				curDate =  new Date(Date.UTC(this.$store.getters.dateStart.getFullYear(),this.$store.getters.dateStart.getMonth()+i, 1));
 			}
-			capabilitiesUrls.forEach( (url) => {
+			productCapabilitiesURLs.forEach( (url) => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.productZIndex).then((data) => {
 					this.$store.commit("appendToProductsWMSLayers",data);
 				});
+			});
+			this.$store.commit("setCurrentProductWMSLayer", 0);
+
+			this.$store.getters.currentProductAnomalies.forEach( (anomaly) => {
+				let curDate = new Date(Date.UTC(this.$store.getters.dateStart.getFullYear(),this.$store.getters.dateStart.getMonth(), 1));
+				let anomaliesCapabilitiesURLS = new Set();
+
+				for (let i = 0; curDate < this.$store.getters.dateEnd; i++) {
+					let splitDate = curDate.toISOString().split("-");
+					let year = splitDate[0];
+					let month = splitDate[1];
+					
+					anomaliesCapabilitiesURLS.add(options.anomaliesWMSURL + anomaly.key + "/" + year +"/" +month);
+					curDate =  new Date(Date.UTC(this.$store.getters.dateStart.getFullYear(),this.$store.getters.dateStart.getMonth()+i, 1));
+				}
+				
+				anomaliesCapabilitiesURLS.forEach( (url) => {
+					this.$refs.map1.getAvailableWMSLayers(url, this.anomaliesZIndex).then((data) => {
+						this.$store.commit("appendToProductsAnomaliesWMSLayers",data);
+					});
+				});
+				this.$store.commit("setCurrentProductAnomaly", 0);
+				this.$store.commit("setCurrentProductAnomalyWMSLayer", 0);
 			});
 		},
 		toggleClickOnMap() {
@@ -165,10 +206,10 @@ export default {
 				id = evt.getId();
 			this.$store.commit("selectedPolygon", id);
 		},		
-		updateStratificationLayerStyle(){
+		updateStratificationLayerStyle() {
 			if (this.$store.getters.areaDensity == null)
 				return;
-				
+			
 			requests.fetchStratificationDataByProductAndDate(this.$store.getters.currentStratificationDate,			
 			this.$store.getters.currentProduct.id,
 			this.$store.getters.currentStratification.id
@@ -176,23 +217,36 @@ export default {
 				this.dt = response.data.data;
 				this.res = 0;
 				let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
+				let areaDensityCol = JSON.parse(JSON.stringify(this.$store.getters.areaDensity.color_col));
+
 				tmpLayer.setStyle( (ft) => {
-					let id = ft.getId();
-					if( id in response.data.data) {
-						//console.log(this.$store.getters.areaDensity);
-						let color = response.data.data[id][this.$store.getters.areaDensity.color_col];
-						return new Style({
-							fill: new Fill({
-								color:  "rgba(" + color.join() + ",0.7)",
-							}),
-							stroke: new Stroke({
-								color: "rgba(" + color.join() + ",1.0)",
-								width: 1,
-							})
-						});
-					}
-					return null;
+					let id = JSON.parse(JSON.stringify(ft.getId()));
+					//let id = ft.getId();
+					let color = response.data.data[id];
+					if (color == null)
+						return null;
+						
+					color = color[areaDensityCol];
+					if (color == null)
+						return null;
+						
+					let fillColor = null;
+					let strokeColor = null;
+					
+					fillColor = "rgba(" + color.join() + ",0.7)";
+					strokeColor = "rgba(" + color.join() + ",1.0)";
+
+					return new Style({
+						fill: new Fill({
+							color: fillColor,
+						}),
+						stroke: new Stroke({
+							color:  strokeColor,
+							width: 1,
+						})
+					});
 				});
+				
 			});
 		},
 		updateStratificationLayerVisibility() {
@@ -215,5 +269,6 @@ export default {
 .map {
 	width: 100%;
 	height: 100vh;
+	position: absolute;
 }
 </style>

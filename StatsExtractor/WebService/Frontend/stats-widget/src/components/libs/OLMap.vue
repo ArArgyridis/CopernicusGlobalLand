@@ -31,7 +31,7 @@ import OSM from 'ol/source/OSM';
 import Overlay from 'ol/Overlay';
 import {register} from 'ol/proj/proj4';
 import {LineString, Point, Polygon} from 'ol/geom';
-import TileLayer from 'ol/layer/Tile';
+import TileLayer from 'ol/layer/WebGLTile';
 import TileWMS from 'ol/source/TileWMS';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -129,7 +129,6 @@ export default {
 
 			params.wmsParams["width"] = 256;
 			params.wmsParams["height"] = 256;
-
 
 			if (params.url.substr(params.url.length-1) !="&")
 				params.url = params.url.concat("&");
@@ -321,7 +320,16 @@ export default {
 			this.map.getView().fit(extent);
 		},
 		fitToLayerExtent(id) {
-			this.map.getView().fit(this.layers[id].getSource().getExtent());
+			this.map.updateSize();			
+			let extent = this.layers[id].getSource().getExtent();
+			/*
+			const mapTarget = document.getElementById('map');
+			const size = [
+				parseFloat(getComputedStyle(mapTarget).width),
+				parseFloat(getComputedStyle(mapTarget).height),
+			];
+			*/
+			this.map.getView().fit(extent, { size: this.map.getSize()});
 		},
 		getAvailableWMSLayers(url, zIndex=null) {
 			let tmpURL = url+"?service=wms&version=1.3.0&request=GetCapabilities";
@@ -347,8 +355,7 @@ export default {
 						ret.push({title: layer.Title, layerId: layerId, name: layer.Name});
 				});
 				}catch (e) {
-					console.log("Unable to parse wms capabilities");
-					console.log(e);
+					console.log("Unable to parse wms capabilities for layer: ", url);
 				}
 				return ret;
 			});
@@ -386,7 +393,8 @@ export default {
 			}
 			else {
 				let tmpLayer = new VectorTileLayer({
-					renderMode: 'vector',
+					renderMode: 'hybrid',
+					declutter: true,
 					source: this.layers[id].getSource(),
 					style: ( (ft) => {
 						//console.log(ft);
@@ -427,6 +435,8 @@ export default {
 			}
 		},
 		clearCurrentPolygonSelection() {
+			if (this.activeHighlightLayer == null)
+				return;
 			this.selectedFeatureId = null;
 			this.layers[this.hoverLayers[this.activeHighlightLayer].hoverId].changed();
 		},
@@ -498,7 +508,7 @@ export default {
 				}
 			}
 		},
-		updateLayerStyle(id, style){
+		updateLayerStyle(id, style) {
 			this.layers[id].setStyle(style);
 		},
 		
@@ -526,7 +536,7 @@ export default {
 			let tmpLayer = new VectorTileLayer({
 				source: source,
 				declutter: true,
-				renderMode: "vector"
+				renderMode: "hybrid"
 			});
 			return this.__addGenericLayer(tmpLayer, zIndex);
 			
@@ -572,6 +582,12 @@ export default {
 			return Math.floor(Math.random() * (max - min + 1)) + min;
 		},
 		__newMarkerStyle (options, label=null) {
+			if( "icon" in options ) {
+				return new Style({
+					image:options.icon
+				});
+			}
+		
 			if (options.color == null)
 				options.color = "rgba(" + this.__getRandomInt(80, 170) + "," + this.__getRandomInt(80, 170) + "," + this.__getRandomInt(80, 170) + "," + 1 +")";
 
@@ -579,7 +595,7 @@ export default {
 				options.stroke ="rgba(" + this.__getRandomInt(80, 170) + "," + this.__getRandomInt(80, 170) + "," + this.__getRandomInt(80, 170) + "," + 1 +")";
 
 			let markerStroke = new Stroke({
-				color: options.stroke,//"rgba(232, 232, 115, 1)",
+				color: options.stroke,
 				width: 1.5,
 			});
 			let fill = new Fill({color: options.color, width: 5});

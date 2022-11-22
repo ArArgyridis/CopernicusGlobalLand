@@ -15,7 +15,7 @@
 <Dashboard v-show="showTheDashboard==true" ref="dashboard"/>
 <div class="container-fluid fixed-top">
 	<div class="row">
-		<div id="leftPanel" class="noPadding hiddenBar raise hidden sidenav leftnav" >
+		<div id="leftPanel" class="noPadding shownBar raise hidden sidenav leftnav" >
 			<LeftPanel v-on:closeSideMenu="toggleLeft()" 
 					v-on:updateProducts="updateProducts()"
 					v-on:currentProductChange="updateAll()"
@@ -29,17 +29,16 @@
 			/><!--- v-on:currentProductAnomalyChange=""-->
 		</div>
 		<div class="noPadding hidden">
-		<!--<button class="btn btn-secondary mt-3" v-on:click="showDashboard()"> Show Region Dashboard</button>-->
 			<MapApp ref="mapApp" 
 			v-on:featureClicked="refreshStratificationInfo()"
 			v-on:mapCoordinate="updateRawDataChart($event)"
 			/>
 			<div class="d-flex">
-				<div class="btn position-relative fixed-top burger raise transition d-inline" id="menuButton">
+				<div class="btn position-relative fixed-top burger raise transition d-inline offsetButton" id="menuButton">
 					<FontAwesomeIcon icon="bars"  size="3x" :style="{ color: '#eaeada' }" v-on:click="toggleLeft()"/>
 				</div>
 			</div>
-			<div class="d-flex logo relative"><img alt="Copernicus LMS" src="../assets/copernicus_land_monitoring.png"></div>
+			<div class="d-flex logo relative"><img alt="Copernicus LMS" src="/assets/copernicus_land_monitoring.png"></div>
 		</div>		
 		<div id="rightPanel" class="transition noPadding hiddenBar raise hidden sidenav rightnav">
 			<RightPanel ref="rightPanel" v-on:closeTimechartsPanel="closeRightPanel()" v-on:showDashboard="showDashboard()"/>
@@ -154,11 +153,15 @@ export default {
 		updateProductInfo() {
 			this.$store.commit("clearProducts");
 			requests.fetchProductInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.activeCategory.id).then((response)=>{
-				this.$store.commit("setProducts", response.data.data);
+				this.$store.commit("setCategoryProducts", response.data.data);
 				if (this.$store.getters.products != null) {
 					this.$store.commit("setCurrentProduct", 0);
+				
 					this.updateAll();
+						/*
 					this.$store.commit("setCurrentProductWMSLayer", 0);
+					this.$store.commit("setCurrentProductAnomalyWMSLayer", 0);
+					*/
 				}
 			});
 		},
@@ -174,20 +177,16 @@ export default {
 				
 				if (this.$store.getters.currentStratification.dates != null) {
 					if (this.$store.getters.currentStratificationDate == null) {
-						let tmpDates = Object.keys(this.$store.getters.currentStratification.dates).reverse();
-						this.$store.commit("setCurrentStratificationDate", tmpDates[0]);
+						this.$store.commit("setCurrentStratificationDate", 0);
 					}
-					/*
+				
 					if (this.$store.getters.areaDensity == null)
 						this.$store.commit("setStratificationAreaDensity",2);
 					this.updateStratificationLayerStyle();
-					*/
+					
 				}
 			});
-		},/*
-		updateStratificationPolygonInfo(evt) {				
-			this.refreshStratificationInfo();
-		},*/
+		},
 		updateProductWMSVisibility() {
 			this.setRightPanelVisibility(false);
 			this.$refs.mapApp.updateProductWMSVisibility();
