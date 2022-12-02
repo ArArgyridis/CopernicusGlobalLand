@@ -64,7 +64,8 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
             " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,"
             " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,"
             " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,"
-            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense"
+            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,"
+            " mean"
             " FROM poly_stats ps WHERE noval_color IS NULL;";
 
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
@@ -76,15 +77,24 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
             RGBVal color = product->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
             data << "'" << rgbToArrayString(color) << "',";
         }
-        data.seekp(-1,data.cur);
-        data <<"),";
+
+        if (row[7].is_null()) {
+            data <<"null),";
+            continue;
+        }
+
+        float dt =row[7].as<float>();
+        RGBVal meanColor = product->styleColors[product->reverseValue(dt)];
+        std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
+        data <<"'" << rgbToArrayString(meanColor) <<"'),";
+
     }
 
     if (data.tellp() == 0)
         return;
 
-    query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color) VALUES " + stringstreamToString(data)
-            + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color; ";
+    query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color, meanval_color) VALUES " + stringstreamToString(data)
+            + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color, meanval_color = EXCLUDED.meanval_color; ";
     cn->executeQuery(query);
 }
 
@@ -250,7 +260,7 @@ ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData ProcessingChain
         return ret;
 
     rasterizer->Update();
-/*
+    /*
     using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
     ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
     labelWriter->SetFileName(std::to_string(repeat) + "_"+std::to_string(threadId) + "labelImage_v2.tif");

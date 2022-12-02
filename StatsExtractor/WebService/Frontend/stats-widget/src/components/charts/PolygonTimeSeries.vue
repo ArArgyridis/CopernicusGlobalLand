@@ -31,9 +31,9 @@ export default {
 	},
 	computed:{
 		diagramTitle() {
-			if (this.$store.getters.currentProduct == null || this.$store.getters.areaDensity == null)
+			if (this.$store.getters.product == null || this.$store.getters.areaDensity == null)
 				return "Dummy Title";
-			return this.$store.getters.currentProduct.description + " Timeseries (Density: " + this.$store.getters.areaDensity.description +")";
+			return this.$store.getters.product.description + " Timeseries (Density: " + this.$store.getters.areaDensity.description +")";
 		},
 		diagramData:{
 			get() {
@@ -91,10 +91,10 @@ export default {
 			return this.isLoading;
 		},
 		updateChartCurrentDate() {
-			if (this.$store.getters.currentStratificationDate == null)
+			if (this.$store.getters.currentDate == null)
 				return;
 				
-			let tmpDt =  Date.parse(this.$store.getters.currentStratificationDate );
+			let tmpDt =  Date.parse(this.$store.getters.currentDate );
 
 			let dtStart = tmpDt - 86400*4;
 			let dtEnd = tmpDt + 86400*4;
@@ -109,11 +109,11 @@ export default {
 		updateChartData() {
 			this.isLoading = true;
 			let polyId = this.$store.getters.selectedPolygon;
-			let currentProduct = this.$store.getters.currentProduct;
+			let product = this.$store.getters.product;
 			let areaDensity = this.$store.getters.areaDensity;
 			
-			if(polyId != null && currentProduct != null &&  areaDensity != null) { 
-				requests.fetchStatsByPolygonAndDateRange(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, currentProduct.id, areaDensity.col)
+			if(polyId != null && product != null &&  areaDensity != null) { 
+				requests.fetchStatsByPolygonAndDateRange(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, product.id, areaDensity.col)
 				.then((response) =>{
 					if (response.data.data != null) {
 						response.data.data.forEach((pair)=>{

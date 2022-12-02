@@ -127,8 +127,14 @@ def processSingleImage(params, relImagePath):
 
     ptr = re.compile(params["productInfo"].pattern)
     date = params["productInfo"].createDate(ptr.findall(os.path.split(relImagePath[0])[1])[0])
-    return LayerInfo(dstImg, "{0}_{1}".format(date[0:10], params["productInfo"].variable), "EPSG:4326",
-                     None,None, getImageExtent(dstImg), date, params["productInfo"].id)
+
+    layerName = None
+    if params["productInfo"].productType == "raw":
+        layerName = "{0}_{1}".format(date[0:10], params["productInfo"].variable)
+    elif params["productInfo"].productType == "anomaly":
+        layerName = date[0:10]
+
+    return LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date, params["productInfo"].id)
 
 
 class MapserverImporter(object):
@@ -214,14 +220,14 @@ class MapserverImporter(object):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python MapserverImporter.py config_file product_id")
+        print("Usage: python MapserverImporter.py config_file")
         return
 
     cfg = sys.argv[1]
     Constants.load(cfg)
-
-    obj = MapserverImporter(cfg)
-    obj.process()
+    for productId in Constants.PRODUCT_INFO:
+        obj = MapserverImporter(cfg)
+        obj.process(productId)
 
 
 

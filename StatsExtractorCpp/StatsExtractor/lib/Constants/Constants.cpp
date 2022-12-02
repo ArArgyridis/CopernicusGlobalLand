@@ -13,6 +13,7 @@
 */
 
 #include <iostream>
+#include <libxml/xpathInternals.h>
 #include <sstream>
 
 #include "Constants.h"
@@ -40,8 +41,31 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):
     if (!row[6].is_null())
         variable = row[6].as<std::string>();
 
-    if (!row[7].is_null())
+    if (!row[7].is_null()) {
         style = row[7].as<std::string>();
+        //parsing style
+        XmlDocPtr doc = XmlDocPtr(xmlReadMemory(style.c_str(), style.size(), "tmp.xml", nullptr, 0), xmlFreeDoc);
+
+        XmlXPathContextPtr ctx = XmlXPathContextPtr(xmlXPathNewContext(doc.get()), xmlXPathFreeContext);
+        xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>(""), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
+        xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("sld"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
+        xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("gml"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/gml"));
+
+        XmlXpathObjectPtr res = XmlXpathObjectPtr(xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>("//sld:ColorMapEntry"), ctx.get()), xmlXPathFreeObject);
+        if (res != nullptr) {
+
+            styleColors.resize(res->nodesetval->nodeNr);
+            styleColors.reserve(res->nodesetval->nodeNr);
+
+            for (size_t i = 0; i < res->nodesetval->nodeNr; i++) {
+                if(res->nodesetval->nodeTab[i]->type == XML_ELEMENT_NODE) {
+                    xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
+                    std::string color(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))));
+                    sscanf(color.c_str(), "#%2hx%2hx%2hx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
+                }
+            }
+        }
+    }
 
     if (!row[9].is_null()) {
         valueRange.low = row[9].as<float>();
@@ -81,8 +105,8 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg):
     if (!row[20].is_null())
         histogramBins = row[20].as<unsigned short>();
 
-    if (!row[21].is_null()) {
-        boost::filesystem::path relPath = row[21].as<std::string>();
+    if (!row[23].is_null()) {
+        boost::filesystem::path relPath = row[23].as<std::string>();
         firstProductPath =productAbsPath(relPath);
 
     }
@@ -103,12 +127,14 @@ void ProductInfo::loadMetadata() {
         return;
 
     scaler = &noScalerFunc;
+    reverseScaler = &reverseNoScalerFunc;
     metadata = getMetadata(firstProductPath);
 
     if (productType =="raw") {
         scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
         addOffset = std::stod((*metadata)[variable+"#add_offset"]);
         scaler = &scalerFunc;
+        reverseScaler = &reverseScalerFunc;
     }
 
     noData = stof((*metadata)["MY_NO_DATA_VALUE"]);
@@ -122,9 +148,9 @@ void ProductInfo::loadMetadata() {
 
     lutProductValues = std::vector<float>(minMaxValues[1]-minMaxValues[0]+1);
     size_t i;
-    #pragma omp parallel shared(lutProductValues,minMaxValues, scaleFactor, addOffset) private(i)
+#pragma omp parallel shared(lutProductValues,minMaxValues, scaleFactor, addOffset) private(i)
     {
-        #pragma omp for
+#pragma omp for
         for (i = 0; i < lutProductValues.size(); i++)
             lutProductValues[i] = scaler(minMaxValues[0]+static_cast<int>(i), scaleFactor, addOffset);
 
@@ -145,6 +171,9 @@ float ProductInfo::scaleValue(float value) {
     return scaler(value, scaleFactor, addOffset);
 }
 
+size_t ProductInfo::reverseValue(float value) {
+    return reverseScaler(value, scaleFactor, addOffset);
+}
 
 
 

@@ -57,22 +57,22 @@ export default {
 				{
 					id: 0,
 					content: "Point Timeseries",
-					condition: () => { return this.$store.getters.currentProduct !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
+					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
 				},
 				{
 					id: 1,
 					content: "Density Distribution",
-					condition: () => {return this.$store.getters.currentProduct !== null && this.$store.getters.currentStratificationDate != null }
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null }
 				},
 				{
 					id: 2,
 					content: "Polygon Histogram Values",
-					condition: () => {return this.$store.getters.currentProduct !== null && this.$store.getters.currentStratificationDate != null;}
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;}
 				},
 				{	
 					id: 3,
 					content: "Density-Driven Polygon Timeseries",
-					condition: () => {return this.$store.getters.currentProduct !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null;}
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null;}
 				},
 
 			],

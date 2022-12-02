@@ -52,9 +52,8 @@ def main():
 					print("Computing anomalies!")
 					runLongTermComparisonAnomalyDetector(pid, config)
 
-				#if Constants.PRODUCT_INFO[pid].variable is not None:
-				#mapserver = MapserverImporter(config)
-				#mapserver.process(pid)
+				mapserver = MapserverImporter(config)
+				mapserver.process(pid)
 
 			#fetching stratifications and compute stats for each strata
 			"""

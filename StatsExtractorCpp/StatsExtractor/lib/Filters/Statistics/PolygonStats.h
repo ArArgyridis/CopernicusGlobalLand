@@ -62,6 +62,7 @@ public:
     ProductInfo::Pointer product;
     std::vector<size_t> histogram;
     std::vector<RGBVal> densityColors;
+
     template <class InputPixelType, class LabelPixelType>
     inline void updateStats(InputPixelType& pixelData) { //apply it on valid polygon pixels!
         totalCount++;

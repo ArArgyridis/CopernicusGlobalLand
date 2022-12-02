@@ -18,6 +18,8 @@
 #include <boost/filesystem/path.hpp>
 #include <gdal_priv.h>
 #include <itkPoint.h>
+#include <libxml2/libxml/tree.h>
+#include <libxml/xpath.h>
 #include <memory>
 #include <ogr_core.h>
 #include <ogr_feature.h>
@@ -54,6 +56,11 @@ using point2d = itk::Point<double, 2>;
 using LabelsArray       = std::vector<size_t>;
 using LabelsArrayPtr    = std::shared_ptr<LabelsArray>;
 
+/** typedefs for XML */
+using XmlDocPtr                 = std::unique_ptr<xmlDoc, void(*)(xmlDocPtr)>;
+using XmlXPathContextPtr        = std::unique_ptr<xmlXPathContext, void(*)(xmlXPathContextPtr)>;
+using XmlXpathObjectPtr         = std::unique_ptr<xmlXPathObject, void(*)(xmlXPathObjectPtr)>;
+
 /** Image statistics Info */
 
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath);
@@ -61,10 +68,15 @@ OGRPolygon envelopeToGeometry(OGREnvelope& envelope);
 long double pixelsToAreaM2Degrees(long double& pixelCount, long double pixelSize);
 long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize);
 
-
 float noScalerFunc(float x, float& scale, float& offset);
+
 std::string rgbToArrayString(RGBVal& array);
+
+size_t reverseNoScalerFunc(float x, float &scale, float &offset);
+size_t reverseScalerFunc(float x, float& scale, float& offset);
+
 float scalerFunc(float x, float& scale, float& offset);
+
 
 //template functions
 

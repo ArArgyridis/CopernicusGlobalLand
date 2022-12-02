@@ -16,17 +16,19 @@
 <div class="container-fluid fixed-top">
 	<div class="row">
 		<div id="leftPanel" class="noPadding shownBar raise hidden sidenav leftnav" >
-			<LeftPanel v-on:closeSideMenu="toggleLeft()" 
-					v-on:updateProducts="updateProducts()"
-					v-on:currentProductChange="updateAll()"
-					v-on:rawWMSChange="updateProductWMSVisibility()" 
-					v-on:stratificationChange="updateStratificationLayerVisibility()"
-					v-on:switchViewMode="toggleCurrentLayersVisibility($event)"
-					v-on:stratificationDateChange="refreshStratificationInfo()"
-					v-on:stratificationAreaDensityChange="updateStratificationLayerStyle()"
-					v-on:closeLeftPanel="toggleLeft()"
-					v-on:anomalyWMSChange="updateProductAnomalyWMSVisibility()"
-			/><!--- v-on:currentProductAnomalyChange=""-->
+			<LeftPanel 
+			v-on:closeLeftPanel="toggleLeft()"
+			v-on:closeSideMenu="toggleLeft()" 
+			v-on:dateChanged="updateStratificationLayerStyle()"
+			v-on:getCategoryProducts="getCategoryProducts()"
+			v-on:resetProducts="resetProducts()"
+			v-on:stratificationViewOptionsChanged="updateStratificationLayerStyle()"
+			v-on:statisticsViewModeChanged="statisticsViewModeUpdate()"
+			v-on:stratificationChanged="updateStratificationLayerVisibility()"
+			v-on:stratificationDensityChanged = "updateStratificationLayerStyle()"
+			v-on:stratifiedOrRawChanged="setCurrentLayersVisibilityByViewMode()"
+			v-on:updateWMSLayer="updateWMSVisibility()"
+			/>
 		</div>
 		<div class="noPadding hidden">
 			<MapApp ref="mapApp" 
@@ -34,7 +36,7 @@
 			v-on:mapCoordinate="updateRawDataChart($event)"
 			/>
 			<div class="d-flex">
-				<div class="btn position-relative fixed-top burger raise transition d-inline offsetButton" id="menuButton">
+				<div class="btn position-relative fixed-top raise transition d-inline offsetButton" id="menuButton">
 					<FontAwesomeIcon icon="bars"  size="3x" :style="{ color: '#eaeada' }" v-on:click="toggleLeft()"/>
 				</div>
 			</div>
@@ -73,7 +75,6 @@ export default {
 	computed: {
 		clickedCoordinates: {
 			get() {
-
 				return this.$store.getters.clickedCoordinates();
 			},
 			set(dt) {
@@ -87,8 +88,21 @@ export default {
 			set(dt) {
 				this.$store.commit("selectedPolygon", dt);
 			}
+		},
+		currentWMSLayer: {
+			get() {
+				let ret = this.$store.getters.productWMSLayer;
+				if (this.$store.getters.productStatisticsViewMode == 1)
+					ret = this.$store.getters.productAnomalyWMSLayer;
+				return ret;
+			},
+			set(dt) {
+				if (this.$store.getters.productStatisticsViewMode == 0)
+					this.$store.commit("setProductWMSLayer", dt);
+				else if (this.$store.getters.productStatisticsViewMode == 1)
+					this.$store.commit("setAnomalyProductWMSLayer", dt);
+			}
 		}
-
 	},
 	data() {
 		return {
@@ -99,22 +113,47 @@ export default {
 	},
 	methods: {
 		init() {
-			//this.updateProducts();
-			//this.showDashboard();
 			//hack to properly resize right panel timechart
 			document.getElementById("rightPanel").addEventListener('transitionend', () => {
 				this.$refs.rightPanel.resizeChart();
 			});
+			this.updateStratificationInfo();
 		},
 		closeRightPanel() {
 			this.setRightPanelVisibility(false);
 			this.refreshStratificationInfo();
 			this.$refs.mapApp.clearPolygonSelection();
 		},
+		getCategoryProducts() {
+			if (this.$store.getters.products == null)
+				this.getProductInfo();
+			//console.log("GET CATEGORY PRODUCTS!!!!!!!!");
+		},
+		getProductInfo() {
+
+			if (this.$store.getters.dateStart == null || this.$store.getters.dateEnd == null || this.$store.getters.activeCategory == null)
+				return;
+			
+			requests.fetchProductInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.activeCategory.id).then((response)=>{
+				this.$store.commit("setCategoryProducts", response.data.data);
+				this.updateAll();
+			});
+		},
 		refreshStratificationInfo() {
 			this.$refs.rightPanel.loadStratificationCharts();
 			this.$refs.rightPanel.loadLocationCharts();
 			this.updateStratificationLayerStyle();
+		},
+		resetProducts() {
+			this.setRightPanelVisibility(false);
+			this.$refs.mapApp.clearWMSLayers();
+			this.$refs.rightPanel.resetAllCharts();
+			this.$store.commit("clearProducts");
+			this.getProductInfo();
+			if (!this.activateClickOnMap) {
+				this.$refs.mapApp.toggleClickOnMap();
+				this.activateClickOnMap = true;
+			}
 		},
 		//hiding right panel
 		setRightPanelVisibility(status) {
@@ -129,16 +168,24 @@ export default {
 			this.$refs.dashboard.setVisibility(true);
 			this.$refs.dashboard.refreshData();
 		},
-		toggleCurrentLayersVisibility(evt) {
+		statisticsViewModeUpdate() {
+			let statsViewMode =  this.$store.getters.productStatisticsViewMode;
+			let stratifiedOrRaw = this.$store.getters.stratifiedOrRaw;
+			this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, this.$store.getters.stratifiedOrRaw == 0);
+			this.updateStratificationLayerStyle();
+			this.setCurrentLayersVisibilityByViewMode();
+			this.$refs.mapApp.setLayerVisibility( this.$store.getters.productWMSLayer.layerId,   stratifiedOrRaw == 1 && statsViewMode == 0);
+			this.$refs.mapApp.setLayerVisibility( this.$store.getters.productAnomalyWMSLayer.layerId, stratifiedOrRaw == 1 && statsViewMode== 1);
+		},
+		setCurrentLayersVisibilityByViewMode() {
+			console.log("asdsadsa")
 			if (this.$store.getters.currentStratification != null)
-				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, evt.id==0);
+				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, this.$store.getters.stratifiedOrRaw == 0);
+		
+			if (this.currentWMSLayer != null) 
+				this.$refs.mapApp.setLayerVisibility(this.currentWMSLayer.layerId, this.$store.getters.stratifiedOrRaw == 1);
 			
-			if (this.$store.getters.currentProductWMSLayer != null) 
-				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductWMSLayer.layerId, evt.id==1);
 			
-			if (this.$store.getters.currentProductAnomalyWMSLayer != null) 
-				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentProductAnomalyWMSLayer.layerId, evt.id==2);
-
 			this.setRightPanelVisibility(false);
 			this.$refs.rightPanel.resetAllCharts();
 		},
@@ -150,50 +197,22 @@ export default {
 			this.togglePanelClasses("leftPanel");
 			document.getElementById("menuButton").classList.toggle("offsetButton");
 		},
-		updateProductInfo() {
-			this.$store.commit("clearProducts");
-			requests.fetchProductInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.activeCategory.id).then((response)=>{
-				this.$store.commit("setCategoryProducts", response.data.data);
-				if (this.$store.getters.products != null) {
-					this.$store.commit("setCurrentProduct", 0);
-				
-					this.updateAll();
-						/*
-					this.$store.commit("setCurrentProductWMSLayer", 0);
-					this.$store.commit("setCurrentProductAnomalyWMSLayer", 0);
-					*/
-				}
-			});
-		},
 		updateStratificationInfo() {
 			this.$refs.mapApp.clearStratifications();
-			requests.fetchStratificationInfo(this.$store.getters.dateStart, this.$store.getters.dateEnd, this.$store.getters.currentProduct.id).then((response)=>{
+			requests.fetchStratificationInfo().then((response)=>{
 				this.$store.commit("setStratifications", response.data.data);
 				this.$refs.mapApp.refreshStratifications();
-				if (this.$store.getters.currentStratification == null)
-					this.$store.commit("setCurrentStratification", 0);
 					
 				this.updateStratificationLayerVisibility();
-				
-				if (this.$store.getters.currentStratification.dates != null) {
-					if (this.$store.getters.currentStratificationDate == null) {
-						this.$store.commit("setCurrentStratificationDate", 0);
-					}
-				
-					if (this.$store.getters.areaDensity == null)
-						this.$store.commit("setStratificationAreaDensity",2);
-					this.updateStratificationLayerStyle();
-					
-				}
+				this.updateStratificationLayerStyle();
 			});
 		},
-		updateProductWMSVisibility() {
+		updateWMSVisibility() {
 			this.setRightPanelVisibility(false);
-			this.$refs.mapApp.updateProductWMSVisibility();
-		},
-		updateProductAnomalyWMSVisibility() {
-			this.setRightPanelVisibility(false);
-			this.$refs.mapApp.updateProductAnomalyWMSVisibility();
+			if (this.$store.getters.productStatisticsViewMode == 0) 
+				this.$refs.mapApp.updateProductWMSVisibility();			
+			else if (this.$store.getters.productStatisticsViewMode == 1) 
+				this.$refs.mapApp.updateProductAnomalyWMSVisibility();
 		},
 		updateStratificationLayerStyle(){
 			this.$refs.mapApp.updateStratificationLayerStyle();
@@ -205,23 +224,12 @@ export default {
 			this.updateStratificationLayerStyle();
 		},
 		updateAll() {
+			this.updateStratificationLayerStyle();
 			this.setRightPanelVisibility(false);
-			this.updateStratificationInfo();
 			this.updateWMSLayers();
 		},
-		updateProducts() {
-			this.setRightPanelVisibility(false);
-			this.$refs.mapApp.clearStratifications();
-			this.$refs.mapApp.clearWMSLayers();
-			this.$refs.rightPanel.resetAllCharts();
-			this.updateProductInfo();
-			if (!this.activateClickOnMap) {
-				this.$refs.mapApp.toggleClickOnMap();
-				this.activateClickOnMap = true;
-			}
-		},
 		updateRawDataChart(evt) {
-			if (this.$store.getters.currentProduct == null) 
+			if (this.$store.getters.product == null) 
 				return;
 			
 			this.clickedCoordinates = evt;
@@ -252,9 +260,6 @@ export default {
 
 <style scoped>
 @import "../libs/css/myStyles.css";
-.burger {
-	top: -99.6vh;
-}
 .rightnav {
 	right: 0;
 }

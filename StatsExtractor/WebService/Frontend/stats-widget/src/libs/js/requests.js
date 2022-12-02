@@ -21,6 +21,7 @@ export default {
 	},
 	fetchHistogramByPolygonAndDate(polyId, date, productId) {
 		let postParams  = {};
+		console.log(date);
 		postParams["request"] = "histogrambypolygonanddate";
 		postParams["options"] = {
 			poly_id: polyId,
@@ -51,14 +52,10 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},		
-	fetchStratificationInfo(dateStart, dateEnd, productId) {
+	fetchStratificationInfo() {
 		let postParams = {};
 		postParams["request"] = "stratificationinfo";
-		postParams["options"] = {
-			dateStart: dateStart,
-			dateEnd: dateEnd,
-			product_id: productId
-		}
+		postParams["options"] = null;
 		return axios.post(options.endpointURL, postParams);
 	},
 	fetchStratificationDataByProductAndDate(date, product, stratification) {

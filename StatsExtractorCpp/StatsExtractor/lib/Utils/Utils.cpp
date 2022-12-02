@@ -74,13 +74,21 @@ OGRPolygon envelopeToGeometry(OGREnvelope &envelope) {
 long double pixelsToAreaM2Degrees(long double &pixelCount, long double pixelSize) {
     return pixelCount*1.0*pow(pixelSize*M_PI/180.0*6371000, 2);
 }
+
 long double pixelsToAreaM2Meters(long double &pixelCount, long double pixelSize) {
     return pixelCount*1.0*pixelSize*pixelSize;
 }
 
-
 float noScalerFunc(float x, float& scale, float& offset) {
     return x;
+}
+
+size_t reverseNoScalerFunc(float x, float &scale, float &offset) {
+    return static_cast<size_t>(round(x));
+}
+
+size_t reverseScalerFunc(float x, float &scale, float &offset) {
+    return static_cast<size_t>(round( (x-offset)/scale));
 }
 
 

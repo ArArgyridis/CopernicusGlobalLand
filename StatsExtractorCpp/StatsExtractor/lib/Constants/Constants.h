@@ -33,12 +33,14 @@ class ProductInfo {
     MetadataDictPtr metadata;
     float scaleFactor, addOffset, pixelSize, noData;
     float (*scaler)(float, float&, float&);
+    size_t (*reverseScaler)(float, float&, float&);
     long double (*pixelsToArea)(long double&, long double);
 
 public:
     using Pointer = std::shared_ptr<ProductInfo>;
 
     std::string productType, pattern, types, dateptr, variable, style, fileNameCreationPattern;
+    std::vector<RGBVal> styleColors;
     rapidjson::Document novalColorRamp, sparsevalColorRamp, midvalColorRamp, highvalColorRamp;
     boost::filesystem::path rootPath, firstProductPath;
     std::vector<std::string> productNames;
@@ -55,6 +57,7 @@ public:
     float getNoData();
     boost::filesystem::path productAbsPath(boost::filesystem::path &relPath);
     float scaleValue(float value);
+    size_t reverseValue(float value);
 };
 
 class Constants {

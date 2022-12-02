@@ -17,10 +17,10 @@ export default {
 	},
 	computed: {
 		diagramTitle() {
-			if (this.$store.getters.currentProduct == null || this.$store.getters.currentStratificationDate == null) 
+			if (this.$store.getters.product == null || this.$store.getters.currentDate == null) 
 				return "Dummy Title";
 				
-			return "Density Distribution for " + this.$store.getters.currentStratificationDate;
+			return "Density Distribution for " + this.$store.getters.currentDate;
 		}, 
 		diagramData: {
 			get() {
@@ -82,11 +82,11 @@ export default {
 		},
 		updateChartData() {
 			this.isLoading = true;
-			let currentProduct = this.$store.getters.currentProduct;
-			let date = this.$store.getters.currentStratificationDate;
+			let product = this.$store.getters.product;
+			let date = this.$store.getters.currentDate;
 
-			if (this.polyId != null && currentProduct != null && date != null) {
-				requests.getPieDataByDateAndPolygon(currentProduct.id, date, this.polyId).then((response) => {
+			if (this.polyId != null && product != null && date != null) {
+				requests.getPieDataByDateAndPolygon(product.id, date, this.polyId).then((response) => {
 					let dt = [];
 					Object.keys(response.data.data).forEach( key  => {
 						dt.push({name: key, y: response.data.data[key]});

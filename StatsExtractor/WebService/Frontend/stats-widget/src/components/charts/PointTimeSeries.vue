@@ -36,10 +36,10 @@ export default {
 			return this.$store.getters.clickedCoordinates;
 		},
 		diagramTitle() {
-			if (this.$store.getters.currentProduct == null)
+			if (this.$store.getters.product == null)
 				return "Dummy Title";
 				
-			return "Raw " + this.$store.getters.currentProduct.description;
+			return "Raw " + this.$store.getters.product.description;
 		},
 		diagramData: {
 			get() {
@@ -122,10 +122,10 @@ export default {
 			return this.isLoading;
 		},
 		displayCurrentDate() {
-			if (this.$store.getters.currentStratificationDate == null)
+			if (this.$store.getters.currentDate == null)
 				return;
 				
-			let tmpDt =  Date.parse(this.$store.getters.currentStratificationDate );
+			let tmpDt =  Date.parse(this.$store.getters.currentDate );
 
 			let dtStart = tmpDt - 86400*4;
 			let dtEnd = tmpDt + 86400*4;
@@ -148,8 +148,8 @@ export default {
 
 				
 			this.isLoading = true;
-			let valueRanges = this.$store.getters.currentProduct.value_ranges;
-			let tmpProdId = this.$store.getters.currentProduct.id;
+			let valueRanges = this.$store.getters.product.value_ranges;
+			let tmpProdId = this.$store.getters.product.id;
 			this.$refs.diagram.chart.yAxis[0].options.min = -0.5*valueRanges[0];
 			this.$refs.diagram.chart.yAxis[0].options.max = 1.5*valueRanges[valueRanges.length-2];
 			if (this.$store.getters.currentView == 2) {
@@ -161,12 +161,14 @@ export default {
 				this.$refs.diagram.chart.yAxis[0].options.min = 0;
 				this.$refs.diagram.chart.yAxis[0].options.max = 7;
 			}
-				
+			console.log("hereeee\n");
 			requests.getRawTimeSeriesDataForRegion(this.$store.getters.dateStart, this.$store.getters.dateEnd, tmpProdId, this.currentCoordinates).then((response) => {
+				console.log(response);
 				let rawData		     	= new Array();
 				let ltsMeanData 	     	= new Array();
 				let validRange		= new Array();
-				response.data.data.values.forEach( (row) => {
+				response.data.data.forEach( (row) => {
+					console.log(row);
 					let tm = new Date(row[0]).getTime();
 					rawData.push( [tm, row[1]]);
 					ltsMeanData.push([tm, row[2]]);
@@ -187,10 +189,10 @@ export default {
 			this.$refs.diagram.chart.showLoading();
 		},
 		updateChartCurrentDate() {
-			if (this.$store.getters.currentStratificationDate == null)
+			if (this.$store.getters.currentDate == null)
 				return;
 				
-			let tmpDt =  Date.parse(this.$store.getters.currentStratificationDate );
+			let tmpDt =  Date.parse(this.$store.getters.currentDate );
 
 			let dtStart = tmpDt - 86400*4;
 			let dtEnd = tmpDt + 86400*4;

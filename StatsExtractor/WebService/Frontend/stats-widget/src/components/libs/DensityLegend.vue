@@ -27,7 +27,7 @@
 	name: 'DensityLegend',
 	computed: {
 		title() {
-			let product = this.$store.getters.currentProduct;
+			let product = this.$store.getters.product;
 			let id = this.$store.getters.areaDensity.id;
 			return "Density Legend (Total Area (%) having values in range [" + product.value_ranges[id].toFixed(2).toString() + "," +product.value_ranges[id+1].toFixed(2).toString()  + "))";
 		}
@@ -40,11 +40,8 @@
 			let areaDensity = this.$store.getters.areaDensity;
 			if (areaDensity == null)
 				return;
-			let product = this.$store.getters.currentProduct;
+			let product = this.$store.getters.product;
 			let paletteCol = this.$store.getters.areaDensity.palette_col;
-			
-			console.log();
-			
 			
 			let style = "linear-gradient(to right, ";
 			Object.keys(product[paletteCol]).forEach( (key) => {

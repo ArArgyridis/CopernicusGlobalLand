@@ -12,21 +12,31 @@ else(OTB_FOUND)
 endif(OTB_FOUND)
 
 
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-
 SET (PQXX_DIR .)
 SET (POSTGRES_DIR .)
 add_subdirectory(fmt)
 
 
 find_package(Threads REQUIRED)
+
+
+
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS serialization filesystem)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 find_package(PQXX REQUIRED)
 find_package(fmt)
 
-include_directories(${Boost_INCLUDE_DIRS})
+find_package(LibXml2 REQUIRED)
+if (LIBXML2_FOUND)
+    include_directories(${LIBXML2_INCLUDE_DIR})
+endif()
+
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
@@ -69,7 +79,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(${PROJECT_NAME} ${SOURCE} ${HEADERS} "main.cpp" )
-target_link_libraries(${PROJECT_NAME}  ${PQXX_LIBRARIES} ${OTB_LIBRARIES} ${Boost_LIBRARIES} fmt::fmt-header-only)
+target_link_libraries(${PROJECT_NAME}  ${PQXX_LIBRARIES} ${OTB_LIBRARIES} ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only)
 
 
 install(TARGETS StatsExtractor

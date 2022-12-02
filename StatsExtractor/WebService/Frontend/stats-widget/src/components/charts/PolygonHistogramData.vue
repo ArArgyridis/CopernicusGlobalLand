@@ -18,10 +18,10 @@ export default {
 	},
 	computed: {
 		diagramTitle() {
-			if (this.$store.getters.currentProduct == null || this.$store.getters.currentStratificationDate == null)
+			if (this.$store.getters.product == null || this.$store.getters.currentDate == null)
 				return "Dummy Title";
 				
-			return this.$store.getters.currentProduct.description + " (" + this.$store.getters.currentStratificationDate.substring(0, 10)+")";
+			return this.$store.getters.product.description + " (" + this.$store.getters.currentDate.substring(0, 10)+")";
 		},
 		diagramData:{
 			get() {
@@ -95,11 +95,11 @@ export default {
 		updateChartData() {
 			this.isLoading = true;
 			let polyId = this.$store.getters.selectedPolygon;
-			if (polyId == null || this.$store.getters.currentStratificationDate == null) {
+			if (polyId == null || this.$store.getters.currentDate == null) {
 				this.diagramData = [null, null];
 				return
 			}
-			requests.fetchHistogramByPolygonAndDate(polyId, this.$store.getters.currentStratificationDate, this.$store.getters.currentProduct.id).then((response) =>{
+			requests.fetchHistogramByPolygonAndDate(polyId, this.$store.getters.currentDate, this.$store.getters.product.id).then((response) =>{
 				
 				let xAxisCategories = [];
 				for (let i = 0; i < response.data.data.histogram.y.length; i++) {

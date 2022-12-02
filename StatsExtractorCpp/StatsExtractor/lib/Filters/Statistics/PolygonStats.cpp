@@ -141,6 +141,8 @@ void PolygonStats::finalizeStatistics(PolyStatsMapPtr stats) {
         for (size_t i = 0; i < 4; i++)
             polyStat.second->densityArray[i] = polyStat.second->product->convertPixelsToArea(polyStat.second->densityArray[i]);
         polyStat.second->computeColors();
+
+
     }
 }
 
@@ -162,6 +164,7 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer 
     std::stringstream data;
     for(auto & polyData:*polygonData) {
         auto hist = polyData.second->histogramToJSON();
+
         data  <<"(" << polyData.first <<"," << productFileID <<"," << polyData.second->densityArray[0]/10000 <<"," << polyData.second->densityArray[1]/10000 <<"," << polyData.second->densityArray[2]/10000 <<"," << polyData.second->densityArray[3]/10000
              <<",'"<<rgbToArrayString(polyData.second->densityColors[0]) <<"','" <<rgbToArrayString(polyData.second->densityColors[1]) <<"','" << rgbToArrayString(polyData.second->densityColors[2]) << "','" << rgbToArrayString(polyData.second->densityColors[3])
                 <<"','"<< jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
@@ -175,7 +178,8 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer 
                                                      " noval_color, sparseval_color, midval_color, highval_color, histogram, total_pixels, valid_pixels)"
                                                      " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, tdt.noval_area_ha::double precision, "
                                                      " tdt.sparse_area_ha::double precision, tdt.mid_area_ha::double precision, tdt.dense_area_ha::double precision,"
-                                                     " noval_color::jsonb, sparseval_color::jsonb, midval_color::jsonb, highval_color::jsonb, histogram::jsonb, total_pixels::bigint, valid_pixels::bigint"
+                                                     " noval_color::jsonb, sparseval_color::jsonb, midval_color::jsonb, highval_color::jsonb, histogram::jsonb, total_pixels::bigint,"
+                                                     " valid_pixels::bigint"
                                                      " FROM tmp_data tdt"
                                                      " ON CONFLICT(poly_id, product_file_id) DO NOTHING;";
 

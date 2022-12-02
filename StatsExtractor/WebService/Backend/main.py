@@ -30,10 +30,7 @@ def process(environ):
 			req = StatsRequests(requestData=requestData)
 			res = req.process()
 			response["data"] = res[1]
-			print(response)
-			print(json.dumps(response))
 			return (res[0], json.dumps(response).encode("utf-8"))
-
 
 		except ValueError:
 			return ("400: Bad request", """{"error": "Unable to process"}""".encode("utf-8"))
