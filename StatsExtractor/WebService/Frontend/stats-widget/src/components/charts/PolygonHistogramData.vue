@@ -17,33 +17,80 @@ export default {
 		highcharts: Chart
 	},
 	computed: {
+		diagramData: {
+			get() {
+				if (this.dgDt == null)
+					return this.noData;
+				return this.dgDt;
+			},
+			set(dt) {
+				this.dgDt = dt;
+			}
+		},
+		diagramOptions(){
+			this.updateChartData();
+			return this.__computeChartOptions();
+		},
 		diagramTitle() {
 			if (this.$store.getters.product == null || this.$store.getters.currentDate == null)
 				return "Dummy Title";
 				
 			return this.$store.getters.product.description + " (" + this.$store.getters.currentDate.substring(0, 10)+")";
 		},
-		diagramData:{
-			get() {
-				return this.$refs.diagram.chart.series[0].data;
-			},
-			set(dt) {
-				this.$refs.diagram.chart.series[0].setData(dt[0], true);
-				this.$refs.diagram.chart.axes[0].setCategories(dt[1],true);
-				this.$refs.diagram.chart.setTitle({text:this.diagramTitle}, true);
-				this.$refs.diagram.chart.reflow();
-			}
-		},	
+		noData() {
+			return [null, null];
+		}
 	},
 	data() {
 		return {	
 			isLoading: true,
-			diagramOptions:{
+			dgDt: this.noData,
+			polygonId: null,
+			product:{id: null},
+			date: null
+		}
+	},
+	methods: {
+		loads() {
+			return this.isLoading;
+		},
+		updateChartData() {
+			
+			if (this.$store.getters.product == null || this.$store.getters.currentDate == null || this.$store.getters.selectedPolygon ==null)
+				return;
+			
+			if (this.product.id == this.$store.getters.product.id && this.polygonId == this.$store.getters.selectedPolygon && this.date == this.$store.getters.currentDate)
+				return;
+
+			this.isLoading = true;
+			this.product = this.$store.getters.product;
+			this.date = this.$store.getters.currentDate;
+			this.polygonId = this.$store.getters.selectedPolygon;
+			requests.fetchHistogramByPolygonAndDate(this.polygonId, this.date, this.product.id).then((response) =>{
+				let xAxisCategories = [];
+				for (let i = 0; i < response.data.data.histogram.y.length; i++) {
+					xAxisCategories.push(response.data.data.histogram.x[i].toString() +"-" + response.data.data.histogram.x[i+1].toString());
+				}
+				this.diagramData = [response.data.data.histogram.y, xAxisCategories];
+				this.isLoading = false;
+			}).catch( ()=> {
+				this.diagramData = this.noData;
+			});
+		},
+		reset() {
+			this.diagramData = this.noData;
+		},
+		resizeChart() {
+			if (this.diagramTitle != "Dummy Title")
+				this.$refs.diagram.chart.reflow();
+		},
+		__computeChartOptions() {
+			return {
 				credits:{
 					enabled:false
 				},
 				title:{
-					text: "Dummy Title"
+					text: this.diagramTitle
 				},
 				plotOptions: {
 					column: {
@@ -56,7 +103,7 @@ export default {
 				series: [{
 					name: "Histogram",
 					type: "column",
-					data: null
+					data: this.diagramData[0]
 				}],
 				yAxis:{
 					title:{
@@ -65,18 +112,7 @@ export default {
 					}
 				},
 				xAxis:{
-					categories: [
-						"0 - 25",
-						"25-50",
-						"50-75",
-						"75-100",
-						"100-125",
-						"125-150",
-						"150-175",
-						"175-200",
-						"200-225",
-						"225-250"
-					],
+					categories: this.diagramData[1],
 					title:{
 						enabled:true,
 						text:"Frequency",
@@ -87,37 +123,6 @@ export default {
 				}
 			}
 		}
-	},
-	methods: {
-		loads() {
-			return this.isLoading;
-		},
-		updateChartData() {
-			this.isLoading = true;
-			let polyId = this.$store.getters.selectedPolygon;
-			if (polyId == null || this.$store.getters.currentDate == null) {
-				this.diagramData = [null, null];
-				return
-			}
-			requests.fetchHistogramByPolygonAndDate(polyId, this.$store.getters.currentDate, this.$store.getters.product.id).then((response) =>{
-				
-				let xAxisCategories = [];
-				for (let i = 0; i < response.data.data.histogram.y.length; i++) {
-					xAxisCategories.push(response.data.data.histogram.x[i].toString() +"-" + response.data.data.histogram.x[i+1].toString());
-				}
-				this.diagramData = [response.data.data.histogram.y, xAxisCategories];
-				this.isLoading = false;
-			}).catch( ()=> {
-				this.diagramData = [null, null];			
-			});
-		},
-		reset() {
-			this.diagramData = [null, null];
-		},
-		resizeChart() {
-			if (this.diagramTitle != "Dummy Title")
-				this.$refs.diagram.chart.reflow();
-		}	
 	}
 }
 </script>

@@ -85,7 +85,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
 
         float dt =row[7].as<float>();
         RGBVal meanColor = product->styleColors[product->reverseValue(dt)];
-        std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
+        //std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
         data <<"'" << rgbToArrayString(meanColor) <<"'),";
 
     }

@@ -152,7 +152,7 @@ export default {
 			if (polyId == null)
 				return;
 				
-			requests.fetchDashboard(polyId, this.$store.getters.currentProduct.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then( (response) => {
+			requests.fetchDashboard(polyId, this.$store.getters.product.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then( (response) => {
 				let keys = ["map2", "map3"];
 				keys.forEach((key) => {
 					let vectorLayer = this.$refs[key].createGEOJSONLayerFromString(response.data.data);

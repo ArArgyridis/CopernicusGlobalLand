@@ -33,6 +33,7 @@ export default {
 			clickedPointLayerId: null,
 			pointerLayerId: null,
 			bingKey: options.bingKey,
+			initCmp: true,
 			projectEPSG: "EPSG:3857",
 			productZIndex: 1,
 			stratificationZIndex: 2,
@@ -43,7 +44,8 @@ export default {
 				stratID: null,
 				productID: null,
 				date: null,
-				statisticsViewMode: null
+				statisticsViewMode: null,
+				currentStyles:{}
 			}
 		}
 	},	
@@ -71,40 +73,43 @@ export default {
 				return;
 			/*
 			this.$store.getters.allProductsData.forEach((product) => {
-				Object.keys((product.viewInfo)).forEach( (prodId) => {
-						product.viewInfo[prodId].stratification.info.forEach((stratification) => {
+				Object.keys((product.properties)).forEach( (prodId) => {
+						product.properties[prodId].stratification.info.forEach((stratification) => {
 							this.$refs.map1.removeLayer(stratification.layerId);
 						});
 				});
 			});
 			*/
+			console.log("@@@@@@@");
 		},
 		clearPolygonSelection() {
 			this.$refs.map1.clearCurrentPolygonSelection();
 			this.$store.commit("selectedPolygon", null);
 		},
-		clearWMSLayers(){
-			if (this.$store.getters.product == null)
+		clearWMSLayers() {
+			if (this.initCmp) {
+				this.initCmp = false;
+				//return;
+			}
+			if (this.$store.getters.product == null || this.$store.getters.allCategories == null)
 				return;
-			/*
+
 			//remove wms layers from map
-			this.$store.getters.allProductsData.forEach((product) => {
-				Object.keys((product.viewInfo)).forEach( (prodId) => {
-						product.viewInfo[prodId].rawWMS.layers.forEach((wms) => {
-							this.$refs.map1.removeLayer(wms.layerId);
+			this.$store.getters.allCategories.forEach( (category) => {
+				if(category.products != null) {
+					category.products.info.forEach( (product) => {
+						product.properties.raw.wms.layers.forEach( (layerId) => {
+							this.$refs.map1.removeLayer(layerId);
 						});
-				});
-			});
-			
-			//removing anomaly wms layers from map
-			this.$store.getters.allProductsData.forEach((product) => {
-				Object.keys((product.viewInfo)).forEach( (prodId) => {
-						product.viewInfo[prodId].anomalies.layers.forEach((wms) => {
-							this.$refs.map1.removeLayer(wms.layerId);
+						product.properties.anomalies.info.forEach( (anomaly) => {
+							anomaly.layers.info.forEach( (layer) => {
+								this.$refs.map1.removeLayer(layer.layerId);
+							});
 						});
-				});
+					});
+				}
 			});
-			*/
+
 		},
 		emit(eventName, data) {
 			this.$emit(eventName, data);
@@ -151,7 +156,7 @@ export default {
 			if (this.$store.getters.product == null || this.$store.getters.productWMSLayer != null) 
 				return;
 
-			this.$store.getters.product.viewInfo.rawWMS.urls.forEach(url => {
+			this.$store.getters.product.properties.raw.wms.urls.forEach(url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.productZIndex).then((data) => {
 					this.$store.commit("appendToProductsWMSLayers",data);
 				}).catch(error => {
@@ -159,7 +164,7 @@ export default {
 				});
 			});
 			
-			this.$store.getters.product.viewInfo.anomalies.current.urls.forEach(url => {
+			this.$store.getters.product.properties.anomalies.current.urls.forEach(url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.anomaliesZIndex).then((data) => {
 					this.$store.commit("appendToProductsAnomaliesWMSLayers", data);
 				}).catch(error => {
@@ -184,13 +189,10 @@ export default {
 			this.$refs.map1.setVisibility( this.$store.getters.productWMSLayer.layerId, true);
 		},
 		updateProductAnomalyWMSVisibility() {
-			console.log(this.$store.getters.previousProductAnomalyWMSLayer, this.$store.getters.productAnomalyWMSLayer)
 			if (this.$store.getters.previousProductAnomalyWMSLayer != null) {
-				console.log("old id", this.$store.getters.previousProductAnomalyWMSLayer.layerId);
 				this.$refs.map1.setVisibility(this.$store.getters.previousProductAnomalyWMSLayer.layerId, false);
 			}
-			
-			
+
 			this.$refs.map1.setVisibility( this.$store.getters.productAnomalyWMSLayer.layerId, true);
 		},
 		updateWMSVisibility() {
@@ -231,38 +233,41 @@ export default {
 				});
 			} else 
 				this.setStratificationStyle(this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.productID][this.stratificationViewProps.date]);
-			
-			
 		},
 		setStratificationStyle(data) {
 			if (data == null)
 				return;
 
+			this.stratificationViewProps.currentStyles = {};
 			let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
-			console.log(colorCol);
-			tmpLayer.setStyle( (ft) => {
-				//let id = JSON.parse(JSON.stringify(ft.getId()));
-				let id = ft.getId();
-				let color = data[id];
-				if (color == null)
-					return null;
-					
-				color = color[colorCol];
-				if (color == null)
-					return null;
-						
-				let joinedColor = color.join();
 
-				return new Style({
-					fill: new Fill({
-						color: "rgba(" + joinedColor + ",0.7)",
-					}),
-					stroke: new Stroke({
-						color:  "rgba(" + joinedColor + ",1.0)",
-						width: 1,
-					})
-				});
+			tmpLayer.setStyle( (ft) => {
+
+				let id = ft.getId();
+				let style = this.stratificationViewProps.currentStyles[id];
+				if (style == null) {
+					let color = data[id];
+					if (color == null)
+						return null;
+					
+					color = color[colorCol];
+					if (color == null)
+						return null;
+						
+					let joinedColor = color.join();
+					this.stratificationViewProps.currentStyles[id] = new Style({
+						fill: new Fill({
+							color: "rgba(" + joinedColor + ",0.7)",
+						}),
+						stroke: new Stroke({
+							color:  "rgba(" + joinedColor + ",1.0)",
+							width: 1,
+						})
+					});
+					style = this.stratificationViewProps.currentStyles[id];
+				}
+				return style;
 			});
 		},
 		updateStratificationLayerVisibility() {

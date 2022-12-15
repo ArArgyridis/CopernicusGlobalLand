@@ -30,7 +30,9 @@ export default {
 	components: {
 		highcharts: Chart
 	},
-	props: {},
+	props: {
+		mode: String
+	},
 	computed: {
 		currentCoordinates() {
 			return this.$store.getters.clickedCoordinates;
@@ -39,24 +41,117 @@ export default {
 			if (this.$store.getters.product == null)
 				return "Dummy Title";
 				
-			return "Raw " + this.$store.getters.product.description;
+			return  this.$store.getters.product.description + "(" + this.mode + ")";
 		},
-		diagramData: {
-			get() {
-				return this.rawTimeSeries.series[0].data;
-			},
-			set(dt) {
-				this.$refs.diagram.chart.series[0].setData(dt[0], true);
-				this.$refs.diagram.chart.series[1].setData(dt[1], true);
-				this.$refs.diagram.chart.series[2].setData(dt[2], true);
+		diagramOptions() {
+			let product = this.$store.getters.product;
+			if (this.mode == "Anomalies")
+				product = this.$store.getters.productAnomaly;
+			
+			let coords =this.$store.getters.clickedCoordinates;
+			if (coords != null)
+				coords = JSON.parse(JSON.stringify(coords));
+			let dateStart = JSON.parse(JSON.stringify(this.$store.getters.dateStart));
+			let dateEnd = JSON.parse(JSON.stringify(this.$store.getters.dateEnd));
+			
+			this.updateChartData(product, coords, dateStart, dateEnd);
+			
+			let tmpDt = this.diagramData;
+			if (tmpDt == null)
+				tmpDt = this.noData;
+			
+			let valueRange  = [0, 1.5];
+			
+			if (product !=null) {
+				valueRange = product.value_ranges;
 			}
+			
+			let step = (valueRange[valueRange.length-1] - valueRange[0])/valueRange.length;
+			return this.__computeChartOptions(tmpDt, valueRange, step);
+		},
+		noData() {
+			return  [null, null, null];
 		}
 	},
 	data() {
 		return {
-			previousCoordinates: null,
+			previousCoordinates: {coordinate:[-NaN, -NaN]},
+			previousDateStart: null,
+			previousDateEnd: null,
 			isLoading: true,
-			diagramOptions:{
+			diagramData: this.noData,
+			product:{id:null}
+		}
+	},
+	methods: {
+		loads() {
+			return this.isLoading;
+		},
+		updateChartData(product, coords, dateStart, dateEnd) {
+			//checking if data should be fetched
+			if (product == null || coords == null || dateStart == null || dateEnd == null)
+				return;
+			
+			if (this.product.id == product.id && this.previousCoordinates.coordinate[0] == coords.coordinate[0] && this.previousCoordinates.coordinate[1] == coords.coordinate[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
+				return;
+			
+			this.isLoading = true;
+			this.previousCoordinates 	= coords;
+			this.previousDateStart 	= dateStart;
+			this.previousDateEnd 	= dateEnd;
+			this.product = product;
+
+			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, product.id, coords).then((response) => {
+				let diagramData = null;
+				if (this.mode == "Raw") {
+					diagramData = [
+						new Array(response.data.data.length),
+						new Array(response.data.data.length),
+						new Array(response.data.data.length)
+					];
+					
+					for (let i = 0; i < response.data.data.length; i++) {
+						let row = response.data.data[i];
+						let tm = new Date(row[0]).getTime();
+						diagramData[0][i] = [tm, row[2] - 2*row[3],  row[2] +2*row[3]];
+						diagramData[1][i] = [tm, row[1]];
+						diagramData[2][i] = [tm, row[2]];
+					}
+				}
+				else if (this.mode == "Anomalies") {
+					diagramData = [
+						null,
+						new Array(response.data.data.length),
+						null
+					];
+					
+					for (let i = 0; i < response.data.data.length; i++) {
+						let row = response.data.data[i];
+						let tm = new Date(row[0]).getTime();
+						diagramData[1][i] = [tm, row[1]];
+					}
+				}
+				
+				this.diagramData 		= diagramData;
+				this.isLoading 			= false;				
+				this.$refs.diagram.chart.hideLoading();
+				this.resizeChart();
+1			}).catch(() =>{
+				this.diagramData = this.noData;
+				this.$refs.diagram.chart.hideLoading();
+			});
+			this.$refs.diagram.chart.showLoading();
+		},
+
+		reset() {
+			this.diagramData = this.noData;
+		},
+		resizeChart() {
+			if (this.diagramTitle != "Dummy Title" && this.$refs.diagram != null)
+				this.$refs.diagram.chart.reflow();
+		},
+		__computeChartOptions(tmpDt=this.noData, valueRange=[0,1.5], step=0.2) {
+			return {
 				credits:{
 					enabled:false
 				},
@@ -67,20 +162,21 @@ export default {
 					{
 						name:"valid range",
 						type:"arearange",
-						data:null,
+						data: tmpDt[0],
 						showInLegend: false,
 						color:"rgba(201, 201, 201, 0.7)",
 						marker: {
 							enabled:false
 						},
 					},{
-						name: "Product",
-						data: null, 
+						name: "Product value",
+						data: tmpDt[1], 
 						color: '#0F602C'
 					},{
-						name: "Long-Term Statistics",
-						data: null, 
+						name: "Long-Term Value",
+						data: tmpDt[2],
 						color: '#EB603F',
+						showInLegend: this.mode == "Raw",
 						marker: {
 							enabled:false
 						},
@@ -88,18 +184,12 @@ export default {
 					}
 				],
 				yAxis:{
-					min: 0,
-					max: 1.5,
+					min: valueRange[0] - step,
+					max: valueRange[valueRange.length-1] + step,
 					title:{
 						enabled:true,
 						text:"Variable Value"
-					},
-					plotBands: [{ // mark the weekend
-						color: 'rgba(0,0,0,1)',
-						from:  Date.UTC(2021, 0, 2, 8),
-						to:  Date.UTC(2021, 0, 2, 14),
-						id: 'pltbnd1'
-					}]
+					}
 				},
 				xAxis:{
 					type: "datetime",
@@ -109,107 +199,18 @@ export default {
 					title:{
 						enabled:true,
 						text:"Date",
-					}
+					},
+					plotBands: [{ // mark the weekend
+						color: 'rgba(255,145,71,0.9)',
+						from:  Date.parse(this.$store.getters.currentDate) - 86400*4,
+						to:  Date.parse(this.$store.getters.currentDate) + 86400*4,
+						id: 'pltbnd1'
+					}]
 				},
 				legend:{
 					enabled: true
 				}
 			}
-		}
-	},
-	methods: {
-		loads() {
-			return this.isLoading;
-		},
-		displayCurrentDate() {
-			if (this.$store.getters.currentDate == null)
-				return;
-				
-			let tmpDt =  Date.parse(this.$store.getters.currentDate );
-
-			let dtStart = tmpDt - 86400*4;
-			let dtEnd = tmpDt + 86400*4;
-			this.$refs.diagram.chart.xAxis[0].removePlotBand('pltbnd1');
-			this.$refs.diagram.chart.xAxis[0].addPlotBand({ // mark the weekend
-				color: 'rgba(255,145,71,0.9)',
-				from:  dtStart,
-				to:  dtEnd,
-				id: 'pltbnd1'
-			});
-		},
-		updateChartData() {
-			if (this.currentCoordinates == null)
-				return;
-			
-			if (this.currentCoordinates == this.previousCoordinates) {
-				this.updateChartCurrentDate();
-				return;
-			}
-
-				
-			this.isLoading = true;
-			let valueRanges = this.$store.getters.product.value_ranges;
-			let tmpProdId = this.$store.getters.product.id;
-			this.$refs.diagram.chart.yAxis[0].options.min = -0.5*valueRanges[0];
-			this.$refs.diagram.chart.yAxis[0].options.max = 1.5*valueRanges[valueRanges.length-2];
-			if (this.$store.getters.currentView == 2) {
-				tmpProdId = this.$store.getters.currentAnomaly;
-				if (tmpProdId == null)
-					return
-				tmpProdId = tmpProdId.id;
-				
-				this.$refs.diagram.chart.yAxis[0].options.min = 0;
-				this.$refs.diagram.chart.yAxis[0].options.max = 7;
-			}
-			console.log("hereeee\n");
-			requests.getRawTimeSeriesDataForRegion(this.$store.getters.dateStart, this.$store.getters.dateEnd, tmpProdId, this.currentCoordinates).then((response) => {
-				console.log(response);
-				let rawData		     	= new Array();
-				let ltsMeanData 	     	= new Array();
-				let validRange		= new Array();
-				response.data.data.forEach( (row) => {
-					console.log(row);
-					let tm = new Date(row[0]).getTime();
-					rawData.push( [tm, row[1]]);
-					ltsMeanData.push([tm, row[2]]);
-					validRange.push( [ tm, row[2] - 2*row[3],  row[2] +2*row[3]]  );
-				});
-				
-				this.diagramData = [validRange,rawData, ltsMeanData];
-				this.$refs.diagram.chart.setTitle({text:this.diagramTitle}, true);
-
-				this.$refs.diagram.chart.hideLoading();
-				this.isLoading = false;
-				this.previousCoordinates = this.currentCoordinates;
-
-			}).catch(() =>{
-				this.diagramData = [null, null, null];
-				this.$refs.diagram.chart.hideLoading();
-			});
-			this.$refs.diagram.chart.showLoading();
-		},
-		updateChartCurrentDate() {
-			if (this.$store.getters.currentDate == null)
-				return;
-				
-			let tmpDt =  Date.parse(this.$store.getters.currentDate );
-
-			let dtStart = tmpDt - 86400*4;
-			let dtEnd = tmpDt + 86400*4;
-			this.$refs.diagram.chart.xAxis[0].removePlotBand('pltbnd1');
-			this.$refs.diagram.chart.xAxis[0].addPlotBand({ // mark the weekend
-				color: 'rgba(255,145,71,0.9)',
-				from:  dtStart,
-				to:  dtEnd,
-				id: 'pltbnd1'
-			});
-		},
-		reset() {
-			this.diagramData = [null, null];
-		},
-		resizeChart() {
-			//if (this.diagramTitle != "Dummy Title")
-				this.$refs.diagram.chart.reflow();
 		}
 	}
 }

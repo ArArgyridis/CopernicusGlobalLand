@@ -16,28 +16,66 @@ export default {
 		highcharts: Chart
 	},
 	computed: {
+		diagramOptions() {
+			this.updateChartData();
+			return this.__computeChartOptions();
+		},
 		diagramTitle() {
 			if (this.$store.getters.product == null || this.$store.getters.currentDate == null) 
 				return "Dummy Title";
 				
 			return "Density Distribution for " + this.$store.getters.currentDate;
-		}, 
-		diagramData: {
-			get() {
-				return this.$refs.diagram.chart.series[0].data;
-			},
-			set(dt) {
-				this.$refs.diagram.chart.series[0].setData(dt, true);
-			}
 		},
-		polyId() {
-			return this.$store.getters.selectedPolygon;
+		noData() {
+			return null;
 		}
 	},
 	data() {
 		return {
 			isLoading: true,
-			diagramOptions: {
+			diagramData: this.noData,
+			product: {id: null},
+			date: null,
+			polygonId: null
+		}	
+	},
+	methods: {
+		loads() {
+			return this.isLoading;
+		},
+		updateChartData() {
+			if (this.$store.getters.product == null || this.$store.getters.currentDate == null || this.$store.getters.selectedPolygon == null)
+				return;
+			
+			if(this.$store.getters.product.id == this.product.id && this.date == this.$store.getters.currentDate && this.$store.getters.selectedPolygon == this.polygonId)
+				return;
+	
+			this.isLoading 	= true;
+			this.product 	= this.$store.getters.product;
+			this.date 		= this.$store.getters.currentDate;
+			this.polygonId 	= this.$store.getters.selectedPolygon
+
+			requests.getPieDataByDateAndPolygon(this.product.id, this.date, this.polygonId).then((response) => {
+				let dt = [];
+				Object.keys(response.data.data).forEach( key  => {
+					dt.push({name: key, y: response.data.data[key]});
+				});
+				this.diagramData = dt;
+				this.isLoading = false;
+			}).catch(() =>{
+				this.diagramData = null;
+				console.log("Unable to fetch Pie chart (by polygon and date) data");
+			});
+		},
+		reset() {
+			this.diagramData = null;
+		},
+		resizeChart() {
+			if (this.diagramTitle != "Dummy Title")
+				this.$refs.diagram.chart.reflow();
+		},
+		__computeChartOptions() {
+			return {
 				credits:{
 					enabled:false
 				},
@@ -71,41 +109,9 @@ export default {
 					series: [{
 						name: 'Density',
 						colorByPoint: true,
-						data: []
+						data: this.diagramData
 					}]
-			}		
-		}	
-	},
-	methods: {
-		loads() {
-			return this.isLoading;
-		},
-		updateChartData() {
-			this.isLoading = true;
-			let product = this.$store.getters.product;
-			let date = this.$store.getters.currentDate;
-
-			if (this.polyId != null && product != null && date != null) {
-				requests.getPieDataByDateAndPolygon(product.id, date, this.polyId).then((response) => {
-					let dt = [];
-					Object.keys(response.data.data).forEach( key  => {
-						dt.push({name: key, y: response.data.data[key]});
-					});
-					this.diagramData = dt;
-					this.$refs.diagram.chart.setTitle({text:this.diagramTitle}, true);
-					this.isLoading = false;
-				}).catch(() =>{
-					this.diagramData = null;
-					console.log("Unable to fetch Pie chart (by polygon and date) data");
-				});
-			}		
-		},
-		reset() {
-			this.diagramData = null;
-		},
-		resizeChart() {
-			if (this.diagramTitle != "Dummy Title")
-				this.$refs.diagram.chart.reflow();
+			}
 		}
 	}
 }

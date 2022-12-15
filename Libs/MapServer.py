@@ -47,8 +47,8 @@ class MapServer:
 
 	def process(self):
 		imageryMap = mapscript.mapObj()
-		imageryMap.setMetaData("wms_onlineresource", self._wmsServerURL)
-		imageryMap.setMetaData("wms_enable_request", "*")
+		imageryMap.web.metadata.set("wms_onlineresource", self._wmsServerURL)
+		imageryMap.web.metadata.set("wms_enable_request", "*")
 
 		imageryMap.name = self._wmsTitle
 		imageryMap.setSize(256, 256)
@@ -70,8 +70,8 @@ class MapServer:
 			inFileName = os.path.splitext(layerInfo.processFile.split("/")[-1])[0]
 
 			layer = mapscript.layerObj()
-			imageryMap.setMetaData("wms_title", layerInfo.layerName)
-			imageryMap.setMetaData("wms_srs", layerInfo.epsgStr)
+			imageryMap.web.metadata.set("wms_title", layerInfo.layerName)
+			imageryMap.web.metadata.set("wms_srs", layerInfo.epsgStr)
 
 			layer.data =layerInfo.processFile
 			layer.name = layerInfo.layerName
@@ -81,8 +81,8 @@ class MapServer:
 					layer.addProcessing("SCALE_{0}={1},{2}".format(style[0], style[1], style[2]) )
 
 			layer.setProjection(layerInfo.epsgStr)
-			layer.setMetaData("wms_srs", layerInfo.epsgStr)
-			layer.setMetaData("STATUS", "ON")
+			layer.metadata.set("wms_srs", layerInfo.epsgStr)
+			layer.metadata.set("STATUS", "ON")
 			#layer.tileindex = tileIndex
 			imageryMap.insertLayer(layer)
 			

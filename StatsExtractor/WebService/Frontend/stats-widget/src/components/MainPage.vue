@@ -19,7 +19,7 @@
 			<LeftPanel 
 			v-on:closeLeftPanel="toggleLeft()"
 			v-on:closeSideMenu="toggleLeft()" 
-			v-on:dateChanged="updateStratificationLayerStyle()"
+			v-on:dateChanged="updateDate()"
 			v-on:getCategoryProducts="getCategoryProducts()"
 			v-on:resetProducts="resetProducts()"
 			v-on:stratificationViewOptionsChanged="updateStratificationLayerStyle()"
@@ -127,7 +127,6 @@ export default {
 		getCategoryProducts() {
 			if (this.$store.getters.products == null)
 				this.getProductInfo();
-			//console.log("GET CATEGORY PRODUCTS!!!!!!!!");
 		},
 		getProductInfo() {
 
@@ -140,14 +139,12 @@ export default {
 			});
 		},
 		refreshStratificationInfo() {
-			this.$refs.rightPanel.loadStratificationCharts();
-			this.$refs.rightPanel.loadLocationCharts();
 			this.updateStratificationLayerStyle();
 		},
 		resetProducts() {
 			this.setRightPanelVisibility(false);
 			this.$refs.mapApp.clearWMSLayers();
-			this.$refs.rightPanel.resetAllCharts();
+			//this.$refs.rightPanel.resetAllCharts();
 			this.$store.commit("clearProducts");
 			this.getProductInfo();
 			if (!this.activateClickOnMap) {
@@ -178,16 +175,12 @@ export default {
 			this.$refs.mapApp.setLayerVisibility( this.$store.getters.productAnomalyWMSLayer.layerId, stratifiedOrRaw == 1 && statsViewMode== 1);
 		},
 		setCurrentLayersVisibilityByViewMode() {
-			console.log("asdsadsa")
+
 			if (this.$store.getters.currentStratification != null)
 				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, this.$store.getters.stratifiedOrRaw == 0);
 		
 			if (this.currentWMSLayer != null) 
 				this.$refs.mapApp.setLayerVisibility(this.currentWMSLayer.layerId, this.$store.getters.stratifiedOrRaw == 1);
-			
-			
-			this.setRightPanelVisibility(false);
-			this.$refs.rightPanel.resetAllCharts();
 		},
 		togglePanelClasses(id){
 			document.getElementById(id).classList.toggle("hiddenBar");
@@ -196,6 +189,9 @@ export default {
 		toggleLeft() {
 			this.togglePanelClasses("leftPanel");
 			document.getElementById("menuButton").classList.toggle("offsetButton");
+		},
+		updateDate() {
+			this.updateStratificationLayerStyle();
 		},
 		updateStratificationInfo() {
 			this.$refs.mapApp.clearStratifications();
@@ -216,7 +212,6 @@ export default {
 		},
 		updateStratificationLayerStyle(){
 			this.$refs.mapApp.updateStratificationLayerStyle();
-			this.$refs.rightPanel.loadStratificationCharts(this.currentStratificationPolygonId);
 		},
 		updateStratificationLayerVisibility() {
 			this.setRightPanelVisibility(false);
@@ -233,7 +228,6 @@ export default {
 				return;
 			
 			this.clickedCoordinates = evt;
-			this.$refs.rightPanel.loadLocationCharts();
 			this.setRightPanelVisibility(true);
 		},
 		updateWMSLayers() {

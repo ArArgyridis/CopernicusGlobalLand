@@ -23,6 +23,10 @@ from datetime import datetime
 
 def productStats(cfg, query, path, requestData, queue, key):
     data = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
+    res = None
+    if len(data) == 0:
+        queue.put({key: res})
+        return
     
     obj = PointValueExtractor(data[0],
                                   requestData["options"]["coordinate"][0], requestData["options"]["coordinate"][1],
@@ -30,10 +34,6 @@ def productStats(cfg, query, path, requestData, queue, key):
     res =  obj.process()
     #res = None
     queue.put({key: res})
-    #queue.put( {key: res})
-
-
-
 
 class StatsRequests(GenericRequest):
     def __init__(self, cfg="../../active_config.json", requestData=None):
@@ -101,7 +101,7 @@ class StatsRequests(GenericRequest):
         FROM dt JOIN dates ON dt.id = dates.id""".format(self._requestData["options"]["category_id"], self._requestData["options"]["dateStart"], self._requestData["options"]["dateEnd"])
         return self.__getResponseFromDB(query)
 
-    def fetchStatsByPolygonAndDateRange(self):
+    def densityStatsByPolygonAndDateRange(self):
         query = """
         SELECT ARRAY_TO_JSON (ARRAY_AGG(JSON_BUILD_ARRAY( pf.date, ps.{0}) ORDER BY pf.date))
         FROM {1}.poly_stats ps 
@@ -111,8 +111,26 @@ class StatsRequests(GenericRequest):
         """.format(self._requestData["options"]["area_type"], self._config.statsInfo.schema, self._requestData["options"]["poly_id"],
                    self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"])
+
         return self.__getResponseFromDB(query)
     
+    def polygonStatsTimeseries(self):
+        query = """
+            WITH dt AS NOT MATERIALIZED(
+                SELECT pf."date", ps.mean , ps.sd ,psltai.mean meanlts, psltai.sd sdlts 
+                FROM poly_stats ps 
+                JOIN product_file pf ON ps.product_file_id = pf.id 
+                JOIN product_file_description pfd ON pf.product_description_id = pfd.id
+                LEFT JOIN long_term_anomaly_info ltai ON pfd.id = ltai.current_product_description_id 
+                LEFT JOIN product_file_description pfdltai ON ltai.statistics_product_description_id = pfdltai.id 
+                LEFT JOIN product_file pfltai ON pfdltai.id = pfltai.product_description_id and EXTRACT('doy' FROM pfltai."date") between EXTRACT('doy' FROM pf."date") - 2	and EXTRACT('doy' FROM pf."date") +2
+                LEFT JOIN poly_stats psltai ON pfltai.id = psltai.product_file_id AND ps.poly_id = psltai.poly_id  
+            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfd.product_id = {3} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7)
+            SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date"))
+            FROM dt""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
+        print(query)
+        return self.__getResponseFromDB(query)
+        
     def __fetchStratificationDataByProductAndDate(self):
         query = """
         SELECT ps.poly_id, 
@@ -133,7 +151,7 @@ class StatsRequests(GenericRequest):
     JOIN  product p ON pfd.product_id = p.id
     JOIN  stratification_geom sg ON sg.id = ps.poly_id
     JOIN  stratification s ON s.id = sg.stratification_id
-    WHERE pf.date = '{0}' and s.id = {1} and p.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.75""".format(self._requestData["options"]["date"],
+    WHERE pf.date = '{0}' and s.id = {1} and p.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7""".format(self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
         res = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
         ret = {}
@@ -154,7 +172,7 @@ class StatsRequests(GenericRequest):
         query  = """SELECT type 
                             FROM product_file_description pfd 
                             JOIN product p ON pfd.product_id = p.id 
-                            WHERE pfd.id = {0}""".format(self._requestData["options"]["product_id"])
+                            WHERE p.id = {0}""".format(self._requestData["options"]["product_id"])
 
         productType = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)[0][0]
         if productType == "anomaly":
@@ -174,7 +192,7 @@ class StatsRequests(GenericRequest):
             FROM product_file pf 
             JOIN product_file_description pfd ON pf.product_description_id = pfd.id
             JOIN product p on pfd.product_id =p.id
-            WHERE date between  '{1}' and '{2}' and p.id  = {3} AND pfd.variable IS NOT NULL
+            WHERE date between  '{1}' and '{2}' and p.id  = {3} AND (pfd.variable IS NOT null or p."type"='anomaly')
             GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
         
         threads = []
@@ -202,7 +220,7 @@ class StatsRequests(GenericRequest):
                 JOIN product p ON pfdprod.product_id = p.id
                 WHERE p.id = {4} AND pfd.variable IS NOT NULL
                 GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date""".format(var, path, doyStart, doyEnd, self._requestData["options"]["product_id"])
-            print(queryLTS)
+
             threads.append(Process(target=productStats, args=(self._config, queryLTS, path, self._requestData, result,  var)))
             threads[-1].start()
 
@@ -219,28 +237,30 @@ class StatsRequests(GenericRequest):
         
         #converting mean and stdev dicts to doy        
         ltsStats = {}
-        
-        for mn, sd in zip(resultDict["mean"]["raw"], resultDict["stdev"]["raw"]):
-            doy = datetime.fromisoformat(mn[0])
-            doy = doy.utctimetuple().tm_yday
-            ltsStats[doy] = [mn[1], sd[1]]
+        tmpDoys = []
+        if productType == "raw":
+            for mn, sd in zip(resultDict["mean"]["raw"], resultDict["stdev"]["raw"]):
+                doy = datetime.fromisoformat(mn[0])
+                doy = doy.utctimetuple().tm_yday
+                ltsStats[doy] = [mn[1], sd[1]]
+            tmpDoys = ltsStats.keys()
+            tmpDoys = list(tmpDoys)
 
         response = list(range(len(resultDict["product"]["raw"])))
+        
         i = 0
-        tmpDoys = ltsStats.keys()
-        tmpDoys = list(tmpDoys)
-
+        
         for row in resultDict["product"]["raw"]:
             doy = datetime.fromisoformat(row[0])
             doy = doy.utctimetuple().tm_yday
             stop = False
-            
+            response[i] = row[0:2]
             j = 0
             while not stop and j < len(tmpDoys):
-                print("heree")
+
                 if abs(doy - tmpDoys[j]) < 4 :
-                   response[i] = row[0:2]+ltsStats[tmpDoys[j] ]
-                   stop = True
+                    response[i]+=ltsStats[tmpDoys[j] ]
+                    stop = True
                 j += 1
             i+=1
 
@@ -295,16 +315,18 @@ class StatsRequests(GenericRequest):
             ret = self.__fetchCategories()
         elif self._requestData["request"] == "dashboard":
             ret = self.__fetchDashboard()
+        elif self._requestData["request"] == "densityStatsByPolygonAndDateRange":
+            ret = self.densityStatsByPolygonAndDateRange()
         elif self._requestData["request"] == "histogrambypolygonanddate":
             ret = self.__histogramDataByProductAndPolygon()
         elif self._requestData["request"] == "polygonDescription":
             ret = self.polygonDescription()
+        elif self._requestData["request"] == "polygonStatsTimeseries":
+            ret = self.polygonStatsTimeseries()
         elif self._requestData["request"] == "productinfo":
             ret = self.__fetchProductInfo()
         elif self._requestData["request"] == "rankstratabydensity":
             ret = self.__rankStrataByDensity()
-        elif self._requestData["request"] == "statsbypolygonanddaterange":
-            ret = self.fetchStatsByPolygonAndDateRange()
         elif self._requestData["request"] == "stratificationinfo":
             ret = self.__fetchStratificationInfo()
         elif self._requestData["request"] == "stratificationinfobyproductanddate":

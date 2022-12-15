@@ -21,7 +21,7 @@ export default {
 	},
 	fetchHistogramByPolygonAndDate(polyId, date, productId) {
 		let postParams  = {};
-		console.log(date);
+
 		postParams["request"] = "histogrambypolygonanddate";
 		postParams["options"] = {
 			poly_id: polyId,
@@ -40,9 +40,9 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
-	fetchStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productId, area_type="noval_area_ha"){
+	densityStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productId, area_type="noval_area_ha"){
 		let postParams={};
-		postParams["request"] = "statsbypolygonanddaterange";
+		postParams["request"] = "densityStatsByPolygonAndDateRange";
 		postParams["options"]={
 			poly_id: polyId,
 			product_id: productId,
@@ -95,6 +95,17 @@ export default {
 			product_id: productId
 		};
 		postParams["options"] = {...postParams["options"], ...coordInfo};
+		return axios.post(options.endpointURL, postParams);
+	},
+	polygonStatsTimeSeries(polyId, dateStart, dateEnd, productId) {
+		let postParams = {};
+		postParams["request"] = "polygonStatsTimeseries";
+		postParams["options"] = {
+			date_start: dateStart,
+			date_end: dateEnd,
+			product_id: productId,
+			poly_id: polyId
+		};
 		return axios.post(options.endpointURL, postParams);
 	},
 	rankStratabyAreaDensity(productId, date, stratification, density) {

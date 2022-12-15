@@ -134,7 +134,6 @@
 import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import requests from '../libs/js/requests.js';
-import utils from "../libs/js/utils.js";
 import Legend from "./libs/Legend.vue";
 
 export default {
@@ -163,7 +162,7 @@ export default {
 			get() {
 				if (this.product == null)
 					return "Select Product";
-				utils.computeDensityDescription;
+
 				return this.$store.getters.product.description;
 			}
 		},
@@ -257,7 +256,7 @@ export default {
 				return this.$store.getters.currentDate;
 			}
 			,set(val) {
-				this.$store.commit("setcurrentDate", val);
+				this.$store.commit("setCurrentDate", val);
 				this.$emit("dateChanged");
 			}
 		},
