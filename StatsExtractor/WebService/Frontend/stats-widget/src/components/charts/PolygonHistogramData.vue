@@ -34,8 +34,9 @@ export default {
 		diagramTitle() {
 			if (this.$store.getters.product == null || this.$store.getters.currentDate == null)
 				return "Dummy Title";
-				
-			return this.$store.getters.product.description + " (" + this.$store.getters.currentDate.substring(0, 10)+")";
+			
+			let tmpDate = new Date(Date.parse(this.$store.getters.currentDate));
+			return "Region Histogram for " + tmpDate.toDateString();
 		},
 		noData() {
 			return [null, null];

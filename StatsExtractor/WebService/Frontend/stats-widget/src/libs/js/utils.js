@@ -2,6 +2,16 @@ export default {
 	computeDensityDescription(str, val1, val2) {
 		return str +" [" + val1 + ", " + val2 + ")";
 	},
+	markerProperties() {
+		let ret = 		{
+			anchor: [0.3, 1.0],
+			anchorXUnits: 'fraction',
+			anchorYUnits: 'fraction',
+			src: "/assets/marker.png",
+			scale: 0.02
+		};
+		return ret;
+	},
 	rgbToHex(r, g, b) {
 		return(this.valueToHex(r) + this.valueToHex(g) + this.valueToHex(b));
 	},

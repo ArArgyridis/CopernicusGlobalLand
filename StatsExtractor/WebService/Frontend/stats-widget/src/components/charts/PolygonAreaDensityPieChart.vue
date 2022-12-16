@@ -23,8 +23,9 @@ export default {
 		diagramTitle() {
 			if (this.$store.getters.product == null || this.$store.getters.currentDate == null) 
 				return "Dummy Title";
-				
-			return "Density Distribution for " + this.$store.getters.currentDate;
+			
+			let tmpDate = new Date(Date.parse(this.$store.getters.currentDate));
+			return "Density Distribution for " + tmpDate.toDateString();
 		},
 		noData() {
 			return null;

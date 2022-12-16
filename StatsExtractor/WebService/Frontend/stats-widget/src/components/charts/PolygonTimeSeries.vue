@@ -35,7 +35,7 @@ export default {
 		diagramTitle() {
 			if (this.$store.getters.product == null)
 				return "Dummy Title";
-			return "Stratification Time Series (" + this.mode + ")";
+			return "Product Time Series for Region (" + this.mode + ")";
 		},
 		diagramOptions() {
 			let polyId = this.$store.getters.selectedPolygon;

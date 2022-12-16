@@ -38,7 +38,7 @@ export default {
 		diagramTitle() {
 			if (this.$store.getters.product == null || this.$store.getters.areaDensity == null)
 				return "Dummy Title";
-			return this.$store.getters.product.description + " Timeseries (Density: " + this.$store.getters.areaDensity.description +")";
+			return "Product Density Timeseries (" + this.$store.getters.areaDensity.description +")";
 		},
 		noData() {
 			return  [null];

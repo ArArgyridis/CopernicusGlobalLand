@@ -22,6 +22,7 @@
 import OLMap from './libs/OLMap.vue';
 import requests from '../libs/js/requests.js';
 import options from "../libs/js/options.js";
+import utils from "../libs/js/utils.js"
 import {Fill, Stroke, Style, Icon } from 'ol/style';
 
 export default {
@@ -71,16 +72,6 @@ export default {
 		clearStratifications() {
 			if (this.$store.getters.product == null || this.$store.getters.stratifications == null)
 				return;
-			/*
-			this.$store.getters.allProductsData.forEach((product) => {
-				Object.keys((product.properties)).forEach( (prodId) => {
-						product.properties[prodId].stratification.info.forEach((stratification) => {
-							this.$refs.map1.removeLayer(stratification.layerId);
-						});
-				});
-			});
-			*/
-			console.log("@@@@@@@");
 		},
 		clearPolygonSelection() {
 			this.$refs.map1.clearCurrentPolygonSelection();
@@ -120,14 +111,8 @@ export default {
 			
 			this.$refs.map1.setVisibility(this.clickedPointLayerId, true);
 			this.$refs.map1.clearVectorLayer(this.clickedPointLayerId);
-			this.$refs.map1.addPointToLayer(this.clickedPointLayerId, 2, evt.coordinate[0], evt.coordinate[1],  {icon:	new Icon({
-					anchor: [0.3, 1.0],
-						anchorXUnits: 'fraction',
-						anchorYUnits: 'fraction',
-						src: "/assets/marker.png",
-						scale: 0.02
-					})
-			});
+			let iconProps = utils.markerProperties();
+			this.$refs.map1.addPointToLayer(this.clickedPointLayerId, 2, evt.coordinate[0], evt.coordinate[1],  {icon:	new Icon(iconProps)} );
 		},
 		refreshCurrentStratificationStyle(){
 			this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId).changed();

@@ -41,7 +41,7 @@ export default {
 			if (this.$store.getters.product == null)
 				return "Dummy Title";
 				
-			return  this.$store.getters.product.description + "(" + this.mode + ")";
+			return   "Location Time Series (" + this.mode + ")";
 		},
 		diagramOptions() {
 			let product = this.$store.getters.product;
@@ -85,6 +85,7 @@ export default {
 	},
 	methods: {
 		loads() {
+			console.log("hereee", this.isLoading);
 			return this.isLoading;
 		},
 		updateChartData(product, coords, dateStart, dateEnd) {
@@ -132,10 +133,10 @@ export default {
 					}
 				}
 				
-				this.diagramData 		= diagramData;
-				this.isLoading 			= false;				
+				this.diagramData = diagramData;
 				this.$refs.diagram.chart.hideLoading();
 				this.resizeChart();
+				this.isLoading = false;		
 1			}).catch(() =>{
 				this.diagramData = this.noData;
 				this.$refs.diagram.chart.hideLoading();

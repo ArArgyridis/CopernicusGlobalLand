@@ -5,24 +5,20 @@
 		<div class="modal-wrapper">
 			<div class="modal-container" id="dashboardContainer" >
 				<div class="modal-header" >
-					<h3>{{region}} <br>({{strata}})</h3>
+					<div class="container">
+						<div class="row">
+							<div class="col"><h4>{{region}} ({{strata}})</h4></div>
+						</div>
+						<div class="row">
+							<div class="col"><h5>{{productDescription}}</h5></div>
+						</div>
+						<div class="row">
+							<div class="col"><h6>Analysis Period: {{dateStart }} / {{dateEnd}}</h6></div>
+						</div>
+					</div>
 				</div>
 				<div class="modal-body">
 					<OLMap id="map2" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map2" class="dashboardMap" />
-				</div>
-				<!--<div class="hexagon"><span></span></div>-->
-				<div class="container">
-					<div class="row">
-						<h3>Examination Period</h3>
-					</div>
-					<div class="row">
-						<div class="col-sm d-flex justify-content-center">
-							<DateTime v-bind:date=dateStart />
-						</div>
-						<div class="col-sm d-flex justify-content-center">
-							<DateTime v-bind:date=dateEnd />
-						</div>
-					</div>
 				</div>
 				<div class="modal-footer">
 					<!--<p>default footer</p>-->
@@ -36,20 +32,34 @@
 	<div class="dashboardPrintArea" ref="dashboardPrintArea" id="dashboardPrintArea">
 		<div class="dashboardPrintInnerArea">
 			<div class="modal-header" >
-				<h3>{{region}} <br>({{strata}})</h3>
+				<div class="container">
+					<div class="row">
+						<div class="col"><h4>{{region}} ({{strata}})</h4></div>
+					</div>
+					<div class="row">
+						<div class="col"><h5>{{productDescription}}</h5></div>
+					</div>
+					<div class="row">
+						<div class="col"><h6>Analysis Period: {{dateStart }} / {{dateEnd}}</h6></div>
+					</div>
+				</div>
 			</div>
 			<div><OLMap id="map3" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map3" class="dashboardMap" /></div>
 			<div class="container mt-2">
 				<div class="row">
-					<div class="col-sm"><PointTimeSeries ref="PointTimeSeries" /></div>
-					<div class="col-sm"><PolygonAreaDensityPieChart ref="PolygonAreaDensityPieChart" class="col-sm"/></div>
+					<div class="col-sm"><PointTimeSeries ref="PointTimeSeriesRaw" mode="Raw" /></div>
+					<div class="col-sm"><PointTimeSeries ref="PointTimeSeriesAnomalies" mode="Anomalies" /></div>
 				</div>
 				<div class="row">
-					<div class="col-sm"><PolygonHistogramData ref="PolygonHistogramData"/></div>
-					<div class="col-sm"><PolygonTimeSeries ref="PolygonTimeSeries"/></div>
+					<div class="col-sm"><PolygonTimeSeries ref="PolygonTimeSeriesRaw" mode="Raw"/></div>
+					<div class="col-sm"><PolygonTimeSeries ref="PolygonTimeSeriesAnomalies" mode="Anomalies"/></div>					
 				</div>
+				<div class="row">
+					<div class="col-sm"><PolygonAreaDensityPieChart ref="PolygonAreaDensityPieChart" class="col-sm"/></div>
+					<div class="col-sm"><PolygonHistogramData ref="PolygonHistogramData"/></div>
+				</div>
+			</div>
 		</div>
-	</div>
 	</div>
 </div>
 </template>
@@ -59,18 +69,19 @@ import html2canvas from 'html2canvas';
 
 import requests from "../libs/js/requests.js";
 import OLMap from "./libs/OLMap.vue";
-import DateTime from "./libs/DateTime.vue";
+//import DateTime from "./libs/DateTime.vue";
 import options from "../libs/js/options.js";
+import utils from "../libs/js/utils.js";
 import PointTimeSeries from "./charts/PointTimeSeries.vue";
 import PolygonAreaDensityPieChart from "./charts/PolygonAreaDensityPieChart.vue";
 import PolygonHistogramData from "./charts/PolygonHistogramData.vue";
 import PolygonTimeSeries from "./charts/PolygonTimeSeries.vue";
-
+import {Icon } from 'ol/style';
 
 export default {
 	name: "Dashboard",
 	components: {
-		DateTime,
+		//DateTime,
 		OLMap,
 		PointTimeSeries,
 		PolygonAreaDensityPieChart,
@@ -79,10 +90,18 @@ export default {
 	},
 	computed: {
 		dateStart() {
-			return this.$store.getters.dateStart;
+			let tmpDate = new Date(Date.parse(this.$store.getters.dateStart));
+			return tmpDate.toDateString();
 		},
 		dateEnd() {
-			return this.$store.getters.dateEnd;
+			let tmpDate = new Date(Date.parse(this.$store.getters.dateEnd));
+			return tmpDate.toDateString();
+		},
+		
+		productDescription() {
+			if (this.$store.getters.product == null)
+				return "Dummy Product";
+			return this.$store.getters.product.description;
 		}
 	},
 	data() {
@@ -98,7 +117,7 @@ export default {
 			printTimeOut: null,
 			region: "region",
 			strata: "strata",
-			diagramRefs: ["PointTimeSeries", "PolygonAreaDensityPieChart", "PolygonHistogramData", "PolygonTimeSeries"]
+			diagramRefs: ["PointTimeSeriesRaw", "PointTimeSeriesAnomalies", "PolygonTimeSeriesRaw", "PolygonTimeSeriesAnomalies", "PolygonAreaDensityPieChart", "PolygonHistogramData"]
 		}
 	},
 	methods: {
@@ -110,16 +129,26 @@ export default {
 			
 			this.bingIdPrintArea = this.$refs.map3.addBingLayerToMap("aerial",  true, 0);
 			this.$refs.map3.setVisibility(this.bingIdPrintArea, true);
-
+			
+			/*
 			this.diagramRefs.forEach((dg) => {
 				this.$refs[dg].updateChartData();
 			});
+			*/
 		},
 		print() {
 			this.printTimeOut = setInterval(() => {			
-				if (this.$refs.PointTimeSeries.loads() || this.$refs.PolygonAreaDensityPieChart.loads() || this.$refs.PolygonHistogramData.loads() || this.$refs.PolygonTimeSeries.loads())
+				let stop = false;
+				this.diagramRefs.forEach((dg) => {
+					stop = stop || this.$refs[dg].loads();
+				});
+				if (stop)
 					return;
-
+					
+				this.diagramRefs.forEach((dg) => {
+					this.$refs[dg].resizeChart();
+				});
+	
 				this.__print();
 				clearInterval(this.printTimeOut);
 			}, 1 );
@@ -146,6 +175,10 @@ export default {
 			
 			this.$refs.map3.getMap().updateSize();
 			document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
+			
+			this.diagramRefs.forEach((dg) => {
+				this.$refs[dg].resizeChart();
+			});
 		},
 		refreshData() {
 			let polyId = this.$store.getters.selectedPolygon;
@@ -154,10 +187,15 @@ export default {
 				
 			requests.fetchDashboard(polyId, this.$store.getters.product.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then( (response) => {
 				let keys = ["map2", "map3"];
+				let clickedCoords = this.$store.getters.clickedCoordinates;
+				let iconProps = utils.markerProperties();
 				keys.forEach((key) => {
 					let vectorLayer = this.$refs[key].createGEOJSONLayerFromString(response.data.data);
 					this.$refs[key].setVisibility(vectorLayer, true);
 					this.$refs[key].fitToLayerExtent(vectorLayer);
+					let pointLayer = this.$refs[key].createEmptyVectorLayer();
+					this.$refs[key].addPointToLayer(pointLayer, 2, clickedCoords.coordinate[0], clickedCoords.coordinate[1],  {icon:	new Icon(iconProps)} );
+					this.$refs[key].setVisibility(pointLayer, true);
 				});
 				this.region = response.data.data.properties.description;
 				this.strata = response.data.data.properties.strata;
@@ -224,13 +262,18 @@ export default {
 	}
 }
 
+.modal-header h2 {
+	text-align:center;
+	width:100%;
+}
+
 .modal-header h3 {
 	text-align:center;
 	width:100%;
 }
 
 .modal-body {
-	margin: 20px 0;
+	margin: 15px 0;
 }
 
 .modal-default-button {
@@ -254,69 +297,6 @@ export default {
 	border:1px solid black;
 	height: 96%;
 }
-
-.hexagon {
-  position: relative;
-  width: 150px; 
-  height: 86.60px;
-  background-color: #64C7CC;
-  margin: 43.30px 0;
-  box-shadow: 0 0 20px rgba(0,0,0,0.8);
-  border-left: solid 2px #333333;
-  border-right: solid 2px #333333;
-}
-
-.hexagon:before,
-.hexagon:after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  width: 106.07px;
-  height: 106.07px;
-  -webkit-transform: scaleY(0.5774) rotate(-45deg);
-  -ms-transform: scaleY(0.5774) rotate(-45deg);
-  transform: scaleY(0.5774) rotate(-45deg);
-  background-color: inherit;
-  left: 19.9670px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.8);
-}
-
-.hexagon:before {
-  top: -53.0330px;
-  border-top: solid 2.8284px #333333;
-  border-right: solid 2.8284px #333333;
-}
-
-.hexagon:after {
-  bottom: -53.0330px;
-  border-bottom: solid 2.8284px #333333;
-  border-left: solid 2.8284px #333333;
-}
-
-/*cover up extra shadows*/
-.hexagon span {
-  display: block;
-  position: absolute;
-  top:1.1547005383792515px;
-  left: 0;
-  width:146px;
-  height:84.2931px;
-  z-index: 2;
-  background: inherit;
-}
-
-
-
-
-
-/*
- * The following styles are auto-applied to elements with
- * transition="modal" when their visibility is toggled
- * by Vue.js.
- *
- * You can easily play with the modal transition by editing
- * these styles.
- */
 
 .modal-enter-active,
 .modal-leave-active {
