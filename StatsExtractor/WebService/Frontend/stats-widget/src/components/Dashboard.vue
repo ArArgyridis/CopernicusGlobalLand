@@ -29,7 +29,7 @@
 		</div>
 	</div>
 	<!--printed element-->
-	<div class="dashboardPrintArea" ref="dashboardPrintArea" id="dashboardPrintArea">
+	<div class="dashboardPrintArea" ref="dashboardPrintArea" id="dashboardPrintArea" hidden>
 		<div class="dashboardPrintInnerArea">
 			<div class="modal-header" >
 				<div class="container">
@@ -47,16 +47,16 @@
 			<div><OLMap id="map3" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map3" class="dashboardMap" /></div>
 			<div class="container mt-2">
 				<div class="row">
-					<div class="col-sm"><PointTimeSeries ref="PointTimeSeriesRaw" mode="Raw" /></div>
-					<div class="col-sm"><PointTimeSeries ref="PointTimeSeriesAnomalies" mode="Anomalies" /></div>
+					<div class="col border border-secondary"><PointTimeSeries ref="PointTimeSeriesRaw" mode="Raw" /></div>
+					<div class="col border border-secondary"><PointTimeSeries ref="PointTimeSeriesAnomalies" mode="Anomalies" /></div>
 				</div>
 				<div class="row">
-					<div class="col-sm"><PolygonTimeSeries ref="PolygonTimeSeriesRaw" mode="Raw"/></div>
-					<div class="col-sm"><PolygonTimeSeries ref="PolygonTimeSeriesAnomalies" mode="Anomalies"/></div>					
+					<div class="col border border-secondary"><PolygonTimeSeries ref="PolygonTimeSeriesRaw" mode="Raw"/></div>
+					<div class="col border border-secondary"><PolygonTimeSeries ref="PolygonTimeSeriesAnomalies" mode="Anomalies"/></div>					
 				</div>
 				<div class="row">
-					<div class="col-sm"><PolygonAreaDensityPieChart ref="PolygonAreaDensityPieChart" class="col-sm"/></div>
-					<div class="col-sm"><PolygonHistogramData ref="PolygonHistogramData"/></div>
+					<div class="col border border-secondary"><PolygonAreaDensityPieChart ref="PolygonAreaDensityPieChart" /></div>
+					<div class="col border border-secondary"><PolygonHistogramData ref="PolygonHistogramData"/></div>
 				</div>
 			</div>
 		</div>
@@ -129,12 +129,7 @@ export default {
 			
 			this.bingIdPrintArea = this.$refs.map3.addBingLayerToMap("aerial",  true, 0);
 			this.$refs.map3.setVisibility(this.bingIdPrintArea, true);
-			
-			/*
-			this.diagramRefs.forEach((dg) => {
-				this.$refs[dg].updateChartData();
-			});
-			*/
+
 		},
 		print() {
 			this.printTimeOut = setInterval(() => {			
@@ -174,7 +169,7 @@ export default {
 			document.getElementById("dashboardPrintArea").removeAttribute("hidden");
 			
 			this.$refs.map3.getMap().updateSize();
-			document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
+			//document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
 			
 			this.diagramRefs.forEach((dg) => {
 				this.$refs[dg].resizeChart();
@@ -235,7 +230,6 @@ export default {
 	z-index: 10;
 	width:100%;
 }
-
 
 @media(min-width:901px) {
 	.modal-container {

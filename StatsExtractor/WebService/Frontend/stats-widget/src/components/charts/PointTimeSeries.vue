@@ -148,8 +148,10 @@ export default {
 			this.diagramData = this.noData;
 		},
 		resizeChart() {
-			if (this.diagramTitle != "Dummy Title" && this.$refs.diagram != null)
+			if (this.diagramTitle != "Dummy Title") {
+				console.log("@@@@@");
 				this.$refs.diagram.chart.reflow();
+			}
 		},
 		__computeChartOptions(tmpDt=this.noData, valueRange=[0,1.5], step=0.2) {
 			return {
