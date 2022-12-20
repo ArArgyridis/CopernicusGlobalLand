@@ -13,7 +13,7 @@
 							<div class="col"><h5>Selected Product: {{productDescription}}</h5></div>
 						</div>
 						<div class="row">
-							<div class="col"><h6>Examination Period: {{dateStart }} / {{dateEnd}}</h6></div>
+							<div class="col"><h6>Examination Period: {{dateStart }} / {{dateEnd}}, Selected Date: {{currentDate}}</h6></div>
 						</div>
 					</div>
 				</div>
@@ -53,7 +53,7 @@
 						<div class="col"><h5>Selected Product: {{productDescription}}</h5></div>
 					</div>
 					<div class="row">
-						<div class="col"><h6>Examination Period: {{dateStart }} / {{dateEnd}}</h6></div>
+						<div class="col"><h6>Examination Period: {{dateStart }} / {{dateEnd}}, Selected Date: {{currentDate}}</h6></div>
 					</div>
 				</div>
 			</div>
@@ -115,6 +115,10 @@ export default {
 		PolygonTimeSeries
 	},
 	computed: {
+		currentDate() {
+			let tmpDate = new Date(Date.parse(this.$store.getters.currentDate));
+			return tmpDate.toDateString();
+		},
 		dateStart() {
 			let tmpDate = new Date(Date.parse(this.$store.getters.dateStart));
 			return tmpDate.toDateString();

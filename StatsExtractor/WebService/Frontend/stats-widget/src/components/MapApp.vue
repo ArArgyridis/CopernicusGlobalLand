@@ -228,7 +228,7 @@ export default {
 		setStratificationStyle(data) {
 			if (data == null)
 				return;
-
+			this.$refs.map1.activateSpinner();
 			this.stratificationViewProps.currentStyles = {};
 			let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
