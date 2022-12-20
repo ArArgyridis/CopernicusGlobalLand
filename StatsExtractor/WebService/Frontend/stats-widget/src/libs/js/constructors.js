@@ -55,13 +55,13 @@ export function	AnomaliesProps(product) {
 			anomaly.layers = {
 				current: null,
 				previous: null,
-				info: []
+				info: {}
 			};
 			anomaly.stratificationInfo = new stratificationViewProps("meanval_color");
 			anomaly.style = new styleBuilder(anomaly.stylesld);
 			product.dates.forEach(date =>{
 				let splitDate = date.split("-");
-				let url = options.anomaliesWMSURL + anomaly.key + "/" + splitDate[0] +"/" +splitDate[1];
+				let url = options.anomaliesWMSURL + anomaly.name + "/" + splitDate[0] +"/" +splitDate[1];
 				anomaly.urls.add(url);
 			});
 		});
@@ -116,7 +116,7 @@ export function	rawWMSProps(product) {
 		this.previous = null;
 		this.next = null;
 		this.urls = new Set();
-		this.layers = [];
+		this.layers = {};
 	
 		product.dates.forEach(date =>{
 			let splitDate = date.split("-");

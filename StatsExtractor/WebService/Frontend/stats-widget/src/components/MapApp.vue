@@ -54,8 +54,7 @@ export default {
 	components: {
 		OLMap
 	},
-	computed: {
-	},
+	computed: {},
 	methods: {
 		init() {
 			//cartographic background
@@ -89,18 +88,18 @@ export default {
 			this.$store.getters.allCategories.forEach( (category) => {
 				if(category.products != null) {
 					category.products.info.forEach( (product) => {
-						product.properties.raw.wms.layers.forEach( (layerId) => {
-							this.$refs.map1.removeLayer(layerId);
+						Object.keys(product.properties.raw.wms.layers).forEach( (key) => {
+							this.$refs.map1.removeLayer(product.properties.raw.wms.layers[key].layerId);
 						});
+						
 						product.properties.anomalies.info.forEach( (anomaly) => {
-							anomaly.layers.info.forEach( (layer) => {
-								this.$refs.map1.removeLayer(layer.layerId);
+							Object.keys(anomaly.layers.info).forEach( (key) => {
+								this.$refs.map1.removeLayer(anomaly.layers.info[key].layerId);
 							});
 						});
 					});
 				}
 			});
-
 		},
 		emit(eventName, data) {
 			this.$emit(eventName, data);
@@ -143,7 +142,12 @@ export default {
 
 			this.$store.getters.product.properties.raw.wms.urls.forEach(url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.productZIndex).then((data) => {
-					this.$store.commit("appendToProductsWMSLayers",data);
+					let dt = {};
+					data.forEach(lyr => {
+						dt[lyr.datetime] = lyr;
+					});
+	
+					this.$store.commit("appendToProductsWMSLayers",dt);
 				}).catch(error => {
 					console.log(error);
 				});
@@ -151,7 +155,11 @@ export default {
 			
 			this.$store.getters.product.properties.anomalies.current.urls.forEach(url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.anomaliesZIndex).then((data) => {
-					this.$store.commit("appendToProductsAnomaliesWMSLayers", data);
+					let dt = {};
+					data.forEach(lyr => {
+						dt[lyr.datetime] = lyr;
+					});
+					this.$store.commit("appendToProductsAnomaliesWMSLayers", dt);
 				}).catch(error => {
 					console.log(error);
 				});
@@ -180,10 +188,6 @@ export default {
 
 			this.$refs.map1.setVisibility( this.$store.getters.productAnomalyWMSLayer.layerId, true);
 		},
-		updateWMSVisibility() {
-			
-		},
-		
 		updateSelectedPolygon(evt) {
 			let id = null;
 			if (evt != null)
@@ -226,19 +230,34 @@ export default {
 			this.stratificationViewProps.currentStyles = {};
 			let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
+			
+			tmpLayer.on("change", () => {
+				//console.log("prerendering!!!!")
+				//this.$refs.map1.activateSpinner();
+			});
+			
+			tmpLayer.on("postrender", () => {
+				//this.$refs.map1.deactivateSpinner();
+				//console.log("postrendering!!!");
+			});
+			console.log("setting style!!!!");
+			
+			//this.$refs.map1.activateSpinner();
 
 			tmpLayer.setStyle( (ft) => {
-
 				let id = ft.getId();
 				let style = this.stratificationViewProps.currentStyles[id];
 				if (style == null) {
 					let color = data[id];
-					if (color == null)
+					if (color == null) {
+						this.stratificationViewProps.currentStyles[id] = null;
 						return null;
-					
+					}
 					color = color[colorCol];
-					if (color == null)
+					if (color == null) {
+						this.stratificationViewProps.currentStyles[id] = null;
 						return null;
+					}
 						
 					let joinedColor = color.join();
 					this.stratificationViewProps.currentStyles[id] = new Style({
@@ -252,6 +271,7 @@ export default {
 					});
 					style = this.stratificationViewProps.currentStyles[id];
 				}
+	
 				return style;
 			});
 		},
@@ -259,8 +279,10 @@ export default {
 			if (this.$store.getters.previousStratification != null)
 				this.$refs.map1.setVisibility( this.$store.getters.previousStratification.layerId, false);
 
-			this.$refs.map1.setVisibility( this.$store.getters.currentStratification.layerId, true);
-			this.$refs.map1.highlightOnLayer(this.$store.getters.currentStratification.layerId);
+			if (this.$store.getters.currentStratification != null) {
+				this.$refs.map1.setVisibility( this.$store.getters.currentStratification.layerId, true);
+				this.$refs.map1.highlightOnLayer(this.$store.getters.currentStratification.layerId);
+			}
 		}
 	},
 	mounted() {

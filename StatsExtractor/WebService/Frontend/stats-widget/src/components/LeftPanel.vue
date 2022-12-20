@@ -47,7 +47,7 @@
 			<div class="row mt-2" v-if="product != null">
 				<div class="col d-flex justify-content-end my-auto align-items-center">Statistics View Mode:</div>
 				<div class="col d-flex justify-content-start">
-					<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{ currentStatisticsViewMode}} </button>
+					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ currentStatisticsViewMode}} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
 						<li v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx"><a class="dropdown-item">{{md}}</a></li>
 					</ul>
@@ -77,7 +77,7 @@
 				<div class="row mt-2" v-if="currentStratificationName != 'Select stratification'">
 					<div class="col d-flex justify-content-end my-auto align-items-center">View Date:</div>
 					<div class="col d-flex justify-content-start">
-						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentDate.substring(0,10)}} </button>
+						<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{currentDate.substring(0,10)}} </button>
 						<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
 							<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{date.substring(0,10)}}</a></li>
 						</ul>
@@ -113,16 +113,16 @@
 				</div>
 			</div>
 			
-			<div class= "row mt-3 align-items-center" v-if="stratifiedOrRaw==1"> <!-- WMS DATA LAYER-->
-				<div class="col d-inline-flex justify-content-end my-auto align-items-center">Current WMS Layer:</div>
+			<div class= "row mt-3 align-items-center" v-if="stratifiedOrRaw==1"> <!-- WMS LAYERS - SELECTED BY DATE-->
+				<div class="col d-flex justify-content-end my-auto align-items-center">View Date:</div>
 				<div class="col d-flex justify-content-start">
-					<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="wmsLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentWMSLayer}}</button>
-					<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-						<li v-for ="(wms, key) in wmsLayers" v-bind:key="key" v-bind:value="key"  v-on:click="currentWMSLayer = wms"><a class="dropdown-item">{{wms.title}}</a></li>
+					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{currentDate.substring(0,10)}} </button>
+					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
+						<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{date.substring(0,10)}}</a></li>
 					</ul>
 				</div>
 			</div>
-			<Legend class="mt-3" ref="legend"/>
+			<Legend class="mt-3" ref="legend" v-bind:mode="legendMode"/>
 		</div>
 	</div>
 </div>
@@ -166,6 +166,26 @@ export default {
 				return this.$store.getters.product.description;
 			}
 		},
+		legendMode() {
+			let mode = null;
+			if (this.statisticsViewSelectedMode == 0) {
+				if (this.stratifiedOrRaw == 0) {
+					if (this.stratificationViewOptions.viewMode == 0) 
+						mode = "Raw"
+					
+					else if (this.stratificationViewOptions.viewMode == 1) 
+						mode = "Density";
+				}
+				else if (this.stratifiedOrRaw == 1) {
+					mode = "Raw"
+				}
+			}
+			else if (this.statisticsViewSelectedMode == 1) {
+				mode = "Anomalies";
+			}
+			return mode;
+		},
+		
 		product:{
 			get() {
 				return this.$store.getters.product;
@@ -318,12 +338,12 @@ export default {
 			}
 		},
 		stratifiedOrRaw: {
+			get() {
+				return this.$store.getters.stratifiedOrRaw;
+			},
 			set(val) {
 				this.$store.commit("setStratifiedOrRaw",val);
 				this.$emit("stratifiedOrRawChanged");
-			},
-			get() {
-				return this.$store.getters.stratifiedOrRaw;
 			}
 		},
 		wmsLayers:{

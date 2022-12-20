@@ -22,16 +22,18 @@ import axios from 'axios';
 import BingMaps from 'ol/source/BingMaps';
 import Draw from 'ol/interaction/Draw';
 import Feature from 'ol/Feature';
+import Crop from "ol-ext/filter/Crop";
 //import FeatureFormat from 'ol/format/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
 //import WKT from 'ol/format/WKT';
+import LayerGroup from 'ol/layer/Group';
 import Map from 'ol/Map';
 import MVT from 'ol/format/MVT';
 import OSM from 'ol/source/OSM';
 import Overlay from 'ol/Overlay';
 import {register} from 'ol/proj/proj4';
-import {LineString, Point, Polygon} from 'ol/geom';
-import TileLayer from 'ol/layer/WebGLTile';
+import {LineString, Point, Polygon, MultiPolygon} from 'ol/geom';
+import TileLayer from 'ol/layer/Tile';
 import TileWMS from 'ol/source/TileWMS';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -111,8 +113,18 @@ export default {
 			});
 			// remove from map
 			this.map.removeInteraction(dblClickInteraction);
-		}
-		,addBingLayerToMap (style, setMaxZoom, zIndex = null) {
+			
+			this.map.on('loadstart', () =>{
+				this.activateSpinner();
+			});
+			this.map.on('loadend', () => {
+				this.deactivateSpinner();
+			});
+		},
+		activateSpinner() {
+			this.map.getTargetElement().classList.add('spinner');
+		},
+		addBingLayerToMap (style, setMaxZoom, zIndex = null) {
 			if (!this.bingKey) {console.error("A Bing Maps API key is required"); return;}
 			let bingSource =  new BingMaps({
 				key: this.bingKey,
@@ -164,7 +176,9 @@ export default {
 			this.map.addInteraction(draw);
 			return {draw: draw, layer: newVectorLayer};
 		},
-			
+		addMapEvent(type, listener) {
+			this.map.on(type, listener);
+		}, 
 		addMeasurementInteraction(params) {
 			let mLayer = null;
 			if (params.layer == null) {
@@ -259,7 +273,10 @@ export default {
 				maxZoom:params.maxZoom,
 			})
 			return this.__addVectorTileLayerToMap(tmpSource, params.zIndex);
-		},		
+		},
+		clearAllLayers(){
+			this.map.setLayerGroup(new LayerGroup());
+		},
 		clearMeasurements() {
 			this.clearVectorLayer(this.measurementInteraction.layer);
 			this.measurementInteraction.tooltips.forEach( (tooltip) => {
@@ -283,11 +300,11 @@ export default {
 			});
 			return this.__addVectorLayerToMap(geojsonSource);
 		},
-		createGEOJSONLayerFromString(str) {
+		createGEOJSONLayerFromString(str, zIndex = null) {
 			let geojsonSource = new VectorSource({
 				features: new GeoJSON().readFeatures(str)
 			});
-			return this.__addVectorLayerToMap(geojsonSource);
+			return this.__addVectorLayerToMap(geojsonSource, zIndex);
 		},
 		createPointLabel(layerId, featureId, color, showLabel) {
 			let tmpFeature = this.layers[layerId].getSource().getFeatureById(featureId);
@@ -303,6 +320,9 @@ export default {
 			if (extent != null)
 				tmpLayer.setExtent(extent);
 			return this.__addGenericLayer(tmpLayer, zIndex);
+		},
+		deactivateSpinner() {
+			this.map.getTargetElement().classList.remove('spinner');
 		},
 		deleteFeatureFromVectorLayer(layerId, featureId) {
 			let tmpFeature = this.layers[layerId].getSource().getFeatureById(featureId);
@@ -320,7 +340,6 @@ export default {
 			this.map.getView().fit(extent);
 		},
 		fitToLayerExtent(id) {
-			this.map.updateSize();			
 			let extent = this.layers[id].getSource().getExtent();
 			/*
 			const mapTarget = document.getElementById('map');
@@ -329,6 +348,10 @@ export default {
 				parseFloat(getComputedStyle(mapTarget).height),
 			];
 			*/
+			this.map.updateSize();			
+			//this.map.getView().fit(extent);
+			this.map.getView().fit(extent, { size: this.map.getSize()});
+			this.map.updateSize();			
 			this.map.getView().fit(extent, { size: this.map.getSize()});
 		},
 		getAvailableWMSLayers(url, zIndex=null) {
@@ -352,7 +375,7 @@ export default {
 							zIndex: zIndex
 						});
 						this.setVisibility(layerId);
-						ret.push({title: layer.Title, layerId: layerId, name: layer.Name});
+						ret.push({title: layer.Title, layerId: layerId, name: layer.Name, projection:layer.CRS[0], datetime: layer.Dimension[0].default});
 				});
 				}catch (e) {
 					console.log("Unable to parse wms capabilities for layer: ", url);
@@ -440,7 +463,14 @@ export default {
 			this.selectedFeatureId = null;
 			this.layers[this.hoverLayers[this.activeHighlightLayer].hoverId].changed();
 		},
-		
+		cropWMSByGeoJSON(wmsLayerId, geoJSON) {
+			let cropFilter = new Crop({
+				feature: new Feature(new MultiPolygon(geoJSON.geometry.coordinates)),
+				wrapX: true,
+				inner: false
+			});
+			this.layers[wmsLayerId].addFilter(cropFilter);
+		},		
 		removeLayer(id) {
 			this.map.removeLayer(this.layers[id]);
 			delete this.layers[id];
@@ -674,4 +704,27 @@ export default {
 .ol-tooltip-static:before {
 	border-top-color: #ffcc33;
 }
+
+@keyframes spinner {
+to {
+	transform: rotate(360deg);
+     }
+}
+.spinner:after {
+	content: "";
+	box-sizing: border-box;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 40px;
+	height: 40px;
+	margin-top: -20px;
+	margin-left: -20px;
+	border-radius: 50%;
+	border: 5px solid rgba(180, 180, 180, 0.6);
+	border-top-color: rgba(0, 0, 0, 0.6);
+	animation: spinner 0.6s linear infinite;
+}
+
+
 </style>

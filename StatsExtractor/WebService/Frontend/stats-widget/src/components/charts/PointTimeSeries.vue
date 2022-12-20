@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
-	<highcharts ref="diagram" :options="diagramOptions"/> 	
+	<highcharts ref="diagram" :options="diagramOptions" style="width:100%; height:100%;"/> 	
 </template>
 
 <script>
@@ -85,12 +85,11 @@ export default {
 	},
 	methods: {
 		loads() {
-			console.log("hereee", this.isLoading);
 			return this.isLoading;
 		},
 		updateChartData(product, coords, dateStart, dateEnd) {
 			//checking if data should be fetched
-			if (product == null || coords == null || dateStart == null || dateEnd == null)
+			if ( this.$refs.diagram == null ||  product == null || coords == null || dateStart == null || dateEnd == null)
 				return;
 			
 			if (this.product.id == product.id && this.previousCoordinates.coordinate[0] == coords.coordinate[0] && this.previousCoordinates.coordinate[1] == coords.coordinate[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
@@ -101,6 +100,7 @@ export default {
 			this.previousDateStart 	= dateStart;
 			this.previousDateEnd 	= dateEnd;
 			this.product = product;
+			this.resizeChart();
 
 			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, product.id, coords).then((response) => {
 				let diagramData = null;
@@ -135,7 +135,6 @@ export default {
 				
 				this.diagramData = diagramData;
 				this.$refs.diagram.chart.hideLoading();
-				this.resizeChart();
 				this.isLoading = false;		
 1			}).catch(() =>{
 				this.diagramData = this.noData;
@@ -149,7 +148,6 @@ export default {
 		},
 		resizeChart() {
 			if (this.diagramTitle != "Dummy Title") {
-				console.log("@@@@@");
 				this.$refs.diagram.chart.reflow();
 			}
 		},

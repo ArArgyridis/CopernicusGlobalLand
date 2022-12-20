@@ -161,7 +161,6 @@ export default {
 		},
 		showDashboard() {
 			this.showTheDashboard = true;
-			this.$refs.dashboard.init();
 			this.$refs.dashboard.setVisibility(true);
 			this.$refs.dashboard.refreshData();
 		},
@@ -192,6 +191,7 @@ export default {
 		},
 		updateDate() {
 			this.updateStratificationLayerStyle();
+			this.updateWMSVisibility();
 		},
 		updateStratificationInfo() {
 			this.$refs.mapApp.clearStratifications();
@@ -204,7 +204,9 @@ export default {
 			});
 		},
 		updateWMSVisibility() {
-			this.setRightPanelVisibility(false);
+			if (this.$store.getters.stratifiedOrRaw == 0)
+				return;
+				
 			if (this.$store.getters.productStatisticsViewMode == 0) 
 				this.$refs.mapApp.updateProductWMSVisibility();			
 			else if (this.$store.getters.productStatisticsViewMode == 1) 

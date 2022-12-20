@@ -13,6 +13,7 @@
 """
 
 import mapscript, os
+from datetime import datetime
 
 class LayerInfo(object):
 	def __init__(self, processFile, layerName, epsgStr, width, height, extent, date=None, productKey=None, style=None):
@@ -83,6 +84,10 @@ class MapServer:
 			layer.setProjection(layerInfo.epsgStr)
 			layer.metadata.set("wms_srs", layerInfo.epsgStr)
 			layer.metadata.set("STATUS", "ON")
+			if layerInfo.date != None:
+				layer.metadata.set("wms_timedefault", datetime.strptime(layerInfo.date, "%Y-%m-%d").isoformat())
+				layer.metadata.set("wms_timeextent", layerInfo.date+"/"+layerInfo.date)
+				layer.metadata.set("wms_timeitem", "TIME")
 			#layer.tileindex = tileIndex
 			imageryMap.insertLayer(layer)
 			

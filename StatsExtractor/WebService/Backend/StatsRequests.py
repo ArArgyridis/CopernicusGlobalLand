@@ -82,7 +82,7 @@ class StatsRequests(GenericRequest):
                 JOIN product_file_description pfd on pf.product_description_id  = pfd.id
                 JOIN product p ON pfd.product_id = p.id
                 JOIN(
-                	SELECT ltai.current_product_description_id raw_product_id, (ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_OBJECT('id', p.id, 'description', pfd.description, 'key', p.name[1], 'stylesld', pfd.style, 'value_ranges', ARRAY[pfd.min_value, pfd.low_value, pfd.mid_value, pfd.high_value, pfd.max_value]) ORDER BY pfd.id )))::jsonb anomaly_info
+                	SELECT ltai.current_product_description_id raw_product_id, (ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_OBJECT('id', p.id, 'description', pfd.description, 'name', p.name[1], 'stylesld', pfd.style, 'value_ranges', ARRAY[pfd.min_value, pfd.low_value, pfd.mid_value, pfd.high_value, pfd.max_value]) ORDER BY pfd.id )))::jsonb anomaly_info
                 	FROM   long_term_anomaly_info ltai
                 	JOIN product_file_description pfd ON ltai.anomaly_product_description_id = pfd.id
                 	JOIN   product p ON pfd.product_id = p.id

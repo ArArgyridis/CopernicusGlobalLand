@@ -1,3 +1,4 @@
+
  <template>
  <div class="container">
 	<div class="row">
@@ -7,14 +8,14 @@
 	</div>
 	<div class="row">
 		<div class="col-1 empty"></div>
-		<div class="col d-inline-flex  justify-content-start">{{settings.values[0]}}</div>
-		<div class="col ">{{settings.values[1]}}</div>
-		<div class="col d-inline-flex justify-content-end">{{settings.values[2]}}</div>
+		<div class="col d-inline-flex  justify-content-start scaleBarLetters">{{settings.values[0]}}</div>
+		<div class="col scaleBarLetters">{{settings.values[1]}}</div>
+		<div class="col d-inline-flex justify-content-end scaleBarLetters">{{settings.values[2]}}</div>
 		<div class="col-1 empty"></div>
 	</div>
 	<div class=" row">
 		<div class="col-1 empty"></div>
-		<div class="col legendColor" id="densityLegendColorBar"></div>
+		<div class="col legendColor" v-bind:style="{backgroundImage: settings.style}"></div>
 		<div class="col-1 empty"></div>
 	</div>
 </div>
@@ -31,6 +32,9 @@
 
  export default {
 	name: 'DensityLegend',
+	props: {
+		mode:String
+	},
 	computed: {
 		density() {
 			return this.$store.getters.areaDensity;
@@ -43,23 +47,12 @@
 		},
 		settings() {			
 			let settings =  new __legendSettings();
-			if (this.statsViewMode == 0) {
-				if (this.stratifiedOrRaw == 0) {
-					if (this.stratificationViewOptions.viewMode == 0) 
-						settings = this.__computeRawLegend();
-					
-					else if (this.stratificationViewOptions.viewMode == 1) 
-						settings = this.__computeDensityLegend();
-				}
-				else if (this.stratifiedOrRaw == 1) {
-					settings = this.__computeRawLegend();
-				}
-			}
-			else if (this.statsViewMode == 1) {
-				settings = this.__computeAnomalyLegend();
-			}
-			settings.style = settings.style.slice(0,-2) +")";
-			this.refresh(settings.style);
+			if (this.mode =="Raw")
+				settings = this.__computeRawLegend();
+			else if (this.mode== "Density")
+				settings = this.__computeDensityLegend();
+			else if (this.mode =="Anomalies")
+				settings =  this.__computeAnomalyLegend();
 			return settings;
 		},
 		stratificationViewOptions() {
@@ -75,26 +68,15 @@
 		
 	},
 	methods:{
-		init() {
-			this.refresh();
-		},
-		refresh(style = null) {
-			if (style == null)
-				style = this.settings.style;
-				
-			let colorBar = document.getElementById("densityLegendColorBar");
-			if (colorBar != null)
-				colorBar.style["backgroundImage"]= style;
-		},
 		__computeAnomalyLegend() {
 			let settings = new __legendSettings();
 			let anomaly = this.$store.getters.productAnomaly;
 			settings.title = "Value Range for Anomaly Algorithm: " + anomaly.description;
 			let ret = this.__computeLegendValuesAndStyle(anomaly.value_ranges, anomaly.style);
 			settings.values = ret.values;
-			settings.values[0] += " (Negative Dev.)";
+			settings.values[0] += " (-)";
 			settings.values[1] += " (Stable)";
-			settings.values[2] += " (Positive Dev.)";
+			settings.values[2] += " (+)";
 			
 			settings.style = ret.style;
 			return settings;
@@ -108,6 +90,7 @@
 				let hexColor = "#"+ utils.rgbToHex(rgb[0], rgb[1], rgb[2]);
 				settings.style += hexColor +" " + key +"%, "
 			});
+			settings.style = settings.style.slice(0,-2) +")";
 			return settings;
 		},
 		__computeRawLegend() {
@@ -135,11 +118,9 @@
 				ret.style += hexColor +" " + key +"%, ";
 				key += step;
 			});
+			ret.style = ret.style.slice(0,-2) +")";
 			return ret;
 		}
-	},
-	mounted() {
-		this.init();
 	}
 }
  </script>
@@ -148,6 +129,9 @@
 
 
 .legendColor {}
+.scaleBarLetters {
+	font-size: 0.8rem;
+}
 
 .legendColor:empty::after{
 	content: ".";

@@ -7,18 +7,31 @@
 				<div class="modal-header" >
 					<div class="container">
 						<div class="row">
-							<div class="col"><h4>{{region}} ({{strata}})</h4></div>
+							<div class="col"><h4>Examined Region: {{region}} ({{strata}})</h4></div>
 						</div>
 						<div class="row">
-							<div class="col"><h5>{{productDescription}}</h5></div>
+							<div class="col"><h5>Selected Product: {{productDescription}}</h5></div>
 						</div>
 						<div class="row">
-							<div class="col"><h6>Analysis Period: {{dateStart }} / {{dateEnd}}</h6></div>
+							<div class="col"><h6>Examination Period: {{dateStart }} / {{dateEnd}}</h6></div>
 						</div>
 					</div>
 				</div>
 				<div class="modal-body">
-					<OLMap id="map2" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map2" class="dashboardMap" />
+					<div class="container mt-2" v-if="product != null">
+						<div class="row">
+							
+							<div class="col-sm border border-secondary">
+								<OLMap id="map2raw" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map2raw" class="dashboardMap" />
+								<Legend class="mt-3" ref="legend" mode="Raw"/>
+							</div>
+							<div class="col-sm border border-secondary">
+								<OLMap id="map2anom" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map2anom" class="dashboardMap" />
+								<Legend class="mt-3" ref="legend" mode="Anomalies"/>
+							</div>
+							
+						</div>
+					</div>
 				</div>
 				<div class="modal-footer">
 					<!--<p>default footer</p>-->
@@ -29,34 +42,44 @@
 		</div>
 	</div>
 	<!--printed element-->
-	<div class="dashboardPrintArea" ref="dashboardPrintArea" id="dashboardPrintArea" hidden>
+	<div class="dashboardPrintArea" ref="dashboardPrintArea" id="dashboardPrintArea" hidden v-if="product != null">
 		<div class="dashboardPrintInnerArea">
 			<div class="modal-header" >
 				<div class="container">
 					<div class="row">
-						<div class="col"><h4>{{region}} ({{strata}})</h4></div>
+						<div class="col"><h4>Examined Region: {{region}} ({{strata}})</h4></div>
 					</div>
 					<div class="row">
-						<div class="col"><h5>{{productDescription}}</h5></div>
+						<div class="col"><h5>Selected Product: {{productDescription}}</h5></div>
 					</div>
 					<div class="row">
-						<div class="col"><h6>Analysis Period: {{dateStart }} / {{dateEnd}}</h6></div>
+						<div class="col"><h6>Examination Period: {{dateStart }} / {{dateEnd}}</h6></div>
 					</div>
 				</div>
 			</div>
-			<div><OLMap id="map3" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map3" class="dashboardMap" /></div>
+			
 			<div class="container mt-2">
 				<div class="row">
-					<div class="col border border-secondary"><PointTimeSeries ref="PointTimeSeriesRaw" mode="Raw" /></div>
-					<div class="col border border-secondary"><PointTimeSeries ref="PointTimeSeriesAnomalies" mode="Anomalies" /></div>
+					<div class="col-sm border border-secondary">
+						<OLMap id="map3raw" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map3raw" class="dashboardMap" />
+						<Legend class="mt-3" ref="legend" mode="Raw"/>
+					</div>
+					<div class="col-sm border border-secondary">
+						<OLMap id="map3anom" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map3anom" class="dashboardMap" />
+						<Legend class="mt-3" ref="legend" mode="Anomalies"/>
+					</div>
+				</div>
+				<div class="row mt-1">
+					<div class="col-sm border border-secondary"><PointTimeSeries ref="PointTimeSeriesRaw" mode="Raw" class="dashboardPrintDiagram" /></div>
+					<div class="col-sm border border-secondary"><PointTimeSeries ref="PointTimeSeriesAnomalies" mode="Anomalies" class="dashboardPrintDiagram" /></div>
 				</div>
 				<div class="row">
-					<div class="col border border-secondary"><PolygonTimeSeries ref="PolygonTimeSeriesRaw" mode="Raw"/></div>
-					<div class="col border border-secondary"><PolygonTimeSeries ref="PolygonTimeSeriesAnomalies" mode="Anomalies"/></div>					
+					<div class="col-sm border border-secondary"><PolygonTimeSeries ref="PolygonTimeSeriesRaw" mode="Raw" class="dashboardPrintDiagram" /></div>
+					<div class="col-sm border border-secondary"><PolygonTimeSeries ref="PolygonTimeSeriesAnomalies" mode="Anomalies" class="dashboardPrintDiagram" /></div>					
 				</div>
 				<div class="row">
-					<div class="col border border-secondary"><PolygonAreaDensityPieChart ref="PolygonAreaDensityPieChart" /></div>
-					<div class="col border border-secondary"><PolygonHistogramData ref="PolygonHistogramData"/></div>
+					<div class="col-sm border border-secondary"><PolygonAreaDensityPieChart ref="PolygonAreaDensityPieChart" class="dashboardPrintDiagram" /></div>
+					<div class="col-sm border border-secondary"><PolygonHistogramData ref="PolygonHistogramData" class="dashboardPrintDiagram" /></div>
 				</div>
 			</div>
 		</div>
@@ -77,11 +100,14 @@ import PolygonAreaDensityPieChart from "./charts/PolygonAreaDensityPieChart.vue"
 import PolygonHistogramData from "./charts/PolygonHistogramData.vue";
 import PolygonTimeSeries from "./charts/PolygonTimeSeries.vue";
 import {Icon } from 'ol/style';
+import {Stroke, Style } from 'ol/style';
+import Legend from "./libs/Legend.vue";
 
 export default {
 	name: "Dashboard",
 	components: {
 		//DateTime,
+		Legend,
 		OLMap,
 		PointTimeSeries,
 		PolygonAreaDensityPieChart,
@@ -97,7 +123,9 @@ export default {
 			let tmpDate = new Date(Date.parse(this.$store.getters.dateEnd));
 			return tmpDate.toDateString();
 		},
-		
+		product() {
+			return this.$store.getters.product;
+		},
 		productDescription() {
 			if (this.$store.getters.product == null)
 				return "Dummy Product";
@@ -112,51 +140,63 @@ export default {
 			bingIdPrintArea: null,
 			bingKey: options.bingKey,
 			projectEPSG: "EPSG:3857",
-			vectorLayer: null,
+			printVectorLayer: {},
+			pointLayerZIndex: 4,
+			vectorLayerZIndex: 3,
+			productWMSLayerZIndex:2,
 			renderTimeOut: null,
 			printTimeOut: null,
 			region: "region",
 			strata: "strata",
-			diagramRefs: ["PointTimeSeriesRaw", "PointTimeSeriesAnomalies", "PolygonTimeSeriesRaw", "PolygonTimeSeriesAnomalies", "PolygonAreaDensityPieChart", "PolygonHistogramData"]
+			diagramRefs: ["PointTimeSeriesRaw", "PointTimeSeriesAnomalies", "PolygonTimeSeriesRaw", "PolygonTimeSeriesAnomalies", "PolygonAreaDensityPieChart", "PolygonHistogramData"],
+			keys:  ["map2", "map3"],
+			types:["raw", "anom"],
+			reportMapLoads: [true, true]
 		}
 	},
 	methods: {
-		init() {
-			this.renderTimeOut = setTimeout(this.refreshRender, 200);
-			
-			this.bingIdDashboard = this.$refs.map2.addBingLayerToMap("aerial",  true, 0);
-			this.$refs.map2.setVisibility(this.bingIdDashboard, true);
-			
-			this.bingIdPrintArea = this.$refs.map3.addBingLayerToMap("aerial",  true, 0);
-			this.$refs.map3.setVisibility(this.bingIdPrintArea, true);
-
-		},
 		print() {
-			this.printTimeOut = setInterval(() => {			
+			document.getElementById("dashboardPrintArea").removeAttribute("hidden");
+			for (let i = 0; i < 2; i++) { 
+
+				let tmpKey = "map3"+this.types[i];
+				//registering end render event for report maps
+				this.$refs[tmpKey].addMapEvent("rendercomplete", ()=>{
+					this.reportMapLoads[i] = false;
+				});
+				this.$refs[tmpKey].fitToLayerExtent(this.printVectorLayer[tmpKey]);
+			}
+			
+			this.printTimeOut = setInterval(() => {
 				let stop = false;
+				
+				//checking diagram rendering
 				this.diagramRefs.forEach((dg) => {
 					stop = stop || this.$refs[dg].loads();
 				});
+
+				this.reportMapLoads.forEach( (load)=>{
+					stop = stop || load;
+				});
+
 				if (stop)
 					return;
-					
+
 				this.diagramRefs.forEach((dg) => {
 					this.$refs[dg].resizeChart();
 				});
 	
+				//convert html to canvas and create output png image
 				this.__print();
 				clearInterval(this.printTimeOut);
-			}, 1 );
+			}, 1000 );
 		},
 		__print() {
-			this.$refs.map3.getMap().setView(this.$refs.map2.getMap().getView());
-			this.refreshRender();
-			document.getElementById("dashboardPrintArea").removeAttribute("hidden");
 			setTimeout(() => {
 				html2canvas(document.getElementById("dashboardPrintArea")).then(canvas => {
 					let tmpEl = document.createElement('a');
 					tmpEl.href= canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-					tmpEl.download= "dashboard.png";
+					tmpEl.download= this.region+".png";
 					document.body.appendChild(tmpEl);
 					tmpEl.click();
 					document.body.removeChild(tmpEl);
@@ -165,12 +205,15 @@ export default {
 			}, 250);
 		},
 		refreshRender() {
-			this.$refs.map2.getMap().updateSize();
-			document.getElementById("dashboardPrintArea").removeAttribute("hidden");
-			
-			this.$refs.map3.getMap().updateSize();
-			//document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
-			
+			this.keys.forEach((key) => {
+				this.types.forEach((type) =>{
+					let tmpKey = key+type;
+					document.getElementById("dashboardPrintArea").removeAttribute("hidden");
+					this.$refs[tmpKey].getMap().updateSize();
+					document.getElementById("dashboardPrintArea").setAttribute("hidden", true);
+				});
+			});
+
 			this.diagramRefs.forEach((dg) => {
 				this.$refs[dg].resizeChart();
 			});
@@ -179,18 +222,80 @@ export default {
 			let polyId = this.$store.getters.selectedPolygon;
 			if (polyId == null)
 				return;
-				
+			
+			this.keys.forEach((key) => {
+				this.types.forEach((type) =>{
+					let tmpKey = key+type;
+					//cleaning up 
+					this.$refs[tmpKey].clearAllLayers();
+					
+					let bingIdDashboard = this.$refs[tmpKey].addBingLayerToMap("aerial",  true, 0);
+					this.$refs[tmpKey].setVisibility(bingIdDashboard, true);
+				});
+			});
+			this.printVectorLayer = {};
+
 			requests.fetchDashboard(polyId, this.$store.getters.product.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then( (response) => {
-				let keys = ["map2", "map3"];
+				
 				let clickedCoords = this.$store.getters.clickedCoordinates;
 				let iconProps = utils.markerProperties();
-				keys.forEach((key) => {
-					let vectorLayer = this.$refs[key].createGEOJSONLayerFromString(response.data.data);
-					this.$refs[key].setVisibility(vectorLayer, true);
-					this.$refs[key].fitToLayerExtent(vectorLayer);
-					let pointLayer = this.$refs[key].createEmptyVectorLayer();
-					this.$refs[key].addPointToLayer(pointLayer, 2, clickedCoords.coordinate[0], clickedCoords.coordinate[1],  {icon:	new Icon(iconProps)} );
-					this.$refs[key].setVisibility(pointLayer, true);
+				
+				let polyStyle = new Style({
+					fill:null,
+					stroke: new Stroke({
+						color:  "rgb(255,0,0)",
+						width: 2,
+					})
+				});
+				
+				this.keys.forEach((key) => {
+					this.types.forEach((type) =>{
+						let tmpKey = key+type;
+						//polygon
+						this.printVectorLayer[tmpKey]= this.$refs[tmpKey].createGEOJSONLayerFromString(response.data.data, this.vectorLayerZIndex);
+						this.$refs[tmpKey].setVisibility(this.printVectorLayer[tmpKey], true);
+						let vectorLayerObj = this.$refs[tmpKey].getLayerObject(this.printVectorLayer[tmpKey]);
+						vectorLayerObj.setStyle(polyStyle);
+						this.$refs[tmpKey].fitToLayerExtent(this.printVectorLayer[tmpKey]);
+						
+						let url = options.wmsURL;
+						let wmsInfo 	= this.$store.getters.productWMSLayer;
+
+						//wms product (raw or anomalies)
+						let product = this.$store.getters.product;
+						if (type == "anom") {
+							url 			= options.anomaliesWMSURL;
+							product		= this.$store.getters.productAnomaly;
+							wmsInfo 	= this.$store.getters.productAnomalyWMSLayer;
+						}
+						let selYear 	= wmsInfo.title.substring(0,4);
+						let selMonth = wmsInfo.title.substring(5,7);
+
+						let layerProps = {
+							url: url + product.name + "/" + selYear + "/"+selMonth,
+							projection: wmsInfo.projection,
+							wmsParams: {
+								LAYERS: wmsInfo.title,
+								WIDTH:256,
+								HEIGHT:256
+							},
+							serverType: "mapserver",
+							crossOrigin: "anonymous",
+							zIndex: this.productWMSLayerZIndex
+						};
+
+						//product raw/anomalies Data
+						let wmsLayerId = this.$refs[tmpKey].addCustomWMSLayerToMap(layerProps);
+
+						this.$refs[tmpKey].setVisibility(wmsLayerId, true);
+						this.$refs[tmpKey].cropWMSByGeoJSON(wmsLayerId, response.data.data);
+						
+						//pointlayer
+						let pointLayer = this.$refs[tmpKey].createEmptyVectorLayer(this.pointLayerZIndex);
+						this.$refs[tmpKey].addPointToLayer(pointLayer, 2, clickedCoords.coordinate[0], clickedCoords.coordinate[1],  {icon: new Icon(iconProps)} );
+						this.$refs[tmpKey].setVisibility(pointLayer, true);
+
+					});
 				});
 				this.region = response.data.data.properties.description;
 				this.strata = response.data.data.properties.strata;
@@ -226,7 +331,7 @@ export default {
 }
 
 .dashboardMap {
-	height:350px;
+	height:370px;
 	z-index: 10;
 	width:100%;
 }
@@ -301,6 +406,11 @@ export default {
 .modal-leave-to {
 	opacity: 0;
 }
+
+.dashboardPrintDiagram {
+	height:300px;
+}
+
 </style>
 
 
