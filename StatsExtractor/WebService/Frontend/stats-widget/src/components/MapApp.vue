@@ -197,7 +197,7 @@ export default {
 		updateStratificationLayerStyle() {
 			if  ( this.$store.getters.currentStratification == null || this.$store.getters.product == null || this.$store.getters.currentDate == null)
 				return;
-				
+			
 			//if no change, stop
 			if (this.stratificationViewProps.stratID == this.$store.getters.currentStratification.id && this.stratificationViewProps.date == this.$store.getters.currentDate && 
 			this.stratificationViewProps.productID == this.$store.getters.product.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode)
@@ -215,7 +215,9 @@ export default {
 			if (! (this.stratificationViewProps.productID in this.stratificationColorData[this.stratificationViewProps.stratID]))
 				this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.productID] = {};
 			
+			
 			if (!(this.stratificationViewProps.date in this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.productID])) {
+				this.$refs.map1.activateSpinner();
 				requests.fetchStratificationDataByProductAndDate(this.stratificationViewProps.date, this.stratificationViewProps.productID, this.stratificationViewProps.stratID).then((response)=>{
 					this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.productID][this.stratificationViewProps.date] = response.data.data;
 					this.setStratificationStyle(this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.productID][this.stratificationViewProps.date]);
@@ -231,34 +233,11 @@ export default {
 			let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
 			
-			tmpLayer.on("change", () => {
-				//console.log("prerendering!!!!")
-				//this.$refs.map1.activateSpinner();
-			});
 			
-			tmpLayer.on("postrender", () => {
-				//this.$refs.map1.deactivateSpinner();
-				//console.log("postrendering!!!");
-			});
-			console.log("setting style!!!!");
-			
-			//this.$refs.map1.activateSpinner();
-
-			tmpLayer.setStyle( (ft) => {
-				let id = ft.getId();
-				let style = this.stratificationViewProps.currentStyles[id];
-				if (style == null) {
-					let color = data[id];
-					if (color == null) {
-						this.stratificationViewProps.currentStyles[id] = null;
-						return null;
-					}
-					color = color[colorCol];
-					if (color == null) {
-						this.stratificationViewProps.currentStyles[id] = null;
-						return null;
-					}
-						
+			Object.keys(data).forEach((id) =>{
+				this.stratificationViewProps.currentStyles[id] = null;
+				let color = data[id][colorCol];
+				if (color != null) {
 					let joinedColor = color.join();
 					this.stratificationViewProps.currentStyles[id] = new Style({
 						fill: new Fill({
@@ -269,10 +248,11 @@ export default {
 							width: 1,
 						})
 					});
-					style = this.stratificationViewProps.currentStyles[id];
 				}
-	
-				return style;
+			});
+			
+			tmpLayer.setStyle( (ft) => {
+				return this.stratificationViewProps.currentStyles[ft.getId()];
 			});
 		},
 		updateStratificationLayerVisibility() {

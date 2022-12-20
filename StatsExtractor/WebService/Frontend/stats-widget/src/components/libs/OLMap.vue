@@ -117,12 +117,12 @@ export default {
 			this.map.on('loadstart', () =>{
 				this.activateSpinner();
 			});
-			this.map.on('loadend', () => {
+			this.map.on('rendercomplete', () => {
 				this.deactivateSpinner();
 			});
 		},
 		activateSpinner() {
-			this.map.getTargetElement().classList.add('spinner');
+			document.getElementById(this.id).classList.add('spinner');
 		},
 		addBingLayerToMap (style, setMaxZoom, zIndex = null) {
 			if (!this.bingKey) {console.error("A Bing Maps API key is required"); return;}
