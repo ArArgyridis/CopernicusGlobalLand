@@ -420,19 +420,14 @@ export default {
 					declutter: true,
 					source: this.layers[id].getSource(),
 					style: ( (ft) => {
-						//console.log(ft);
 						if (ft.getId() == this.selectedFeatureId) 
 							return this.highlightPolygonStyle;
-						
-						//return null;
 					})
 				});
 
 				this.hoverLayers[id] = {
-					hoverId: this.__addGenericLayer(tmpLayer,  this.layers[id].getZIndex()+1),
+					hoverId: this.__addGenericLayer(tmpLayer,  this.layers[id].getZIndex()+1), 
 					listener: ((e) => {
-						//console.log(e);
-						
 						this.layers[id].getFeatures(e.pixel).then((fts) => {
 							let emt = null;
 							if (!fts.length) {
@@ -443,7 +438,6 @@ export default {
 						
 								if (currentId != this.selectedFeatureId) {
 									this.selectedFeatureId = currentId;
-									//this.layers[this.hoverLayers[this.activeHighlightLayer].hoverId].changed();
 									emt = fts[0];
 								}
 							}

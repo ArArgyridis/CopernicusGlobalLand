@@ -67,6 +67,7 @@ export default{
 				},
 				clickedCoordinates(state, dt) {
 					state.stratifications.current.clickedCoordinates = dt;
+					console.log(state.stratifications);
 				},
 				setCategoryProducts(state, dt) {
 					state.categories.current.products = new ProductsProps();

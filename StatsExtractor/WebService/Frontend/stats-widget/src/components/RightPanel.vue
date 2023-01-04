@@ -15,12 +15,9 @@
 <div class="base">
 
 	<div class="container-fluid">
-	
 		<div class="row">
 			<div class="col text-end raise"><div class="btn" v-on:click="closePanel"><a>x</a></div></div>
 		</div>
-
-		
 		<nav class="navbar navbar-dark bg-secondary" >
 			<div class="container-fluid">
 				<a class="navbar-brand" href="#">Active Diagram: {{ navBarOptions[curActiveDiagramId].content }}</a>
@@ -50,7 +47,8 @@
 			<PolygonDensityTimeSeries v-show="curActiveDiagramId == 6 && navBarOptions[6].condition()" v-bind:ref="refs[6]"/>
 		</div>
 	</div>
-	<button class="btn btn-secondary mt-3" v-on:click="this.$emit('showDashboard')"> Show Region Dashboard</button>
+	<button class="btn btn-secondary mt-3 mx-3" v-on:click="this.$emit('showDashboard')" > Show Region Dashboard</button>
+	<button class="btn btn-secondary mt-3 mx-3" v-on:click="this.$emit('exportCurrentView')"> Export Curent View As Image</button>
 </div>
 </template>
 
@@ -92,27 +90,27 @@ export default {
 				{
 					id: 2,
 					content: "Polygon Raw Timeseries",
-					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.stratifiedOrRaw == 0;}
+					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
 				},
 				{
 					id: 3,
 					content: "Polygon Anomalies Timeseries",
-					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.stratifiedOrRaw == 0;}
+					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
 				},
 				{
 					id: 4,
 					content: "Product Density Distribution for Polygon",
-					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null && this.$store.getters.stratifiedOrRaw == 0;}
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;}
 				},
 				{
 					id: 5,
 					content: "Histogram Values for Polygon/Date",
-					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null&& this.$store.getters.stratifiedOrRaw == 0;}
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;}
 				},
 				{	
 					id: 6,
 					content: " Current Product Density Timeseries for Polygon",
-					condition: () => {return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null && this.$store.getters.stratifiedOrRaw == 0;}
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null ;}
 				}
 			],
 

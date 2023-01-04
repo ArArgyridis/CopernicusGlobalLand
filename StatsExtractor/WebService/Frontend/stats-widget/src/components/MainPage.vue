@@ -30,26 +30,35 @@
 			v-on:updateWMSLayer="updateWMSVisibility()"
 			/>
 		</div>
-		<div class="noPadding hidden">
-			<MapApp ref="mapApp" 
-			v-on:featureClicked="refreshStratificationInfo()"
-			v-on:mapCoordinate="updateRawDataChart($event)"
-			/>
+		<div class="noPadding">
+			<div id="mapView">
+				<MapApp ref="mapApp"
+					v-on:featureClicked="refreshStratificationInfo()"
+					v-on:mapCoordinate="updateRawDataChart($event)"
+				/>
+				<div class="d-flex logo relative"><img alt="Copernicus LMS" src="/assets/copernicus_land_monitoring.png"></div>
+			</div>
 			<div class="d-flex">
 				<div class="btn position-relative fixed-top raise transition d-inline offsetButton" id="menuButton">
 					<FontAwesomeIcon icon="bars"  size="3x" :style="{ color: '#eaeada' }" v-on:click="toggleLeft()"/>
 				</div>
 			</div>
-			<div class="d-flex logo relative"><img alt="Copernicus LMS" src="/assets/copernicus_land_monitoring.png"></div>
+			
 		</div>		
 		<div id="rightPanel" class="transition noPadding hiddenBar raise hidden sidenav rightnav">
-			<RightPanel ref="rightPanel" v-on:closeTimechartsPanel="closeRightPanel()" v-on:showDashboard="showDashboard()"/>
+			<RightPanel ref="rightPanel" 
+			v-on:closeTimechartsPanel="closeRightPanel()" 
+			v-on:exportCurrentView="exportCurrentView()"
+			v-on:showDashboard="showDashboard()"
+			
+			/>
 		</div>
 	</div>
 </div>
 </template>
 
 <script> 
+import html2canvas from 'html2canvas';
 import MapApp from "./MapApp.vue";
 import LeftPanel from "./LeftPanel.vue";
 import Dashboard from "./Dashboard.vue";
@@ -124,6 +133,16 @@ export default {
 			this.refreshStratificationInfo();
 			this.$refs.mapApp.clearPolygonSelection();
 		},
+		exportCurrentView() {
+			html2canvas(document.getElementById("mapView"), {width: this.$refs.mapApp.$el.clientWidth, height: this.$refs.mapApp.$el.clientHeight} ).then(canvas => {
+				let tmpEl = document.createElement('a');
+				tmpEl.href= canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+				tmpEl.download= "current_view.png";
+				document.body.appendChild(tmpEl);
+				tmpEl.click();
+				document.body.removeChild(tmpEl);
+			});
+		},
 		getCategoryProducts() {
 			if (this.$store.getters.products == null)
 				this.getProductInfo();
@@ -144,7 +163,6 @@ export default {
 		resetProducts() {
 			this.setRightPanelVisibility(false);
 			this.$refs.mapApp.clearWMSLayers();
-			//this.$refs.rightPanel.resetAllCharts();
 			this.$store.commit("clearProducts");
 			this.getProductInfo();
 			if (!this.activateClickOnMap) {
@@ -167,16 +185,16 @@ export default {
 		statisticsViewModeUpdate() {
 			let statsViewMode =  this.$store.getters.productStatisticsViewMode;
 			let stratifiedOrRaw = this.$store.getters.stratifiedOrRaw;
-			this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, this.$store.getters.stratifiedOrRaw == 0);
+			//this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, this.$store.getters.stratifiedOrRaw == 0);
 			this.updateStratificationLayerStyle();
 			this.setCurrentLayersVisibilityByViewMode();
 			this.$refs.mapApp.setLayerVisibility( this.$store.getters.productWMSLayer.layerId,   stratifiedOrRaw == 1 && statsViewMode == 0);
 			this.$refs.mapApp.setLayerVisibility( this.$store.getters.productAnomalyWMSLayer.layerId, stratifiedOrRaw == 1 && statsViewMode== 1);
 		},
 		setCurrentLayersVisibilityByViewMode() {
-
+			
 			if (this.$store.getters.currentStratification != null)
-				this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, this.$store.getters.stratifiedOrRaw == 0);
+				this.updateStratificationLayerStyle();
 		
 			if (this.currentWMSLayer != null) 
 				this.$refs.mapApp.setLayerVisibility(this.currentWMSLayer.layerId, this.$store.getters.stratifiedOrRaw == 1);
@@ -218,6 +236,7 @@ export default {
 		updateStratificationLayerVisibility() {
 			this.setRightPanelVisibility(false);
 			this.$refs.mapApp.updateStratificationLayerVisibility();
+			this.$refs.mapApp.moveMarker(null);
 			this.updateStratificationLayerStyle();
 		},
 		updateAll() {

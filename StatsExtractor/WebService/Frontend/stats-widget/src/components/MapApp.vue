@@ -37,8 +37,8 @@ export default {
 			initCmp: true,
 			projectEPSG: "EPSG:3857",
 			productZIndex: 1,
-			stratificationZIndex: 2,
-			anomaliesZIndex: 3,
+			stratificationZIndex: 3,
+			anomaliesZIndex: 2,
 			markerZIndex: 4,
 			stratificationColorData: {},
 			stratificationViewProps: {
@@ -46,7 +46,15 @@ export default {
 				productID: null,
 				date: null,
 				statisticsViewMode: null,
-				currentStyles:{}
+				stratifiedOrRaw: null,
+				currentStyles:{},
+				styleWMS: new Style({
+					fill: new Fill({color: "rgb(54, 102, 142, 0.0)"}),
+					stroke: new Stroke({
+						color:  "rgb(54, 102, 142, 0.6)",
+						width: 1.5,
+					})
+				})
 			}
 		}
 	},	
@@ -107,6 +115,11 @@ export default {
 		moveMarker(evt) {
 			if(this.clickedPointLayerId == null)
 				this.clickedPointLayerId = this.$refs.map1.createEmptyVectorLayer(this.markerZIndex);
+			
+			if (evt ==null) {
+				this.$refs.map1.clearVectorLayer(this.clickedPointLayerId);
+				return;
+			}
 			
 			this.$refs.map1.setVisibility(this.clickedPointLayerId, true);
 			this.$refs.map1.clearVectorLayer(this.clickedPointLayerId);
@@ -200,14 +213,23 @@ export default {
 			
 			//if no change, stop
 			if (this.stratificationViewProps.stratID == this.$store.getters.currentStratification.id && this.stratificationViewProps.date == this.$store.getters.currentDate && 
-			this.stratificationViewProps.productID == this.$store.getters.product.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode)
+			this.stratificationViewProps.productID == this.$store.getters.product.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw)
 				return;
 			
-			this.stratificationViewProps.stratID = this.$store.getters.currentStratification.id;
-			this.stratificationViewProps.date = this.$store.getters.currentDate;
-			this.stratificationViewProps.productID = this.$store.getters.product.id;
+			this.stratificationViewProps.stratID 			= this.$store.getters.currentStratification.id;
+			this.stratificationViewProps.date 				= this.$store.getters.currentDate;
+			this.stratificationViewProps.productID 			= this.$store.getters.product.id;
+			this.stratificationViewProps.stratifiedOrRaw 	= this.$store.getters.stratifiedOrRaw;
+			
+
 			if (this.$store.getters.productStatisticsViewMode == 1) //seeing anomalies
 				this.stratificationViewProps.productID = this.$store.getters.productAnomaly.id;
+				
+			if (this.stratificationViewProps.stratifiedOrRaw == 1) {
+				let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
+				tmpLayer.setStyle(this.stratificationViewProps.styleWMS);
+				return;
+			}
 				
 			if (! (this.stratificationViewProps.stratID in this.stratificationColorData))
 				this.stratificationColorData[this.stratificationViewProps.stratID] = {};
@@ -245,7 +267,7 @@ export default {
 						}),
 						stroke: new Stroke({
 							color:  "rgba(" + joinedColor + ",1.0)",
-							width: 1,
+							width: 1.2,
 						})
 					});
 				}
@@ -279,4 +301,12 @@ export default {
 	height: 100vh;
 	position: absolute;
 }
+
+	.logo {
+		justify-content:end;
+		position: fixed;
+		bottom: 0px;
+		right: 0px;
+		height:8%;
+	}
 </style>
