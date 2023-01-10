@@ -15,11 +15,11 @@
 <div class="base">
 	<div> <!--class="border border-4 rounded"-->
 		<div class="row position-relative">
-			<div class="position-absolute"><h4>Copernicus Global Land Monitoring Service Categories</h4></div>
+			<div class="position-absolute mt-2"><h5>Copernicus Global Land Monitoring Service Product Categories</h5></div>
 			<div class="text-end raise" ><div class="btn" v-on:click="closeLeftPanel"><a>x</a></div></div>
 		</div>
 
-		<div class="row nav nav-tabs mb-3">
+		<div class="row nav nav-tabs mt-2 mb-3">
 			<button v-for="nav in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActiveCategory(nav)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
 		</div>
 		
@@ -27,13 +27,13 @@
 			<div class="col d-flex justify-content-end my-auto">Current Product: </div>
 			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{productDescription}}</button>
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setProduct(key)"><a class="dropdown-item">{{product.description}}</a></li></ul></div>
+					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setProduct(product)"><a class="dropdown-item">{{product.description}}</a></li></ul></div>
 		</div>
 
 		<div>
 			<div class="m-3 border border-2 rounded">
 				<div class="container mt-3">
-					<h4>Analysis Date Range</h4>
+					<h5>Analysis Date Range</h5>
 					<div class="row">
 						<div class ="col text-end my-auto">Starting Date:</div>
 						<div class ="col text-start"><Datepicker v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
@@ -48,7 +48,7 @@
 			</div>
 		</div>
 		<div class = "container mt-3 ml-3 mr-3" v-if="product != null">
-			<h4>View Options</h4>
+			<h5>View Options</h5>
 			
 			<div class="row nav nav-tabs">
 				<button v-for="nav, idx in stratifiedOrRawViewModes" v-bind:key="idx" class="col-sm nav-link text-muted text-center" v-bind:class="{active: stratifiedOrRaw == idx}" v-on:click="stratifiedOrRaw=idx" v-bind:id="'stratifiedOrRawViewModes_'+idx">{{nav}}</button>

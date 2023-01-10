@@ -75,7 +75,7 @@ export default{
 						return;
 				
 					dt.forEach(prod => {
-						new initProduct(prod);
+						initProduct(prod);
 					});
 			
 					state.categories.current.products.info = dt;
@@ -91,8 +91,8 @@ export default{
 							state.categories.current = state.categories.info[i];
 					}
 				},
-				setProduct(state, dt) {			
-					new initProduct(dt);
+				setProduct(state, dt) {	
+					initProduct(dt);
 					state.categories.current.products.current = dt;
 				},
 				setProductAnomaly(state, dt) {
@@ -257,6 +257,14 @@ export default{
 					return state.categories.current.products.current.properties.anomalies.current.layers.current;
 				}
 				catch{
+					return null;
+				}
+			},
+			products: (state) => {
+				try{
+					return state.categories.current.products.info;
+				}
+				catch {
 					return null;
 				}
 			},
