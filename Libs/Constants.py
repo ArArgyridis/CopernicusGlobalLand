@@ -15,8 +15,27 @@ import copy
 import copyreg, re, types
 from Libs.ConfigurationParser import ConfigurationParser
 
-class ProductInfo:
+class SubProductInfo:
     def __init__(self, row):
+        self.id = row[0]
+        self.variable = row[2]
+        self.style = row[3]
+        self.description = row[4]
+        self.valueRange = {
+            "low": row[5],
+            "mid": row[6],
+            "high": row[7]
+        }
+        self.novalColorRamp = row[8]
+        self.sparsevalColorRamp = row[9]
+        self.midvalColorRamp = row[10]
+        self.highvalColorRamp = row[11]
+        self.minValue = row[12]
+        self.maxValue = row[13]
+
+
+class ProductInfo:
+    def __init__(self, row, cfg):
         self.productNames = row[0]
         self.productType = row[1]
         self.id = row[2]
@@ -24,6 +43,15 @@ class ProductInfo:
         self.types = eval(row[4])
         self._dateptr = row[5]
         self.variable = row[6]
+        self.subProducts = []
+        if self.variable == "SUBPRODUCT":
+            query = "SELECT * FROM public.subproduct_file_info WHERE product_file_description_id = {0}".format(self.id)
+
+            res = cfg.pgConnections[cfg.statsInfo.connectionId].getIteratableResult(query)
+
+            for tmpRow in res:
+                self.subProducts.append(SubProductInfo(tmpRow))
+
         self.style = row[7]
         self.valueRange = {
             "low": row[9],
@@ -55,13 +83,13 @@ class Constants:
             SELECT p.name, p.type, pfd.*
             FROM {0}.product p 
             LEFT JOIN {0}.product_file_description pfd on p.id = pfd.product_id 
-            WHERE p.id IN(1,4) ORDER BY p.id -- (pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif') AND """.format(_cfg.statsInfo.schema)
+            WHERE p.id IN(11) ORDER BY p.id -- (pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif') AND """.format(_cfg.statsInfo.schema)
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
 
             if res != 1:
                 for row in res:
                     key = copy.deepcopy(row[2])
-                    Constants.PRODUCT_INFO[row[2]] = ProductInfo(row)
+                    Constants.PRODUCT_INFO[row[2]] = ProductInfo(row, _cfg)
             res = None
 
         except:

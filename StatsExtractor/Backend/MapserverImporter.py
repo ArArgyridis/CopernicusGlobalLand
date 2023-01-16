@@ -49,54 +49,76 @@ def applyColorTable(dstImg, style):
     outDt.GetRasterBand(1).SetRasterColorTable(colors)
     outDt = None
 
+def writeData(dstImg, subDataset, scaler, minValue, maxValue):
+    if not os.path.isfile(dstImg):
+        tmpDt = gdal.Open(subDataset)
+        os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
+
+        outDrv = gdal.GetDriverByName("GTiff")
+
+        outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
+                              options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
+        outDt.SetProjection(tmpDt.GetProjection())
+        outDt.SetGeoTransform(tmpDt.GetGeoTransform())
+        outBnd = outDt.GetRasterBand(1)
+        origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
+
+        try:
+            for row in range(tmpDt.RasterXSize):
+                rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
+                fixedDt = scaler(rowDt, minValue, maxValue,
+                                 origNoDataValue, 255, 0, 250)
+
+                outBnd.WriteArray(fixedDt, row, 0)
+
+            outBnd.SetNoDataValue(255)
+            # outBnd = None
+            outDt.FlushCache()
+            outDt = None
+        except:
+            print("issue for image: ", dstImg)
+
+
+
+
 def processSingleImage(params, relImagePath):
 
     image = os.path.join(params["dataPath"],relImagePath[0])
     print("processing: ", image)
-    dstImg = None
+    if params["productInfo"].productType == "raw":
+        scaler = None
+        dstImg = None
+
+
     if params["productInfo"].productType == "raw":
         if image.endswith(".nc"):
-            subDataset = netCDFSubDataset(image, params["productInfo"].variable)
-
-            dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
+            if params["productInfo"].variable != "SUBPRODUCT":
+                subDataset = netCDFSubDataset(image, params["productInfo"].variable)
+                dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
                                                              relImagePath[1].strftime("%Y"),
                                                              relImagePath[1].strftime("%m"),
                                                              os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
-            #dstImg = os.path.join(params["mapserverPath"], *["raw", relImagePath[0].split(".")[0]+".tif"])
-
-            if not os.path.isfile(dstImg):
-                tmpDt = gdal.Open(subDataset)
-                os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
-
-                print("Processing:", image)
-                outDrv = gdal.GetDriverByName("GTiff")
-                outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
-                                  options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
-                outDt.SetProjection(tmpDt.GetProjection())
-                outDt.SetGeoTransform(tmpDt.GetGeoTransform())
-                outBnd = outDt.GetRasterBand(1)
-                origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
-
-                scaler = None
                 if params["productInfo"].minValue >= 0 and params["productInfo"].maxValue <= 255:
                     scaler = plainScaller
                 else:
                     scaler = linearScaller
 
-                try:
-                    for row in range(tmpDt.RasterXSize):
-                        rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
-                        fixedDt = scaler(rowDt, params["productInfo"].minValue, params["productInfo"].maxValue,
-                                       origNoDataValue, 255, 0, 250)
+                writeData(dstImg, subDataset, scaler, params["productInfo"].minValue, params["productInfo"].maxValue)
+            else:
+                for subProduct in params["productInfo"].subProducts:
+                    subDataset = netCDFSubDataset(image, subProduct.variable)
+                    dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
+                                                                     relImagePath[1].strftime("%Y"),
+                                                                     relImagePath[1].strftime("%m"),
+                                                                     subProduct.variable,
+                                                                     os.path.split(relImagePath[0])[-1].split(".")[0]
+                                                                     + ".tif"])
+                    if subProduct.minValue >= 0 and subProduct.maxValue <= 255:
+                        scaler = plainScaller
+                    else:
+                        scaler = linearScaller
 
-                        outBnd.WriteArray(fixedDt, row, 0)
-
-                    outBnd.SetNoDataValue(255)
-                    #outBnd = None
-                    outDt.FlushCache()
-                    outDt = None
-                except:
-                    print("issue for image: ", dstImg)
+                    writeData(dstImg, subDataset, scaler, subProduct.minValue, subProduct.maxValue, style)
         else:
             return
 
@@ -109,7 +131,11 @@ def processSingleImage(params, relImagePath):
         return
 
     if params["productInfo"].style is not None:
-        applyColorTable(dstImg, params["productInfo"].style)
+        applyColorTable(dstImg, 1, params["productInfo"].style)
+
+
+
+
 
     #print(dstImg)
     dstOverviews = dstImg + ".ovr"
@@ -149,6 +175,12 @@ class MapserverImporter(object):
         rootPath = self._config.filesystem.imageryPath
         if Constants.PRODUCT_INFO[productId].productType == "anomaly":
             rootPath = self._config.filesystem.anomalyProductsPath
+
+        self._layerInfo.append(processSingleImage({"dataPath": rootPath,
+                                                   "mapserverPath": self._config.filesystem.mapserverPath,
+                                                   "productInfo": Constants.PRODUCT_INFO[productId]
+                                                   }, productFiles.fetchone()))
+
         """
         for row in productFiles:
             
@@ -157,16 +189,18 @@ class MapserverImporter(object):
                                  "productInfo":Constants.PRODUCT_INFO[productId]
                                 }, row))
             print("ok")
+        """
 
         """
         threads = executor.map(processSingleImage, [{ "dataPath":rootPath,
                                                      "mapserverPath": self._config.filesystem.mapserverPath,
                                                      "productInfo":Constants.PRODUCT_INFO[productId]
                                                      }]*productFiles.rowcount, productFiles)
-
+        
         for result in threads:
             if result is not None:
                 self._layerInfo.append(result)
+        """
 
 
 
