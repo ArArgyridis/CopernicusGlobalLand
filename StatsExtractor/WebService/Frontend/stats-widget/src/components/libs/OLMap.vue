@@ -45,6 +45,7 @@ import {defaults as defaultControls} from 'ol/control';
 //import { inflateCoordinatesArray } from "ol/geom/flat/inflate"
 import {Fill, Circle, Stroke, Style, Text} from 'ol/style';
 import DoubleClickZoom from "ol/interaction/DoubleClickZoom";
+import {transformExtent} from "ol/proj";
 
 export default {
 	name: 'OLMap',
@@ -362,8 +363,16 @@ export default {
 				try {
 					let capabilities = parser.read(response.data);
 					capabilities.Capability.Layer.Layer.forEach( (layer) => {
-						let layerId = this.addCustomWMSLayerToMap({
+					let tmpExtent = layer.BoundingBox[0].extent;
+					if (layer.BoundingBox[0].crs == "EPSG:4326")
+						tmpExtent = [tmpExtent[1], tmpExtent[0], tmpExtent[3], tmpExtent[2]];
+					
+					if (layer.BoundingBox[0].crs != this.epsg) {
+						tmpExtent = transformExtent(tmpExtent, layer.BoundingBox[0].crs, this.epsg);
+					}
+					let layerId = this.addCustomWMSLayerToMap({
 							url: url,
+							extent: tmpExtent,
 							projection: layer.CRS[0],
 							wmsParams: {
 								LAYERS: layer.Title,

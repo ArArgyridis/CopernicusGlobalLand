@@ -165,7 +165,6 @@ class MapserverImporter(object):
                                 }, row)
             print("ok")
         """
-        print("hereeeee")
         threads = executor.map(processSingleImage, [{
             "dataPath":rootPath,
             "mapserverPath": self._config.filesystem.mapserverPath,
