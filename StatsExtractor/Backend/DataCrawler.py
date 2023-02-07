@@ -66,6 +66,7 @@ class DataCrawler:
         self._outLog = None
 
     def fetchOrValidateAgainstVITO(self, dir, storageDir):
+        self._sshCn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         if self.sock is None:
             self._sshCn.connect(self._cn.sftpParams["terrascope.be"].host, self._cn.sftpParams["terrascope.be"].port,
                             self._cn.sftpParams["terrascope.be"].userName, self._cn.sftpParams["terrascope.be"].password)
@@ -114,7 +115,7 @@ class DataCrawler:
                 checkQuery = """SELECT EXISTS (
                         SELECT *
                         FROM product_file pf 
-                        JOIN product_file_description pfd ON pf.product_description_id = pfd.id
+                        JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                         JOIN product p ON p.id = pfd.product_id 
                         WHERE pf.rel_file_path LIKE '%{0}'
                         AND  '{1}' = ANY(p."name"));""".format(chk, detectedProductName)
@@ -146,9 +147,18 @@ class DataCrawler:
 
 
     def _store(self, dbData):
-        query = """INSERT INTO product_file(product_description_id, rel_file_path, date) VALUES {0} 
-                ON CONFLICT(product_description_id, rel_file_path) DO NOTHING; """
-        self._cn.pgConnections[self._cn.statsInfo.connectionId].executeQueries([query.format(",".join(dbData)), ])
+        query = """
+            WITH tmp_data(product_file_description_id, rel_file_path, date) AS (
+            VALUES {0}
+            )
+                    
+            INSERT INTO product_file(product_file_description_id, rel_file_path, date) 
+                SELECT product_file_description_id, max(rel_file_path), date::timestamp without time zone
+                FROM tmp_data
+                GROUP BY product_file_description_id,date 
+            
+                ON CONFLICT(product_file_description_id, "date") DO NOTHING;"""
+        self._cn.pgConnections[self._cn.statsInfo.connectionId].executeQueries([query.format(",\n".join(dbData)), ])
 
     def importProductFromLocalStorage(self, storageDir):
 

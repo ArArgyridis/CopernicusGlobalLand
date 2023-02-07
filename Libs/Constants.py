@@ -15,24 +15,26 @@ import copy
 import copyreg, re, types
 from Libs.ConfigurationParser import ConfigurationParser
 
-class SubProductInfo:
+class ProductVariable:
     def __init__(self, row):
-        self.id = row[0]
-        self.variable = row[2]
-        self.style = row[3]
-        self.description = row[4]
+        self.id = row["id"]
+        self.variable = row["variable"]
+        self.style = row["style"]
+        self.description = row["description"]
         self.valueRange = {
-            "low": row[5],
-            "mid": row[6],
-            "high": row[7]
+            "low": row["low_value"],
+            "mid": row["mid_value"],
+            "high": row["high_value"]
         }
-        self.novalColorRamp = row[8]
-        self.sparsevalColorRamp = row[9]
-        self.midvalColorRamp = row[10]
-        self.highvalColorRamp = row[11]
-        self.minValue = row[12]
-        self.maxValue = row[13]
-
+        self.novalColorRamp = row["noval_colors"]
+        self.sparsevalColorRamp = row["sparseval_colors"]
+        self.midvalColorRamp = row["midval_colors"]
+        self.highvalColorRamp = row["highval_colors"]
+        self.minProdValue = row["min_prod_value"]
+        self.maxProdValue = row["max_prod_value"]
+        self.histogramBins = row["histogram_bins"]
+        self.minValue = row["min_value"]
+        self.maxValue = row["max_value"]
 
 class ProductInfo:
     def __init__(self, row, cfg):
@@ -42,29 +44,13 @@ class ProductInfo:
         self.pattern = row[3]
         self.types = eval(row[4])
         self._dateptr = row[5]
-        self.variable = row[6]
-        self.subProducts = []
-        if self.variable == "SUBPRODUCT":
-            query = "SELECT * FROM public.subproduct_file_info WHERE product_file_description_id = {0}".format(self.id)
+        self.fileNameCreationPattern = row[6]
+        self.variables = {}
+        if isinstance(row[7], list):
+            for ptrn in row[7]:
+                self.variables[ptrn["variable"] ] = ProductVariable(ptrn)
 
-            res = cfg.pgConnections[cfg.statsInfo.connectionId].getIteratableResult(query)
 
-            for tmpRow in res:
-                self.subProducts.append(SubProductInfo(tmpRow))
-
-        self.style = row[7]
-        self.valueRange = {
-            "low": row[9],
-            "mid": row[10],
-            "high": row[11]
-        }
-        self.novalColorRamp = row[12]
-        self.sparsevalColorRamp = row[13]
-        self.midvalColorRamp = row[14]
-        self.highvalColorRamp = row[15]
-        self.minValue = row[16]
-        self.maxValue = row[17]
-        self.fileNameCreationPattern = row[19]
 
     def createDate(self, ptr):
         return self._dateptr.format(*ptr)
@@ -79,11 +65,19 @@ class Constants:
         try:
             _cfg = ConfigurationParser(cfg)
             _cfg.parse()
-            query = """
-            SELECT p.name, p.type, pfd.*
-            FROM {0}.product p 
-            LEFT JOIN {0}.product_file_description pfd on p.id = pfd.product_id 
-            WHERE p.id IN(11) ORDER BY p.id -- (pfd.pattern LIKE '%.nc' OR pfd.pattern LIKE '%.tif') AND """.format(_cfg.statsInfo.schema)
+            query = """WITH product_variables as not MATERIALIZED(
+                SELECT pfv.product_file_description_id , array_to_json(ARRAY_AGG(row_to_json(pfv.*))) product_variables
+	            FROM product_file_variable pfv 
+	            GROUP BY pfv.product_file_description_id 
+            )
+            SELECT p.name, p.type, pfd.id, pfd.pattern, pfd."types", pfd.create_date, pfd.file_name_creation_pattern, 
+            pv.product_variables
+            FROM product p 
+            LEFT JOIN product_file_description pfd on p.id = pfd.product_id 
+            LEFT JOIN product_variables pv on pv.product_file_description_id = pfd.id
+            WHERE pattern is not NULL
+            ORDER BY p.id""".format(_cfg.statsInfo.schema)
+
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
 
             if res != 1:

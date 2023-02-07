@@ -36,15 +36,16 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Reset() {
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
-                                                                     OGREnvelope &envlp, JsonDocumentPtr images,
-                                                                     JsonDocumentPtr polyIds, size_t &polySRID) {
+                                                                     const ProductVariable::Pointer variable, OGREnvelope &envlp,
+                                                                     JsonValue &images, JsonDocumentSharedPtr polyIds, size_t &polySRID) {
     this->config        = config;
     this->product       = product;
+    this->variable      = variable;
     this->polySRID      = polySRID;
 
     //setting the reference image as input
     typename RawDataImageReaderType::Pointer reader = RawDataImageReaderType::New();
-    reader->SetFileName(this->product->firstProductPath.string().c_str());
+    reader->SetFileName(this->variable->firstProductPath->string().c_str());
     reader->UpdateOutputInformation();
     this->SetNthInput(0, reader->GetOutput());
 
@@ -60,41 +61,48 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     cn->executeQuery(query);
 
-    query = "SELECT id, poly_id, product_file_id,"
-            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,"
-            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,"
-            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,"
-            " CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,"
-            " mean"
-            " FROM poly_stats ps WHERE noval_color IS NULL;";
+    query = R""""(SELECT id, poly_id, product_file_id, product_file_variable_id,
+             CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,
+             CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,
+             CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,
+            CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,
+             mean
+             FROM poly_stats ps WHERE noval_color IS NULL;)"""";
 
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
     std::stringstream data;
 
     for (auto row: res) {
-        data <<"(" << row[0] <<"," << row[1] <<"," << row[2] <<",";
-        for (size_t i = 0; i< product->colorInterpolation.size(); i++) {
-            RGBVal color = product->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
+        data <<"(" << row[0] <<",";
+        for (size_t i = 0; i< variable->colorInterpolation.size(); i++) {
+            RGBVal color = variable->colorInterpolation[i].interpolateColor(row[i+4].as<long double>());
             data << "'" << rgbToArrayString(color) << "',";
         }
 
-        if (row[7].is_null()) {
+        if (row[8].is_null()) {
             data <<"null),";
             continue;
         }
 
-        float dt =row[7].as<float>();
-        RGBVal meanColor = product->styleColors[product->reverseValue(dt)];
+        float dt =row[8].as<float>();
+        RGBVal meanColor = variable->styleColors[variable->reverseValue(dt)];
         //std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
         data <<"'" << rgbToArrayString(meanColor) <<"'),";
 
     }
 
+
     if (data.tellp() == 0)
         return;
 
-    query = "INSERT INTO poly_stats(id, poly_id, product_file_id, noval_color, sparseval_color, midval_color, highval_color, meanval_color) VALUES " + stringstreamToString(data)
-            + "ON CONFLICT (id) DO UPDATE SET noval_color=EXCLUDED.noval_color, sparseval_color=EXCLUDED.sparseval_color, midval_color = EXCLUDED.midval_color, highval_color = EXCLUDED.highval_color, meanval_color = EXCLUDED.meanval_color; ";
+    std::cout <<"Updating colors....\n";
+
+    query = "WITH tmp (id, noval_color, sparseval_color, midval_color, highval_color, meanval_color) AS (VALUES " + stringstreamToString(data)+ ")"
+    "UPDATE poly_stats SET noval_color = tmp.noval_color, sparseval_color=tmp.sparseval_color, midval_color=tmp.midval_color, highval_color=tmp.highval_color"
+    ", meanval_color = tmp.meanval_color "
+    "FROM tmp "
+    "WHERE poly_stats.id = tmp.id";
+
     cn->executeQuery(query);
 }
 
@@ -207,7 +215,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
         roi->SetSizeY(outputRegionForThread.GetSize()[1]);
 
         typename StreamedStatisticsType::Pointer stats = StreamedStatisticsType::New();
-        stats->SetInputProduct(product);
+        stats->SetInputProduct(product, variable);
         stats->SetConfig(config);
         stats->SetInputLabels(regionData.labels);
         stats->SetInputLabelImage(regionData.labelImage);
@@ -317,11 +325,11 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::alignAOIToImage(OGREn
 }
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonDocumentPtr &images) {
-    for (auto & image:images->GetArray()) {
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonValue &images) {
+    for (auto &image:images.GetArray()) {
         size_t imageId = image.GetArray()[1].GetInt64();
         boost::filesystem::path relPath = image.GetArray()[0].GetString();
-        productImages.insert(std::pair<size_t, std::string>(imageId,product->productAbsPath(relPath).string()));
+        productImages.insert(std::pair<size_t, std::string>(imageId,variable->productAbsPath(relPath).string()));
         imageIdsStr += std::to_string(imageId)+",";
     }
     imageIdsStr = imageIdsStr.substr(0, imageIdsStr.length()-1);
@@ -329,7 +337,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(Json
 
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImages(JsonDocumentPtr &polyIds, JsonDocumentPtr &images) {
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImages(JsonDocumentSharedPtr &polyIds, JsonValue &images) {
 
     labels = std::make_shared<std::vector<size_t>>(polyIds->GetArray().Size());
     size_t i = 0;

@@ -13,6 +13,7 @@
 */
 
 #include <iostream>
+#include <libxml/xpathInternals.h>
 #include <sstream>
 
 #include "Utils.hxx"
@@ -114,4 +115,32 @@ std::string stringstreamToString(std::stringstream &stream) {
         stream << ' ';
         return stream.str();
 }
+
+std::vector<RGBVal> styleColorParser(std::string &style) {
+    std::vector<RGBVal> styleColors;
+
+    XmlDocPtr doc = XmlDocPtr(xmlReadMemory(style.c_str(), style.size(), "tmp.xml", nullptr, 0), xmlFreeDoc);
+
+    XmlXPathContextPtr ctx = XmlXPathContextPtr(xmlXPathNewContext(doc.get()), xmlXPathFreeContext);
+    xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>(""), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
+    xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("sld"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
+    xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("gml"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/gml"));
+
+    XmlXpathObjectPtr res = XmlXpathObjectPtr(xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>("//sld:ColorMapEntry"), ctx.get()), xmlXPathFreeObject);
+    if (res != nullptr) {
+
+        styleColors.resize(res->nodesetval->nodeNr);
+        styleColors.reserve(res->nodesetval->nodeNr);
+
+        for (size_t i = 0; i < res->nodesetval->nodeNr; i++) {
+            if(res->nodesetval->nodeTab[i]->type == XML_ELEMENT_NODE) {
+                xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
+                std::string color(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))));
+                sscanf(color.c_str(), "#%2hx%2hx%2hx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
+            }
+        }
+    }
+    return styleColors;
+}
+
 

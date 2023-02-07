@@ -1,6 +1,6 @@
 
  <template>
- <div class="container">
+ <div class="container" v-if="settings != null">
 	<div class="row">
 		<div class="col-1 empty"></div>
 		<div class="col d-inline-flex justify-content-center"><span>{{settings.title}}</span></div>
@@ -70,9 +70,11 @@
 	methods:{
 		__computeAnomalyLegend() {
 			let settings = new __legendSettings();
-			let anomaly = this.$store.getters.productAnomaly;
+			let anomaly = this.$store.getters.currentAnomaly;
+			if (anomaly == null)
+				return;
 			settings.title = "Value Range for Anomaly Algorithm: " + anomaly.description;
-			let ret = this.__computeLegendValuesAndStyle(anomaly.value_ranges, anomaly.style);
+			let ret = this.__computeLegendValuesAndStyle(anomaly.valueRanges, anomaly.style);
 			settings.values = ret.values;
 			settings.values[0] += " (-)";
 			settings.values[1] += " (Stable)";
@@ -84,9 +86,9 @@
 		__computeDensityLegend() {
 			let id = this.density.id;
 			let settings = new __legendSettings();
-			settings.title = "Density Legend (Total Area (%) having values in range [" + this.product.properties.raw.valueRanges[id].toFixed(2).toString() + "," + this.product.properties.raw.valueRanges[id+1].toFixed(2).toString()  + "))";
-			Object.keys(this.product[this.paletteCol]).forEach( (key) => {
-				let rgb = this.product[this.paletteCol][key];
+			settings.title = "Density Legend (Total Area (%) having values in range [" + this.product.currentVariable.valueRanges[id].toFixed(2).toString() + "," + this.product.currentVariable.valueRanges[id+1].toFixed(2).toString()  + "))";
+			Object.keys(this.product.currentVariable[this.paletteCol]).forEach( (key) => {
+				let rgb = this.product.currentVariable[this.paletteCol][key];
 				let hexColor = "#"+ utils.rgbToHex(rgb[0], rgb[1], rgb[2]);
 				settings.style += hexColor +" " + key +"%, "
 			});
@@ -96,7 +98,9 @@
 		__computeRawLegend() {
 			let settings = new __legendSettings();
 			settings.title = "Value Range for Product: " + this.product.description;
-			let tmp = this.__computeLegendValuesAndStyle(this.product.properties.raw.valueRanges, this.product.properties.style);
+			if (this.product.variables.length > 1)
+				settings.title += " (Variable: " + this.product.currentVariable.variable + ")";
+			let tmp = this.__computeLegendValuesAndStyle(this.product.currentVariable.valueRanges, this.product.currentVariable.style);
 			settings.values = tmp.values;
 			settings.style = tmp.style;
 			return settings;

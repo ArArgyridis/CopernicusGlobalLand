@@ -19,7 +19,7 @@
 
 ColorInterpolation::ColorInterpolation() {}
 
-ColorInterpolation::ColorInterpolation(rapidjson::Document &palette) {
+ColorInterpolation::ColorInterpolation(rapidjson::Value &palette) {
     //getting all values
 
     for (auto it = palette.MemberBegin(); it != palette.MemberEnd(); it++) {

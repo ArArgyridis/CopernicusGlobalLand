@@ -20,7 +20,6 @@
 				<div class="modal-body">
 					<div class="container mt-2" v-if="product != null">
 						<div class="row">
-							
 							<div class="col-sm border border-secondary">
 								<OLMap id="map2raw" v-bind:center="[0,0]" v-bind:zoom=2 v-bind:bingKey=bingKey epsg="EPSG:3857" ref="map2raw" class="dashboardMap" />
 								<Legend class="mt-3" ref="legend" mode="Raw"/>
@@ -261,25 +260,18 @@ export default {
 						let vectorLayerObj = this.$refs[tmpKey].getLayerObject(this.printVectorLayer[tmpKey]);
 						vectorLayerObj.setStyle(polyStyle);
 						this.$refs[tmpKey].fitToLayerExtent(this.printVectorLayer[tmpKey]);
-						
-						let url = options.wmsURL;
-						let wmsInfo 	= this.$store.getters.productWMSLayer;
 
 						//wms product (raw or anomalies)
 						let product = this.$store.getters.product;
-						if (type == "anom") {
-							url 			= options.anomaliesWMSURL;
-							product		= this.$store.getters.productAnomaly;
-							wmsInfo 	= this.$store.getters.productAnomalyWMSLayer;
-						}
-						let selYear 	= wmsInfo.title.substring(0,4);
-						let selMonth = wmsInfo.title.substring(5,7);
+						let variable = product.currentVariable;
+						if (type == "anom") 						
+							variable		= this.$store.getters.currentAnomaly;
 
 						let layerProps = {
-							url: url + product.name + "/" + selYear + "/"+selMonth,
-							projection: wmsInfo.projection,
+							url: variable.wms.current.url,
+							projection: variable.wms.current.projection,
 							wmsParams: {
-								LAYERS: wmsInfo.title,
+								LAYERS: variable.wms.current.title,
 								WIDTH:256,
 								HEIGHT:256
 							},

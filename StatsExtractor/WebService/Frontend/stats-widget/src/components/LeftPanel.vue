@@ -13,13 +13,13 @@
 --->
 <template>
 <div class="base">
-	<div> <!--class="border border-4 rounded"-->
-		<div class="row position-relative">
-			<div class="position-absolute mt-2"><h5>Copernicus Global Land Monitoring Service Product Categories</h5></div>
-			<div class="text-end raise" ><div class="btn" v-on:click="closeLeftPanel"><a>x</a></div></div>
+	<div>
+		<div class="row mb-2">
+			<div class="mt-2"><h5>Copernicus Global Land Monitoring Service Product Categories</h5></div>
+			<!--<div class="text-end raise" ><div class="btn" v-on:click="closeLeftPanel"><a>x</a></div></div>-->
 		</div>
-
-		<div class="row nav nav-tabs mt-2 mb-3">
+	
+		<div class="row nav nav-tabs mt-3 mb-3">
 			<button v-for="nav in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActiveCategory(nav)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
 		</div>
 		
@@ -29,6 +29,14 @@
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setProduct(product)"><a class="dropdown-item">{{product.description}}</a></li></ul></div>
 		</div>
+		
+		<div class="row mt-1" v-if="product != null">
+			<div class="col d-flex justify-content-end my-auto">Current Variable: </div>
+			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.currentVariable.description}}</button>
+				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+					<li v-for ="(variable, key) in product.variables" v-bind:key="key" v-bind:value="key"  v-on:click="setVariable(variable)"><a class="dropdown-item">{{variable.description}}</a></li></ul></div>
+		</div>
+		
 
 		<div>
 			<div class="m-3 border border-2 rounded">
@@ -88,14 +96,14 @@
 			<div class= "row mt-2" v-if="statisticsViewSelectedMode==1" >
 				<div class="col d-inline-flex justify-content-end my-auto">Anomaly Algorithm:</div>
 				<div class="col d-flex justify-content-start">
-					<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{productAnomaly.description}}</button>
+					<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentAnomaly.description}}</button>
 					<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-						<li v-for ="(anomaly, key) in productAnomalies" v-bind:key="key" v-bind:value="key"  v-on:click="setProductAnomaly(anomaly)"><a class="dropdown-item">{{anomaly.description}}</a></li>
+						<li v-for ="(anomaly, key) in currentAnomalies" v-bind:key="key" v-bind:value="key"  v-on:click="setProductAnomaly(anomaly)"><a class="dropdown-item">{{anomaly.description}}</a></li>
 					</ul>
 				</div>
 			</div>
 	
-			<div v-bind:hidden="(statisticsViewSelectedMode == 1 ||  stratifiedOrRaw == 1) && stratificationViewOptions.viewMode == 0">
+			<div v-bind:hidden="(statisticsViewSelectedMode == 1 ||  stratifiedOrRaw == 1)">
 				<div class="row nav nav-tabs mt-2" >
 					<button v-for="nav, idx in polygonViewMode" v-bind:key="idx" class="col-sm nav-link text-muted text-center" v-bind:class="{active: stratificationViewOptions.viewMode == idx}" v-on:click="stratificationViewOptions = idx" v-bind:id="'polygonviewmode_'+idx">{{nav}}</button>
 				</div>
@@ -123,7 +131,7 @@
 <script>
 import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
-import requests from '../libs/js/requests.js';
+//import requests from '../libs/js/requests.js';
 import Legend from "./libs/Legend.vue";
 
 export default {
@@ -174,54 +182,40 @@ export default {
 				mode = "Anomalies";
 			}
 			return mode;
-		},
-		
+		},		
 		product:{
 			get() {
 				return this.$store.getters.product;
 			},
 			set(val){
 				this.$store.commit("setProduct", val);
+				this.$store.commit("currentWMSByDateAndMode");
 				this.$emit("updateView");
 			}
 		},
-		productAnomaly: {
+		variable: {
 			get() {
-				if (this.$store.getters.productAnomaly == null)
+				return this.$store.getters.variable;
+			},
+			set(val) {
+				this.$store.commit("setVariable", val);
+				this.$store.commit("currentWMSByDateAndMode");
+				this.$emit("updateView");
+			}
+		},
+		currentAnomaly: {
+			get() {
+				if (this.$store.getters.currentAnomaly == null)
 					return {description: "No Algorithm Selected"};
-				return  this.$store.getters.productAnomaly;
+				return  this.$store.getters.currentAnomaly;
 			},
 			set(val) {
 				this.$store.commit("setProductAnomaly",val);
 			}
 		},
-		productAnomalies: {
+		currentAnomalies: {
 			get() {
-				return this.$store.getters.productAnomalies;
-			}
-		},
-		currentWMSLayer: {
-			get() {
-				if (this.statisticsViewSelectedMode == null)
-					return "No Layer Selected";
-				
-				let currentWMS = this.$store.getters.productWMSLayer;
-				
-				if(this.statisticsViewSelectedMode == 1)
-					currentWMS = this.$store.getters.productAnomalyWMSLayer;
-				
-				if (currentWMS == null)
-					return "No Layer Selected";
-				
-				return currentWMS.title; 
-			},
-			set(val) {
-				if(this.statisticsViewSelectedMode == 0)
-					this.$store.commit("setProductWMSLayer",val);
-				else if(this.statisticsViewSelectedMode == 1)
-					this.$store.commit("setProductAnomalyWMSLayer",val);
-				
-				this.$emit("updateWMSLayer");
+				return this.$store.getters.currentAnomalies;
 			}
 		},
 		currentAreaDensity: {
@@ -267,6 +261,7 @@ export default {
 			}
 			,set(val) {
 				this.$store.commit("setCurrentDate", val);
+				this.$store.commit("currentWMSByDateAndMode");
 				this.$emit("dateChanged");
 			}
 		},
@@ -276,6 +271,7 @@ export default {
 			},
 			set(date) {
 				this.$store.commit("setDateStart", date);
+				this.stratifiedOrRaw = 0;
 				this.$emit("resetProducts");
 			}			
 		},
@@ -285,6 +281,7 @@ export default {
 			},
 			set(date) {
 				this.$store.commit("setDateEnd", date);
+				this.stratifiedOrRaw = 0;
 				this.$emit("resetProducts");
 			}
 		},
@@ -323,6 +320,7 @@ export default {
 			}
 			,set(val) {
 				this.$store.commit("setProductStatisticsViewMode", val);
+				this.$store.commit("currentWMSByDateAndMode");
 				this.$emit("statisticsViewModeChanged");
 				
 			}
@@ -355,15 +353,7 @@ export default {
 		}
 	},
 	methods: {
-		init() {
-			requests.categories().then((response) => {
-				this.$store.commit("setCategoryInfo", response.data.data);
-				this.$emit("resetProducts");
-			});
-		},
-		closeLeftPanel() {
-			this.$emit("closeLeftPanel");
-		},
+		init() {},
 		getProduct(key) {
 			return this.products[key];
 		},
@@ -372,6 +362,9 @@ export default {
 		},
 		setProduct(key) {
 			this.product = key;
+		},
+		setVariable(key) {
+			this.variable = key;
 		},
 		setProductAnomaly(key) {
 			this.productAnomaly = key;

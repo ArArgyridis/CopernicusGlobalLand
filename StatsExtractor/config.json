@@ -32,7 +32,7 @@
 		"mapserver_data_path": "/home/argyros/Projects/JRC/mapserver/"
 	},
 	"mapserver": {
-		"raw_data_wms": "url_here/{0}/{1}",
+		"raw_data_wms": "url_here/{0}/{1}/{2}",
 		"anomalies_wms": "url_here/{0}/{1}"
 	}
 } 

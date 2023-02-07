@@ -43,37 +43,35 @@ export function	stratificationViewProps(colorCol) {
 		this.viewMode = 0;
 		this.colorCol = colorCol;
 	}
-export function	AnomaliesProps(product) {
-		this.info = product.anomaly_info;
-		this.current = this.info[0];
-		this.previous = null;
-		this.next = null;
-	
-		this.info.forEach( anomaly => {
+export function	AnomaliesProps(product, variable) {
+		variable.previousAnomaly = null;
+		variable.nextAnomaly = null;
 		
-			anomaly.urls = new Set();
-			anomaly.layers = {
-				current: null,
-				previous: null,
-				info: {}
-			};
-			anomaly.stratificationInfo = new stratificationViewProps("meanval_color");
-			anomaly.style = new styleBuilder(anomaly.stylesld);
-			product.dates.forEach(date =>{
-				let splitDate = date.split("-");
-				let url = options.anomaliesWMSURL + anomaly.name + "/" + splitDate[0] +"/" +splitDate[1];
-				anomaly.urls.add(url);
-			});
+		if (variable.anomaly_info == null) {
+			variable.currentAnomaly = null;
+			return;
+		}
+		
+		variable.currentAnomaly = variable.anomaly_info[0];
+		variable.anomaly_info.forEach( anomaly => {
+			anomaly.valueRanges 	= [anomaly.min_value, anomaly.low_value, anomaly.mid_value, anomaly.high_value, anomaly.max_value];
+			anomaly.wms 			= new WMSProps(anomaly.name, product.dates, anomaly.variable, options.anomaliesWMSURL);
+			anomaly.stratificationInfo 	= new stratificationViewProps("meanval_color");
+			anomaly.style 			= new styleBuilder(anomaly.style);
 		});
 	}
-export function	RawProps(product) {
-		this.wms = new rawWMSProps(product);
-		let tmpDensity = new areaDensityOptions()[2];
-		this.valueRanges = product.value_ranges;
-		tmpDensity.description = utils.computeDensityDescription(tmpDensity.description, this.valueRanges[2], this.valueRanges[3]);
-		this.density = tmpDensity;
-		this.stratificationInfo = new stratificationViewProps("meanval_color");
-	}
+export function VariableProperties(product) {
+	product.variables.forEach( variable => {
+		AnomaliesProps(product, variable);
+		variable.wms 				= new WMSProps(product.name, product.dates, variable.variable)
+		variable.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
+		variable.density 				= new areaDensityOptions()[2];
+		variable.density.description 	= utils.computeDensityDescription(variable.density.description, variable.valueRanges[2], variable.valueRanges[3]);
+		variable.style 				= new styleBuilder(variable.style);
+		variable.stratificationInfo 		= new stratificationViewProps("meanval_color");
+	});
+}
+
 export function	styleBuilder(style) {
 		let parser = new DOMParser();
 		let xmlDoc = parser.parseFromString(style, "text/xml");
@@ -97,43 +95,46 @@ export function	styleBuilder(style) {
 		}
 		return colorsArr; 
 	}
-export function	ProductViewProps(product) {
-		this.anomalies = new AnomaliesProps(product);
-		this.raw = new RawProps(product);
-		this.statisticsViewMode = 0;
-		this.previousStatisticsViewMode = null;
-		this.currentDate = product.dates[0],
-		this.style = new styleBuilder(product.stylesld);
-		product.style = null;
-	}
+export function	ProductViewProperties(product) {
+	product.statisticsViewMode 			= 0;
+	product.previousStatisticsViewMode 	= null;
+	product.currentDate 					= product.dates[0];
+	VariableProperties(product);
+	product.currentVariable				= product.variables[0];
+}
+
 export function	ProductsProps() {
 		this.previous = null;
 		this.current = null;
 		this.info = [];
-	}
-export function	rawWMSProps(product) {
-		this.current = null;
-		this.previous = null;
-		this.next = null;
-		this.urls = new Set();
-		this.layers = {};
 	
-		product.dates.forEach(date =>{
-			let splitDate = date.split("-");
-			let url = options.wmsURL + product.name + "/" + splitDate[0] +"/" +splitDate[1];
-			this.urls.add(url);
-		});
-	}
+}
+export function WMSProps(name, dates, variable, wmsURL=options.wmsURL) {
+	this.current 	= null;
+	this.previous = null;
+	this.next 	= null;
+	this.urls 		= new Set();
+	this.layers 	= {};
+
+	dates.forEach(date =>{
+		let splitDate	= date.split("-");
+		let url		= wmsURL + name + "/" + splitDate[0] +"/" +splitDate[1];
+		if (variable.length > 0)
+			url += "/" + variable;
+		this.urls.add(url);
+	});
+}
 
 export function	StratificationProps() {
-		this.current = null;
-		this.previous = null;
-		this.next = null;
-		this.info = [];
-		this.clickedCoordinates = null;
-	}
-export function	initProduct(product) {
-		if (product.properties == null) 
-			product.properties = new ProductViewProps(product);
-	}
+	this.current = null;
+	this.previous = null;
+	this.next = null;
+	this.info = [];
+	this.clickedCoordinates = null;
+}
+
+export function initProduct(product) {
+	if (product.currentVariable == null) 
+		ProductViewProperties(product);
+}
 

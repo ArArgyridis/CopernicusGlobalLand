@@ -43,8 +43,10 @@ using OGRSpatialReferencePtr    = std::unique_ptr<OGRSpatialReference> ;
 using OGRFeatureDefnPtr         = std::unique_ptr<OGRFeatureDefn> ;
 
 /** Typedefs to handle JSON data */
-using JsonDocument      = rapidjson::Document;
-using JsonDocumentPtr   = std::unique_ptr<JsonDocument>;
+using JsonDocument            = rapidjson::Document;
+using JsonDocumentUniquePtr   = std::unique_ptr<JsonDocument>;
+using JsonDocumentSharedPtr   = std::shared_ptr<JsonDocument>;
+
 
 using JsonValue     = rapidjson::Value;
 using JsonValuePtr  = std::unique_ptr<JsonValue>;
@@ -60,6 +62,12 @@ using LabelsArrayPtr    = std::shared_ptr<LabelsArray>;
 using XmlDocPtr                 = std::unique_ptr<xmlDoc, void(*)(xmlDocPtr)>;
 using XmlXPathContextPtr        = std::unique_ptr<xmlXPathContext, void(*)(xmlXPathContextPtr)>;
 using XmlXpathObjectPtr         = std::unique_ptr<xmlXPathObject, void(*)(xmlXPathObjectPtr)>;
+
+/** typedef for String Pointer */
+using StringPtr                 = std::shared_ptr<std::string>;
+
+/** typedef for Paths */
+using PathSharedPtr             = std::shared_ptr<boost::filesystem::path>;
 
 /** Image statistics Info */
 
@@ -109,5 +117,6 @@ std::string jsonToString(JSONType& json, size_t decimalPlaces=2) {
 }
 
 std::string stringstreamToString(std::stringstream &stream);
+std::vector<RGBVal> styleColorParser(std::string& style);
 
 #endif // UTILS_HXX

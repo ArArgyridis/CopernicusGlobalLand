@@ -56,7 +56,7 @@ export default {
 			this.date 		= this.$store.getters.currentDate;
 			this.polygonId 	= this.$store.getters.selectedPolygon
 
-			requests.getPieDataByDateAndPolygon(this.product.id, this.date, this.polygonId).then((response) => {
+			requests.getPieDataByDateAndPolygon(this.product.currentVariable.id, this.date, this.polygonId).then((response) => {
 				let dt = [];
 				Object.keys(response.data.data).forEach( key  => {
 					dt.push({name: key, y: response.data.data[key]});

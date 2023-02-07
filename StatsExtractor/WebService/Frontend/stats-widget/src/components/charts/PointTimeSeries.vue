@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
-	<highcharts ref="diagram" :options="diagramOptions" style="width:100%; height:100%;"/> 	
+	<highcharts ref="diagram" v-if="product !=null" :options="diagramOptions" style="width:100%; height:100%;"/> 	
 </template>
 
 <script>
@@ -44,17 +44,22 @@ export default {
 			return   "Location Time Series (" + this.mode + ")";
 		},
 		diagramOptions() {
-			let product = this.$store.getters.product;
-			if (this.mode == "Anomalies")
-				product = this.$store.getters.productAnomaly;
+			if (this.product == null)
+				return;
 			
+			let variable = this.product.currentVariable;
+			
+			
+			if (this.mode == "Anomalies")
+				variable = this.$store.getters.currentAnomaly;
+		
 			let coords =this.$store.getters.clickedCoordinates;
 			if (coords != null)
 				coords = JSON.parse(JSON.stringify(coords));
 			let dateStart = JSON.parse(JSON.stringify(this.$store.getters.dateStart));
 			let dateEnd = JSON.parse(JSON.stringify(this.$store.getters.dateEnd));
 			
-			this.updateChartData(product, coords, dateStart, dateEnd);
+			this.updateChartData(variable, coords, dateStart, dateEnd);
 			
 			let tmpDt = this.diagramData;
 			if (tmpDt == null)
@@ -62,8 +67,8 @@ export default {
 			
 			let valueRange  = [0, 1.5];
 			
-			if (product !=null) {
-				valueRange = product.value_ranges;
+			if (variable !=null) {
+				valueRange = variable.valueRanges;
 			}
 			
 			let step = (valueRange[valueRange.length-1] - valueRange[0])/valueRange.length;
@@ -71,7 +76,11 @@ export default {
 		},
 		noData() {
 			return  [null, null, null];
+		},
+		product() {
+			return this.$store.getters.product;
 		}
+ 
 	},
 	data() {
 		return {
@@ -80,7 +89,7 @@ export default {
 			previousDateEnd: null,
 			isLoading: true,
 			diagramData: this.noData,
-			product:{id:null}
+			curProduct:{id:null}
 		}
 	},
 	methods: {
@@ -92,14 +101,14 @@ export default {
 			if ( this.$refs.diagram == null ||  product == null || coords == null || dateStart == null || dateEnd == null)
 				return;
 			
-			if (this.product.id == product.id && this.previousCoordinates.coordinate[0] == coords.coordinate[0] && this.previousCoordinates.coordinate[1] == coords.coordinate[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
+			if (this.curProduct.id == product.id && this.previousCoordinates.coordinate[0] == coords.coordinate[0] && this.previousCoordinates.coordinate[1] == coords.coordinate[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
 				return;
 			
 			this.isLoading = true;
 			this.previousCoordinates 	= coords;
 			this.previousDateStart 	= dateStart;
 			this.previousDateEnd 	= dateEnd;
-			this.product = product;
+			this.curProduct = product;
 			this.resizeChart();
 
 			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, product.id, coords).then((response) => {

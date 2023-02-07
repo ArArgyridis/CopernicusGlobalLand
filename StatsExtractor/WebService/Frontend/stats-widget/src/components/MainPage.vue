@@ -15,19 +15,17 @@
 <Dashboard v-show="showTheDashboard==true" ref="dashboard"/>
 <div class="container-fluid fixed-top">
 	<div class="row">
-		<div id="leftPanel" class="noPadding shownBar raise hidden sidenav leftnav" >
+		<div id="leftPanel" class="noPadding raise sidenav leftnav" v-bind:class="{shownBar: leftPanelVisibility, hiddenBar: !leftPanelVisibility}">
 			<LeftPanel 
-			v-on:closeLeftPanel="toggleLeft()"
-			v-on:closeSideMenu="toggleLeft()" 
-			v-on:dateChanged="updateDate()"
-			v-on:getCategoryProducts="getCategoryProducts()"
-			v-on:resetProducts="resetProducts()"
-			v-on:stratificationViewOptionsChanged="updateStratificationLayerStyle()"
-			v-on:statisticsViewModeChanged="statisticsViewModeUpdate()"
-			v-on:stratificationChanged="updateStratificationLayerVisibility()"
-			v-on:stratificationDensityChanged = "updateStratificationLayerStyle()"
-			v-on:stratifiedOrRawChanged="setCurrentLayersVisibilityByViewMode()"
-			v-on:updateWMSLayer="updateWMSVisibility()"
+				v-on:dateChanged="setCurrentLayersVisibilityByViewMode()"
+				v-on:resetProducts="resetProducts()"
+				v-on:stratificationViewOptionsChanged="updateStratificationLayerStyle()"
+				v-on:statisticsViewModeChanged="setCurrentLayersVisibilityByViewMode()"
+				v-on:stratificationChanged="updateStratificationLayerVisibility()"
+				v-on:stratificationDensityChanged = "updateStratificationLayerStyle()"
+				v-on:stratifiedOrRawChanged="setCurrentLayersVisibilityByViewMode()"
+				v-on:updateWMSLayer="updateWMSVisibility()"
+				v-on:updateView="setCurrentLayersVisibilityByViewMode()"
 			/>
 		</div>
 		<div class="noPadding">
@@ -39,13 +37,13 @@
 				<div class="d-flex logo relative"><img alt="Copernicus LMS" src="/assets/copernicus_land_monitoring.png"></div>
 			</div>
 			<div class="d-flex">
-				<div class="btn position-relative fixed-top raise transition d-inline offsetButton" id="menuButton">
-					<FontAwesomeIcon icon="bars"  size="3x" :style="{ color: '#eaeada' }" v-on:click="toggleLeft()"/>
+				<div class="btn position-relative fixed-top raise transition d-inline" id="menuButton" v-bind:class="{offsetButton: leftPanelVisibility}">
+					<FontAwesomeIcon icon="bars"  size="3x" :style="{ color: '#eaeada' }" v-on:click="leftPanelVisibility = !leftPanelVisibility"/>
 				</div>
 			</div>
 			
 		</div>		
-		<div id="rightPanel" class="transition noPadding hiddenBar raise hidden sidenav rightnav">
+		<div id="rightPanel" class="transition noPadding hiddenBar raise sidenav rightnav">
 			<RightPanel ref="rightPanel" 
 			v-on:closeTimechartsPanel="closeRightPanel()" 
 			v-on:exportCurrentView="exportCurrentView()"
@@ -100,17 +98,20 @@ export default {
 		},
 		currentWMSLayer: {
 			get() {
-				let ret = this.$store.getters.productWMSLayer;
-				if (this.$store.getters.productStatisticsViewMode == 1)
-					ret = this.$store.getters.productAnomalyWMSLayer;
-				return ret;
+				return this.$store.getters.currentWMSLayer;
 			},
 			set(dt) {
-				if (this.$store.getters.productStatisticsViewMode == 0)
-					this.$store.commit("setProductWMSLayer", dt);
-				else if (this.$store.getters.productStatisticsViewMode == 1)
-					this.$store.commit("setAnomalyProductWMSLayer", dt);
+				this.$store.commit("currentWMS", dt);
 			}
+		},
+		leftPanelVisibility: {
+			get() {
+				return this.$store.getters.leftPanelVisibility;
+			},
+			set(dt) {
+				this.$store.commit("leftPanelVisibility", dt);
+			}
+			
 		}
 	},
 	data() {
@@ -126,7 +127,7 @@ export default {
 			document.getElementById("rightPanel").addEventListener('transitionend', () => {
 				this.$refs.rightPanel.resizeChart();
 			});
-			this.updateStratificationInfo();
+			//this.updateStratificationInfo();
 		},
 		closeRightPanel() {
 			this.setRightPanelVisibility(false);
@@ -148,7 +149,6 @@ export default {
 				this.getProductInfo();
 		},
 		getProductInfo() {
-
 			if (this.$store.getters.dateStart == null || this.$store.getters.dateEnd == null || this.$store.getters.activeCategory == null)
 				return;
 			
@@ -182,53 +182,28 @@ export default {
 			this.$refs.dashboard.setVisibility(true);
 			this.$refs.dashboard.refreshData();
 		},
-		statisticsViewModeUpdate() {
-			let statsViewMode =  this.$store.getters.productStatisticsViewMode;
-			let stratifiedOrRaw = this.$store.getters.stratifiedOrRaw;
-			//this.$refs.mapApp.setLayerVisibility(this.$store.getters.currentStratification.layerId, this.$store.getters.stratifiedOrRaw == 0);
-			this.updateStratificationLayerStyle();
-			this.setCurrentLayersVisibilityByViewMode();
-			this.$refs.mapApp.setLayerVisibility( this.$store.getters.productWMSLayer.layerId,   stratifiedOrRaw == 1 && statsViewMode == 0);
-			this.$refs.mapApp.setLayerVisibility( this.$store.getters.productAnomalyWMSLayer.layerId, stratifiedOrRaw == 1 && statsViewMode== 1);
-		},
 		setCurrentLayersVisibilityByViewMode() {
-			
 			if (this.$store.getters.currentStratification != null)
 				this.updateStratificationLayerStyle();
-		
-			if (this.currentWMSLayer != null) 
-				this.$refs.mapApp.setLayerVisibility(this.currentWMSLayer.layerId, this.$store.getters.stratifiedOrRaw == 1);
+			
+			this.$refs.mapApp.updateWMSVisibility();
 		},
 		togglePanelClasses(id){
 			document.getElementById(id).classList.toggle("hiddenBar");
 			document.getElementById(id).classList.toggle("shownBar");
 		},		
-		toggleLeft() {
-			this.togglePanelClasses("leftPanel");
-			document.getElementById("menuButton").classList.toggle("offsetButton");
-		},
-		updateDate() {
+		dateChanged() {
 			this.updateStratificationLayerStyle();
 			this.updateWMSVisibility();
 		},
 		updateStratificationInfo() {
 			this.$refs.mapApp.clearStratifications();
-			requests.fetchStratificationInfo().then((response)=>{
-				this.$store.commit("setStratifications", response.data.data);
-				this.$refs.mapApp.refreshStratifications();
-					
-				this.updateStratificationLayerVisibility();
-				this.updateStratificationLayerStyle();
-			});
+			
 		},
 		updateWMSVisibility() {
 			if (this.$store.getters.stratifiedOrRaw == 0)
 				return;
-				
-			if (this.$store.getters.productStatisticsViewMode == 0) 
-				this.$refs.mapApp.updateProductWMSVisibility();			
-			else if (this.$store.getters.productStatisticsViewMode == 1) 
-				this.$refs.mapApp.updateProductAnomalyWMSVisibility();
+			this.$refs.mapApp.updateWMSVisibility();
 		},
 		updateStratificationLayerStyle(){
 			this.$refs.mapApp.updateStratificationLayerStyle();
@@ -251,18 +226,14 @@ export default {
 			this.clickedCoordinates = evt;
 			this.setRightPanelVisibility(true);
 		},
+		updateProductView() {
+			this.updateStratificationLayerStyle();
+			this.setRightPanelVisibility(false);
+			this.$refs.mapApp.updateWMSLayers();
+		},
 		updateWMSLayers() {
 			this.$refs.mapApp.clearWMSLayers();
 			this.$refs.mapApp.updateWMSLayers();
-		},
-		__updatePolygonChartData() {
-			this.$refs.rightPanel.updatePolygonTimeseriesChart(this.currentStratificationPolygonId);
-			this.$refs.rightPanel.updateHistogramChart(this.currentStratificationPolygonId);
-			
-			if (this.currentStratificationPolygonId != null)
-				this.setRightPanelVisibility(true);
-			else
-				this.setRightPanelVisibility(false);		
 		}
 	},
 	mounted() {

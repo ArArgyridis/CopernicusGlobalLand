@@ -29,7 +29,7 @@ class ColorInterpolation {
 
 public:
     ColorInterpolation();
-    ColorInterpolation(rapidjson::Document& palette);
+    ColorInterpolation(rapidjson::Value& palette);
 
     RGBVal interpolateColor(long double areaPerc);
 };

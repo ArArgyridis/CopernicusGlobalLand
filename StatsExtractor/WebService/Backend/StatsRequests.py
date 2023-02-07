@@ -40,6 +40,7 @@ class StatsRequests(GenericRequest):
         super().__init__(cfg, ConfigurationParser, requestData)
 
     def __getResponseFromDB(self, query):
+        print(query)
         ret = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
         if isinstance(ret, list):
             ret = ret[0][0]
@@ -53,14 +54,15 @@ class StatsRequests(GenericRequest):
         query =  """
 	    WITH geom AS(
 		SELECT st_asgeojson(geom3857)::json geom, description, stratification_id
-		FROM {0}.stratification_geom sg 
-		WHERE id = {1}
+		FROM stratification_geom sg 
+		WHERE id = {0}
 	),timeline AS(
 		SELECT json_object_agg(pf."date", ARRAY_TO_JSON(ARRAY[noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha])ORDER BY pf."date" DESC) tml
-		FROM {0}.poly_stats ps
-		JOIN {0}.product_file pf ON ps.product_file_id =pf.id 
-                JOIN {0}.product_file_description pfd on pf.product_description_id = pfd.id
-		WHERE pfd.product_id = {2} AND ps.poly_id={1}
+		FROM poly_stats ps
+		JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+		JOIN product_file pf ON ps.product_file_id =pf.id 
+                JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
+		WHERE pfv.id = {1} AND ps.poly_id={0}
 	)
 	SELECT json_build_object(
 	'type', 'Feature',
@@ -68,47 +70,51 @@ class StatsRequests(GenericRequest):
 	'properties', json_build_object('timeline', tml, 'description', geom.description, 'strata', s.description))
 	FROM geom
 	JOIN timeline ON true 
-	JOIN {0}.stratification s ON geom.stratification_id = s.id
-	""".format(self._config.statsInfo.schema, self._requestData["options"]["poly_id"], self._requestData["options"]["product_id"])
+	JOIN stratification s ON geom.stratification_id = s.id
+	""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["product_id"])
         return self.__getResponseFromDB(query)
 
     def __fetchProductInfo(self):
         query = """
-            WITH dt AS( 
-        	SELECT distinct p.id, p.name[1], pf.product_description_id , pfd.description pdescription, ARRAY[pfd.min_value, pfd.low_value, pfd.mid_value, pfd.high_value, pfd.max_value] value_ranges,
-        	noval_colors, sparseval_colors, midval_colors, highval_colors,style,
-        	anomaly_info.anomaly_info
-	        FROM product_file pf 
-                JOIN product_file_description pfd on pf.product_description_id  = pfd.id
-                JOIN product p ON pfd.product_id = p.id
-                JOIN(
-                	SELECT ltai.current_product_description_id raw_product_id, (ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_OBJECT('id', p.id, 'description', pfd.description, 'name', p.name[1], 'stylesld', pfd.style, 'value_ranges', ARRAY[pfd.min_value, pfd.low_value, pfd.mid_value, pfd.high_value, pfd.max_value]) ORDER BY pfd.id )))::jsonb anomaly_info
-                	FROM   long_term_anomaly_info ltai
-                	JOIN product_file_description pfd ON ltai.anomaly_product_description_id = pfd.id
-                	JOIN   product p ON pfd.product_id = p.id
-                	GROUP BY  ltai.current_product_description_id            
-                ) anomaly_info ON p.id = anomaly_info.raw_product_id
-	        WHERE  p.category_id = {0} and (pfd.variable is not null or p."type" ='anomaly')
-            ),dates AS(
-        	SELECT dt.id, ARRAY_TO_JSON(array_agg("date" order by "date" desc) ) dates
+             WITH dt AS( 
+        	SELECT p.id,  p.name[1], p.description, pfd.id product_file_description_id, 
+        	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.description)) variables
+	        FROM product p 
+        	JOIN product_file_description pfd ON p.id = pfd.product_id
+        	JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
+        	JOIN LATERAL (
+        		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object('name', panom.name[1]) || row_to_json(anompfv.*)::jsonb ))  anomaly_info
+        		FROM long_term_anomaly_info ltai
+        		JOIN product_file_variable anompfv ON ltai.anomaly_product_variable_id  = anompfv.id
+        		JOIN product_file_description pfdanom ON anompfv.product_file_description_id = pfdanom.id
+        		JOIN product panom ON pfdanom.product_id = panom.id
+        		WHERE ltai.raw_product_variable_id = pfv.id
+        	
+        	) anomaly_info ON TRUE    	
+        	WHERE p.category_id = {0} AND p."type"='raw' 
+        	GROUP BY p.id,  p.name[1], p.description, pfd.id 
+        ),dates AS(
+        	SELECT dt.id, ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates
         	FROM dt 
-        	JOIN product_file pf ON dt.product_description_id = pf.product_description_id
-        	where pf."date" between '{1}' and '{2}'        	
+        	JOIN product_file pf ON dt.product_file_description_id = pf.product_file_description_id
+        	WHERE pf."date" BETWEEN '{1}' AND '{2}'        	
         	GROUP BY dt.id
         )
-        SELECT  ARRAY_TO_JSON(ARRAY_AGG(JSON_build_object('id', dt.id, 'name', dt.name, 'description',  dt.pdescription, 'dates', dates.dates, 'value_ranges',dt.value_ranges, 'anomaly_info', dt.anomaly_info, 'stylesld', style,
-        'noval_colors', noval_colors, 'sparseval_colors', sparseval_colors, 'midval_colors', midval_colors, 'highval_colors', highval_colors) ORDER BY name)) info
-        FROM dt JOIN dates ON dt.id = dates.id""".format(self._requestData["options"]["category_id"], self._requestData["options"]["dateStart"], self._requestData["options"]["dateEnd"])
+        SELECT ARRAY_TO_JSON(ARRAY_AGG(json_build_object('id', dt.id, 'name', name, 'description', dt.description, 'dates', dates.dates, 'variables', dt.variables) ORDER BY dt.description))
+        FROM dt        
+        JOIN dates ON dt.id = dates.id
+       """.format(self._requestData["options"]["category_id"], self._requestData["options"]["dateStart"], self._requestData["options"]["dateEnd"])
         return self.__getResponseFromDB(query)
 
     def densityStatsByPolygonAndDateRange(self):
         query = """
         SELECT ARRAY_TO_JSON (ARRAY_AGG(JSON_BUILD_ARRAY( pf.date, ps.{0}) ORDER BY pf.date))
-        FROM {1}.poly_stats ps 
-        JOIN {1}.product_file pf ON ps.product_file_id = pf.id
-        JOIN {1}.product_file_description pfd ON pf.product_description_id = pfd.id
-        WHERE ps.poly_id = {2} AND pfd.product_id ={3} AND pf.date BETWEEN '{4}' AND '{5}'
-        """.format(self._requestData["options"]["area_type"], self._config.statsInfo.schema, self._requestData["options"]["poly_id"],
+        FROM poly_stats ps 
+        JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+        JOIN product_file pf ON ps.product_file_id = pf.id
+        JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
+        WHERE ps.poly_id = {1} AND pfd.product_id ={2} AND pf.date BETWEEN '{3}' AND '{4}'
+        """.format(self._requestData["options"]["area_type"], self._requestData["options"]["poly_id"],
                    self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"])
 
@@ -119,13 +125,17 @@ class StatsRequests(GenericRequest):
             WITH dt AS NOT MATERIALIZED(
                 SELECT pf."date", ps.mean , ps.sd ,psltai.mean meanlts, psltai.sd sdlts 
                 FROM poly_stats ps 
+                JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
                 JOIN product_file pf ON ps.product_file_id = pf.id 
-                JOIN product_file_description pfd ON pf.product_description_id = pfd.id
-                LEFT JOIN long_term_anomaly_info ltai ON pfd.id = ltai.current_product_description_id 
-                LEFT JOIN product_file_description pfdltai ON ltai.statistics_product_description_id = pfdltai.id 
-                LEFT JOIN product_file pfltai ON pfdltai.id = pfltai.product_description_id and EXTRACT('doy' FROM pfltai."date") between EXTRACT('doy' FROM pf."date") - 2	and EXTRACT('doy' FROM pf."date") +2
-                LEFT JOIN poly_stats psltai ON pfltai.id = psltai.product_file_id AND ps.poly_id = psltai.poly_id  
-            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfd.product_id = {3} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7)
+                JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
+                LEFT JOIN long_term_anomaly_info ltai ON pfv.id = ltai.raw_product_variable_id
+                LEFT JOIN product_file_variable pfvltaimean ON ltai.mean_variable_id = pfvltaimean.id
+                LEFT JOIN product_file_description pfdltaimean ON pfvltaimean.product_file_description_id = pfdltaimean.id
+                LEFT JOIN product_file pfltaimean ON pfdltaimean.id = pfltaimean.product_file_description_id 
+                and EXTRACT('doy' FROM pfltaimean."date") between EXTRACT('doy' FROM pf."date") - 2	and EXTRACT('doy' FROM pf."date") +2
+                LEFT JOIN poly_stats psltai ON psltai.product_file_id = pfltaimean.id AND psltai.product_file_variable_id = pfvltaimean.id 
+                AND psltai.poly_id = ps.poly_id
+            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7)
             SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date"))
             FROM dt""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
         print(query)
@@ -147,12 +157,14 @@ class StatsRequests(GenericRequest):
      ) res
      FROM  poly_stats ps 
      JOIN  product_file pf ON ps.product_file_id = pf.id
-     JOIN  product_file_description pfd ON pf.product_description_id = pfd.id
-    JOIN  product p ON pfd.product_id = p.id
-    JOIN  stratification_geom sg ON sg.id = ps.poly_id
-    JOIN  stratification s ON s.id = sg.stratification_id
-    WHERE pf.date = '{0}' and s.id = {1} and p.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7""".format(self._requestData["options"]["date"],
+     JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+     JOIN  product_file_description pfd ON pf.product_file_description_id = pfd.id
+     JOIN  product p ON pfd.product_id = p.id
+     JOIN  stratification_geom sg ON sg.id = ps.poly_id
+     JOIN  stratification s ON s.id = sg.stratification_id
+     WHERE pf.date = '{0}' and s.id = {1} and pfv.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7""".format(self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
+        print(query)
         res = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
         ret = {}
         for row in res:
@@ -171,8 +183,9 @@ class StatsRequests(GenericRequest):
         path = self._config.filesystem.imageryPath
         query  = """SELECT type 
                             FROM product_file_description pfd 
+                            JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
                             JOIN product p ON pfd.product_id = p.id 
-                            WHERE p.id = {0}""".format(self._requestData["options"]["product_id"])
+                            WHERE pfv.id = {0}""".format(self._requestData["options"]["product_id"])
 
         productType = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)[0][0]
         if productType == "anomaly":
@@ -184,16 +197,18 @@ class StatsRequests(GenericRequest):
         result = Queue()
         
         query = """
-            SELECT  pfd.variable
+            SELECT  CASE WHEN pfv.variable = ''::text THEN NULL ELSE  pfv.variable END
             ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date ASC)
             ,pfd.pattern
             ,pfd.types
             ,pfd.create_date
             FROM product_file pf 
-            JOIN product_file_description pfd ON pf.product_description_id = pfd.id
+            JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
+            JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
             JOIN product p on pfd.product_id =p.id
-            WHERE date between  '{1}' and '{2}' and p.id  = {3} AND (pfd.variable IS NOT null or p."type"='anomaly')
-            GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
+            WHERE date between  '{1}' and '{2}' and pfv.id  = {3}
+            GROUP BY pfv.variable, pfd.pattern,pfd.types,pfd.create_date""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
+        print(query)
         
         threads = []
         
@@ -206,23 +221,48 @@ class StatsRequests(GenericRequest):
         doyEnd = datetime.strptime(self._requestData["options"]["date_end"], "%Y-%m-%dT%H:%M:%S.%fZ")
         doyEnd = doyEnd.utctimetuple().tm_yday
         
-        for var in ["mean", "stdev"]:
-            queryLTS = """
-                SELECT '{0}' 
-                ,JSON_OBJECT_AGG('{1}' || rel_file_path, date ORDER BY date ASC)
-                ,pfd.pattern
-                ,pfd.types
-                ,pfd.create_date
-                FROM product_file pf 
-                JOIN product_file_description pfd ON pf.product_description_id = pfd.id
-                JOIN long_term_anomaly_info ltai ON pfd.id = ltai.statistics_product_description_id
-                JOIN product_file_description pfdprod ON ltai.current_product_description_id =pfdprod.id
-                JOIN product p ON pfdprod.product_id = p.id
-                WHERE p.id = {4} AND pfd.variable IS NOT NULL
-                GROUP BY pfd.variable, pfd.pattern,pfd.types,pfd.create_date""".format(var, path, doyStart, doyEnd, self._requestData["options"]["product_id"])
+        mQuery = """
+        SELECT pfvanom.variable meanVar
+        ,JSON_OBJECT_AGG( '{0}' || pf.rel_file_path, pf.date ORDER BY pf.date ASC)
+        ,pfd.pattern
+        ,pfd.types
+        ,pfd.create_date
+        FROM product_file_variable pfv 
+        JOIN long_term_anomaly_info ltai ON ltai.raw_product_variable_id = pfv.id
+        
+        --mean info
+        JOIN product_file_variable pfvanom ON ltai.mean_variable_id = pfvanom.id
+        JOIN product_file_description pfd ON pfvanom.product_file_description_id = pfd.id 
+        JOIN product_file pf ON pf.product_file_description_id = pfd.id
+        WHERE pfv.id = {1}
+        GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
+        """.format(path, self._requestData["options"]["product_id"])
+        
+        print(query)
+        
+        threads.append(Process(target=productStats, args=(self._config, mQuery, path, self._requestData, result,  "mean")))
+        threads[-1].start()
+        
+        stdevQuery = """
+        SELECT pfvanom.variable meanVar
+        ,JSON_OBJECT_AGG( '{0}' || pf.rel_file_path, pf.date ORDER BY pf.date ASC)
+        ,pfd.pattern
+        ,pfd.types
+        ,pfd.create_date
+        FROM product_file_variable pfv 
+        JOIN long_term_anomaly_info ltai ON ltai.raw_product_variable_id = pfv.id
+        
+        --stdev info
+        JOIN product_file_variable pfvanom ON ltai.stdev_variable_id = pfvanom.id
+        JOIN product_file_description pfd ON pfvanom.product_file_description_id = pfd.id 
+        JOIN product_file pf ON pf.product_file_description_id = pfd.id
+        WHERE pfv.id = {1}
+        GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
+        """.format(path, self._requestData["options"]["product_id"])
+        
+        threads.append(Process(target=productStats, args=(self._config, stdevQuery, path, self._requestData, result,  "stdev")))
+        threads[-1].start()
 
-            threads.append(Process(target=productStats, args=(self._config, queryLTS, path, self._requestData, result,  var)))
-            threads[-1].start()
 
         for trd in threads:
             trd.join()
@@ -268,13 +308,14 @@ class StatsRequests(GenericRequest):
     
     def __histogramDataByProductAndPolygon(self):
         query = """
-            SELECT JSON_BUILD_OBJECT('histogram', histogram, 'low_value', pfd.min_prod_value , 'high_value', pfd.max_prod_value) 
-            FROM {0}.poly_stats ps 
-            JOIN {0}.product_file pf ON ps.product_file_id  = pf.id
-            JOIN {0}.product_file_description pfd ON pf.product_description_id = pfd.id
-            JOIN {0}.product p ON pfd.product_id = p.id
-            WHERE p.id = {1} AND pf."date" = '{2}' AND ps.poly_id = {3}
-        """.format(self._config.statsInfo.schema, self._requestData["options"]["product_id"],
+            SELECT JSON_BUILD_OBJECT('histogram', histogram, 'low_value', pfv.min_value , 'high_value', pfv.max_value) 
+            FROM poly_stats ps 
+            JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+            JOIN product_file pf ON ps.product_file_id  = pf.id
+            JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
+            JOIN product p ON pfd.product_id = p.id
+            WHERE pfv.id = {0} AND pf."date" = '{1}' AND ps.poly_id = {2}
+        """.format(self._requestData["options"]["product_id"],
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
         return self.__getResponseFromDB(query)
     
@@ -291,12 +332,13 @@ class StatsRequests(GenericRequest):
     def __pieDataByDateAndPolygon(self):
         query = """
         SELECT row_to_json(a.*) response FROM(
-        SELECT ps.noval_area_ha "No value", ps.sparse_area_ha "Sparse", ps.mid_area_ha "Mild", ps.dense_area_ha "Dense"
-        FROM poly_stats ps
-        JOIN product_file pf ON ps.product_file_id = pf.id  
-        JOIN product_file_description pfd ON pf.product_description_id = pfd.id
-        JOIN product p ON pfd.product_id = p.id
-        WHERE p.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2})a
+            SELECT ps.noval_area_ha "No value", ps.sparse_area_ha "Sparse", ps.mid_area_ha "Mild", ps.dense_area_ha "Dense"
+            FROM poly_stats ps
+            JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+            JOIN product_file pf ON ps.product_file_id = pf.id  
+            JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
+            JOIN product p ON pfd.product_id = p.id
+            WHERE pfv.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2}) a
         """.format(self._requestData["options"]["product_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
         return self.__getResponseFromDB(query)
     

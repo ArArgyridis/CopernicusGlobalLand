@@ -49,93 +49,68 @@ def applyColorTable(dstImg, style):
     outDt.GetRasterBand(1).SetRasterColorTable(colors)
     outDt = None
 
-def writeData(dstImg, subDataset, scaler, minValue, maxValue):
-    if not os.path.isfile(dstImg):
-        tmpDt = gdal.Open(subDataset)
-        os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
-
-        outDrv = gdal.GetDriverByName("GTiff")
-
-        outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
-                              options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
-        outDt.SetProjection(tmpDt.GetProjection())
-        outDt.SetGeoTransform(tmpDt.GetGeoTransform())
-        outBnd = outDt.GetRasterBand(1)
-        origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
-
-        try:
-            for row in range(tmpDt.RasterXSize):
-                rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
-                fixedDt = scaler(rowDt, minValue, maxValue,
-                                 origNoDataValue, 255, 0, 250)
-
-                outBnd.WriteArray(fixedDt, row, 0)
-
-            outBnd.SetNoDataValue(255)
-            # outBnd = None
-            outDt.FlushCache()
-            outDt = None
-        except:
-            print("issue for image: ", dstImg)
-
-
-
-
 def processSingleImage(params, relImagePath):
 
     image = os.path.join(params["dataPath"],relImagePath[0])
     print("processing: ", image)
-    if params["productInfo"].productType == "raw":
-        scaler = None
-        dstImg = None
+    ret = []
 
-
+    dstImg = None
+    variable = params["variable"]
+    variableParams = params["productInfo"].variables[params["variable"]]
     if params["productInfo"].productType == "raw":
         if image.endswith(".nc"):
-            if params["productInfo"].variable != "SUBPRODUCT":
-                subDataset = netCDFSubDataset(image, params["productInfo"].variable)
-                dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
-                                                             relImagePath[1].strftime("%Y"),
-                                                             relImagePath[1].strftime("%m"),
-                                                             os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
-                if params["productInfo"].minValue >= 0 and params["productInfo"].maxValue <= 255:
+            subDataset = netCDFSubDataset(image, variable)
+
+            dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
+                                                         relImagePath[1].strftime("%Y"),
+                                                         relImagePath[1].strftime("%m"),
+                                                         variable,
+                                                         os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
+            print("out img: ", dstImg)
+
+            if not os.path.isfile(dstImg):
+                tmpDt = gdal.Open(subDataset)
+                os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
+
+                outDrv = gdal.GetDriverByName("GTiff")
+                outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
+                              options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
+                outDt.SetProjection(tmpDt.GetProjection())
+                outDt.SetGeoTransform(tmpDt.GetGeoTransform())
+                outBnd = outDt.GetRasterBand(1)
+                origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
+
+                scaler = None
+                if variableParams.minProdValue >= 0 and variableParams.maxProdValue <= 255:
                     scaler = plainScaller
                 else:
                     scaler = linearScaller
+                try:
+                    for row in range(tmpDt.RasterXSize):
+                        rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
+                        fixedDt = scaler(rowDt, variableParams.minValue,
+                                         variableParams.maxValue, origNoDataValue, 255, 0, 250)
 
-                writeData(dstImg, subDataset, scaler, params["productInfo"].minValue, params["productInfo"].maxValue)
-            else:
-                for subProduct in params["productInfo"].subProducts:
-                    subDataset = netCDFSubDataset(image, subProduct.variable)
-                    dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
-                                                                     relImagePath[1].strftime("%Y"),
-                                                                     relImagePath[1].strftime("%m"),
-                                                                     subProduct.variable,
-                                                                     os.path.split(relImagePath[0])[-1].split(".")[0]
-                                                                     + ".tif"])
-                    if subProduct.minValue >= 0 and subProduct.maxValue <= 255:
-                        scaler = plainScaller
-                    else:
-                        scaler = linearScaller
+                        outBnd.WriteArray(fixedDt, row, 0)
 
-                    writeData(dstImg, subDataset, scaler, subProduct.minValue, subProduct.maxValue, style)
-        else:
-            return
+                    outBnd.SetNoDataValue(255)
+
+                    outDt.FlushCache()
+                    outDt = None
+                except:
+                    print("issue for image: ", dstImg)
+
 
     elif params["productInfo"].productType == "anomaly": #for now just copy file
         dstImg = os.path.join(params["mapserverPath"], *["anomaly", relImagePath[0]])
         if not os.path.isfile(dstImg):
             os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
             shutil.copy(image, dstImg)
-    else:
-        return
-
-    if params["productInfo"].style is not None:
-        applyColorTable(dstImg, 1, params["productInfo"].style)
 
 
-
-
+    if variableParams.style is not None:
+        applyColorTable(dstImg, variableParams.style)
 
     #print(dstImg)
     dstOverviews = dstImg + ".ovr"
@@ -148,7 +123,7 @@ def processSingleImage(params, relImagePath):
             "cnt": 0
         }
         outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64], callback=myProgress,
-                             callback_data=callbackData)
+                                 callback_data=callbackData)
         outDt = None
 
     ptr = re.compile(params["productInfo"].pattern)
@@ -156,11 +131,13 @@ def processSingleImage(params, relImagePath):
 
     layerName = None
     if params["productInfo"].productType == "raw":
-        layerName = "{0}_{1}".format(date[0:10], params["productInfo"].variable)
+        layerName = "{0}_{1}".format(date[0:10], variable)
     elif params["productInfo"].productType == "anomaly":
         layerName = date[0:10]
 
-    return LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date, params["productInfo"].id)
+    ret.append(LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
+                         params["productInfo"].id))
+    return ret
 
 
 class MapserverImporter(object):
@@ -170,84 +147,86 @@ class MapserverImporter(object):
 
         self._layerInfo = []
 
-    def __prepareLayerForImport(self, productId, productFiles, nThreads=multiprocessing.cpu_count()-1):
+    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=12):
         executor = ProcessPoolExecutor(max_workers=nThreads)
         rootPath = self._config.filesystem.imageryPath
         if Constants.PRODUCT_INFO[productId].productType == "anomaly":
             rootPath = self._config.filesystem.anomalyProductsPath
 
-        self._layerInfo.append(processSingleImage({"dataPath": rootPath,
-                                                   "mapserverPath": self._config.filesystem.mapserverPath,
-                                                   "productInfo": Constants.PRODUCT_INFO[productId]
-                                                   }, productFiles.fetchone()))
-
         """
         for row in productFiles:
             
-            self._layerInfo.append(processSingleImage({ "dataPath":rootPath,
+            self._layerInfo += processSingleImage({ "dataPath":rootPath,
                                  "mapserverPath": self._config.filesystem.mapserverPath,
-                                 "productInfo":Constants.PRODUCT_INFO[productId]
-                                }, row))
+                                 "productInfo":Constants.PRODUCT_INFO[productId],
+                                 "variable": variable
+                                }, row)
             print("ok")
         """
+        print("hereeeee")
+        threads = executor.map(processSingleImage, [{
+            "dataPath":rootPath,
+            "mapserverPath": self._config.filesystem.mapserverPath,
+            "productInfo":Constants.PRODUCT_INFO[productId],
+            "variable": variable
+            }]*productFiles.rowcount, productFiles)
 
-        """
-        threads = executor.map(processSingleImage, [{ "dataPath":rootPath,
-                                                     "mapserverPath": self._config.filesystem.mapserverPath,
-                                                     "productInfo":Constants.PRODUCT_INFO[productId]
-                                                     }]*productFiles.rowcount, productFiles)
-        
         for result in threads:
             if result is not None:
-                self._layerInfo.append(result)
-        """
-
-
+                self._layerInfo += result
 
     def process(self, productId):
         productGroups = dict()
         #for productId in Constants.PRODUCT_INFO:
         #print(Constants.PRODUCT_INFO[productId].productType)
-        query = """SELECT rel_file_path, date FROM product_file WHERE product_description_id = {0} 
+        query = """SELECT rel_file_path, date FROM product_file WHERE product_file_description_id = {0} 
         ORDER BY rel_file_path""".format(productId)
-        res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(query)
-        self.__prepareLayerForImport(productId, res)
 
-        #grouping layers per product and year
-        for layer in self._layerInfo:
-            #check if the current product exists
-            if layer.productKey not in productGroups:
-                productGroups[layer.productKey] = {}
+        for variable in Constants.PRODUCT_INFO[productId].variables:
+            res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(query)
+            self.__prepareLayerForImport(productId, variable, res)
 
-            #check if another product for the examined year has been appended
-            year = layer.date[0:4]
-            if year not in productGroups[layer.productKey]:
-                productGroups[layer.productKey][year] = {}
-            month = layer.date[5:7]
-            if month not in productGroups[layer.productKey][year]:
-                productGroups[layer.productKey][year][month] = []
+            #grouping layers per product and year
+            for layer in self._layerInfo:
+                #check if the current product exists
+                if layer.productKey not in productGroups:
+                    productGroups[layer.productKey] = {}
 
-            #finally append the product
-            productGroups[layer.productKey][year][month].append(layer)
+                #check if another product for the examined year has been appended
+                year = layer.date[0:4]
+                if year not in productGroups[layer.productKey]:
+                    productGroups[layer.productKey][year] = {}
+                month = layer.date[5:7]
+                if month not in productGroups[layer.productKey][year]:
+                    productGroups[layer.productKey][year][month] = []
 
-        for productKey in productGroups:
-            for year in productGroups[productKey]:
-                mapservURL = self._config.mapserver.rawDataWMS
+                #finally append the product
+                productGroups[layer.productKey][year][month].append(layer)
 
-                if (Constants.PRODUCT_INFO[productKey].productType == "anomaly"):
-                    mapservURL = self._config.mapserver.anomaliesWMS
+            for productKey in productGroups:
+                for year in productGroups[productKey]:
+                    mapservURL = self._config.mapserver.rawDataWMS
 
-                for month in productGroups[productKey][year]:
-                    outFile = os.path.join(self._config.filesystem.mapserverPath,
-                                       *(Constants.PRODUCT_INFO[productKey].productType,
+                    if (Constants.PRODUCT_INFO[productKey].productType == "anomaly"):
+                        mapservURL = self._config.mapserver.anomaliesWMS
+
+
+
+                    for month in productGroups[productKey][year]:
+                        outPathParams = [Constants.PRODUCT_INFO[productKey].productType,
                                          Constants.PRODUCT_INFO[productKey].productNames[0], year, month,
-                                         "mapserver.map"))
+                                         "mapserver.map"]
+                        if variable != "":
+                            outPathParams.insert(-1, variable)
 
 
-                    mapserv = MapServer(productGroups[productKey][year][month],
-                                    mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0],
-                                                      year,month), outFile)
-                    mapserv.process()
+                        outFile = os.path.join(self._config.filesystem.mapserverPath, *outPathParams)
+
+                        #print(outFile)
+                        mapserv = MapServer(productGroups[productKey][year][month],
+                                        mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0],
+                                                          year,month, variable), outFile)
+                        mapserv.process()
 
 
 

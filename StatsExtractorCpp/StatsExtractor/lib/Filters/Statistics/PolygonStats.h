@@ -28,7 +28,7 @@ class PolygonStats {
     std::vector<float> histogramRanges;
     size_t polyID;
 
-    JsonDocumentPtr histogramToJSON();
+    JsonDocumentUniquePtr histogramToJSON();
 
 public:
     using Pointer               = std::shared_ptr<PolygonStats>;
@@ -39,14 +39,13 @@ public:
     using PolyStatsPerRegion    = std::map<std::size_t, PolyStatsArrayPtr>;
     using PolyStatsPerRegionPtr = std::shared_ptr<PolyStatsPerRegion>;
 
-    PolygonStats(ProductInfo::Pointer prod, size_t polyID);
     ~PolygonStats();
 
-    static Pointer New(ProductInfo::Pointer& prod, const size_t& polyID);
-    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr& labels, ProductInfo::Pointer& prod);
-    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr& labels, ProductInfo::Pointer& prod);
+    static Pointer New(ProductInfo::Pointer& prod, ProductVariable::Pointer& variable, const size_t& polyID);
+    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr& labels, ProductInfo::Pointer& prod, ProductVariable::Pointer& variable);
+    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr& labels, ProductInfo::Pointer& prod, ProductVariable::Pointer& variable);
 
-    static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination, ProductInfo::Pointer product);
+    static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination);
     static void finalizeStatistics(PolyStatsMapPtr stats);
 
     void addToHistogram(float &value);
@@ -60,36 +59,44 @@ public:
     std::array<long double, 4> densityArray;
     size_t validCount, totalCount;
     ProductInfo::Pointer product;
+    ProductVariable::Pointer variable;
     std::vector<size_t> histogram;
     std::vector<RGBVal> densityColors;
 
     template <class InputPixelType, class LabelPixelType>
     inline void updateStats(InputPixelType& pixelData) { //apply it on valid polygon pixels!
+
         totalCount++;
 
-        if (pixelData == static_cast<InputPixelType>(this->product->getNoData()))
+        if (pixelData == static_cast<InputPixelType>(this->variable->getNoData()))
             return;
 
         validCount++;
 
-        auto val = product->lutProductValues[pixelData-product->minMaxValues[0]];
+        auto val = variable->lutProductValues[pixelData-variable->minMaxValues[0]];
         mean += val;
         sd   += pow(val,2);
 
         if (min > val)
             min = val;
 
+        //std::cout << max <<"\t" << val <<"\t" << (max < val) <<"\n";
+
         if (max < val)
             max = val;
 
-        size_t idx = (val <= product->valueRange.low)*0 +
-                (product->valueRange.low <= val && val < product->valueRange.mid)*1 +
-                (product->valueRange.mid <= val && val < product->valueRange.high)*2 +
-                (val >= product->valueRange.high)*3;
+        size_t idx = (val <= variable->valueRange.low)*0 +
+                (variable->valueRange.low <= val && val < variable->valueRange.mid)*1 +
+                (variable->valueRange.mid <= val && val < variable->valueRange.high)*2 +
+                (val >= variable->valueRange.high)*3;
 
         this->densityArray[idx]++;
         this->addToHistogram(val);
+
     }
+protected:
+    PolygonStats(ProductInfo::Pointer &prod, ProductVariable::Pointer &variable, size_t polyID);
+
 
 };
 

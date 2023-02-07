@@ -83,8 +83,8 @@ public:
 
     virtual void Reset(void) override;
     virtual void SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
-                           OGREnvelope& envlp, JsonDocumentPtr images, JsonDocumentPtr polyIds,
-                           size_t& polSRID);
+                           const ProductVariable::Pointer variable, OGREnvelope& envlp, JsonValue& images,
+                           JsonDocumentSharedPtr polyIds, size_t& polSRID);
     virtual void Synthetize(void) override;
     bool ValidAOI();
 
@@ -111,6 +111,7 @@ private:
 
     Configuration::Pointer config;
     ProductInfo::Pointer product;
+    ProductVariable::Pointer variable;
     OGREnvelope aoi;
     ImagesInfo productImages;
     size_t polySRID, currentRegionId;
@@ -120,8 +121,8 @@ private:
     RegionData rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
 
     void alignAOIToImage(OGREnvelope& envlp);
-    void prepareImageInfo(JsonDocumentPtr& images);
-    void processGeomIdsAndImages(JsonDocumentPtr& polyIds, JsonDocumentPtr& images);
+    void prepareImageInfo(JsonValue& images);
+    void processGeomIdsAndImages(JsonDocumentSharedPtr &polyIds, JsonValue& images);
 
 };
 

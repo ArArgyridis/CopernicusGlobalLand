@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(StatsExtractor LANGUAGES CXX)
 #add_definitions("-DRAPIDJSON_SCHEMA_USE_INTERNALREGEX=0")
-
+add_definitions("-DRAPIDJSON_HAS_STDSTRING=1")
 
 
 find_package(OTB REQUIRED)
@@ -53,7 +53,10 @@ set(SOURCE
     lib/Utils/Utils.cpp
     lib/Filters/Statistics/PolygonStats.cpp
     lib/Utils/ColorInterpolation.cpp
+    lib/Constants/ProductInfo.cpp
+    lib/Constants/ProductVariable.cpp
 )
+
 set (HEADERS
     lib/PostgreSQL/PostgreSQL.h
     lib/ConfigurationParser/ConfigurationParser.h
@@ -70,6 +73,8 @@ set (HEADERS
     lib/Filters/ProcessingChainFilter.h
     lib/Filters/ProcessingChainFilter.hxx
     lib/Filters/StreamedProcessingChainFilter.h
+    lib/Constants/ProductInfo.h
+    lib/Constants/ProductVariable.h
 )
 
 #add_compile_options(-fsanitize=address)

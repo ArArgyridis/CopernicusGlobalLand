@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
-	<highcharts ref="diagram" id="diagram" :options="diagramOptions"/>
+	<highcharts ref="diagram" v-if="product !=null" id="diagram" :options="diagramOptions"/>
 </template>
 
 <script>
@@ -33,20 +33,24 @@ export default {
 	},
 	computed:{
 		diagramTitle() {
-			if (this.$store.getters.product == null)
+			if (this.product == null)
 				return "Dummy Title";
 			return "Product Time Series for Region (" + this.mode + ")";
 		},
 		diagramOptions() {
-			let polyId = this.$store.getters.selectedPolygon;
-			let product = this.$store.getters.product;
-			if (this.mode == "Anomalies")
-				product = this.$store.getters.productAnomaly;
-			let valueRange  = [0, 1.5];
-			if (product !=null) 
-				valueRange = product.value_ranges;
+			if (this.product == null)
+				return;
 			
-			this.updateChartData(polyId, product, valueRange);			
+			let variable = this.product.currentVariable;
+			let polyId = this.$store.getters.selectedPolygon;
+			
+			if (this.mode == "Anomalies")
+				variable = this.$store.getters.currentAnomaly;
+			let valueRange  = [0, 1.5];
+			if (variable !=null) 
+				valueRange = variable.valueRanges;
+			
+			this.updateChartData(polyId, variable, valueRange);			
 			let step = (valueRange[valueRange.length-1] - valueRange[0])/valueRange.length;
 			
 			let tmpDt = this.diagramData;
@@ -58,6 +62,9 @@ export default {
 		noData() {
 			let ret = [null, null, null, null];
 			return ret;
+		},
+		product() {
+			return this.$store.getters.product;
 		}
 	},
 	data(){
@@ -65,7 +72,7 @@ export default {
 			diagramData: this.noData,
 			isLoading: true,
 			previousPolyId: null,
-			product: {id:null}
+			curProduct: {id:null}
 		}
 	},
 	methods:{
@@ -76,11 +83,11 @@ export default {
 			if (product == null || polyId == null)
 				return;
 			
-			if(this.product.id == product.id && this.previousPolyId ==polyId)
+			if(this.curProduct.id == product.id && this.previousPolyId ==polyId)
 				return;
 			
 			this.isLoading = true;
-			this.product = product;			
+			this.curProduct = product;			
 			this.previousPolyId = polyId;			
 			
 			if(polyId != null && product != null) { 

@@ -17,9 +17,9 @@
 #include "../../PostgreSQL/PostgreSQL.h"
 #include "PolygonStats.h"
 
-JsonDocumentPtr PolygonStats::histogramToJSON() {
+JsonDocumentUniquePtr PolygonStats::histogramToJSON() {
     //setting histogram Object
-    JsonDocumentPtr tmpHistogram = std::make_unique<rapidjson::Document>(rapidjson::kObjectType);
+    JsonDocumentUniquePtr tmpHistogram = std::make_unique<rapidjson::Document>(rapidjson::kObjectType);
 
     rapidjson::Document::AllocatorType &allocator = tmpHistogram->GetAllocator();
     JsonValuePtr histogramXAxis = std::make_unique<rapidjson::Value>(rapidjson::kArrayType);
@@ -39,7 +39,7 @@ JsonDocumentPtr PolygonStats::histogramToJSON() {
 
 
 
-PolygonStats::PolygonStats(ProductInfo::Pointer prod, size_t polyID):polyID(polyID), validCount(0), totalCount(0), product(prod) {
+PolygonStats::PolygonStats(ProductInfo::Pointer &prod, ProductVariable::Pointer &variable, size_t polyID):polyID(polyID), validCount(0), totalCount(0), product(prod), variable(variable) {
 
     mean = sd = 0;
 
@@ -48,45 +48,46 @@ PolygonStats::PolygonStats(ProductInfo::Pointer prod, size_t polyID):polyID(poly
 
     std::fill(densityArray.begin(),densityArray.end(), 0.0);
 
-    histogram.reserve(this->product->histogramBins);
-    histogram.resize(this->product->histogramBins);
+    histogram.reserve(this->variable->histogramBins);
+    histogram.resize(this->variable->histogramBins);
     std::fill(histogram.begin(), histogram.end(), 0);
 
-    float histWidth = (product->minMaxValues[1]-product->minMaxValues[0])/this->product->histogramBins;
+    float histWidth = (this->variable->minMaxValues[1]- this->variable->minMaxValues[0])/this->variable->histogramBins;
 
-    histogramRanges.reserve(this->product->histogramBins+1);
-    histogramRanges.resize(this->product->histogramBins+1);
+    histogramRanges.reserve(this->variable->histogramBins+1);
+    histogramRanges.resize(this->variable->histogramBins+1);
 
-    for (size_t i = 0; i < this->product->histogramBins+1; i++)
-        histogramRanges[i] = product->scaleValue(product->minMaxValues[0] +i*histWidth);
+    for (size_t i = 0; i < this->variable->histogramBins+1; i++)
+        histogramRanges[i] = this->variable->minMaxValues[0] +i*histWidth;
 
     densityColors = std::vector<RGBVal>(4);
     for (auto & color: densityColors)
         color.fill(0);
+
 }
 
 PolygonStats::~PolygonStats(){}
 
-PolygonStats::Pointer PolygonStats::New(ProductInfo::Pointer &prod, const size_t &polyID) {
-    return std::make_shared<PolygonStats>(prod, polyID);
+PolygonStats::Pointer PolygonStats::New(ProductInfo::Pointer &prod, ProductVariable::Pointer &variable, const size_t &polyID) {
+    return std::shared_ptr<PolygonStats>(new PolygonStats(prod, variable, polyID));
 }
 
-PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr &labels, ProductInfo::Pointer &prod) {
+PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr &labels, ProductInfo::Pointer &prod, ProductVariable::Pointer &variable) {
     PolyStatsMapPtr myMap = std::make_shared<PolyStatsMap>();
 
     for(const size_t & id: *labels)
-        myMap->insert(std::pair<size_t, Pointer>(id,PolygonStats::New(prod, id)));
+        myMap->insert(std::pair<size_t, Pointer>(id,PolygonStats::New(prod, variable, id)));
 
     return myMap;
 }
 
 PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr &labels,
-                                                                           ProductInfo::Pointer &prod){
+                                                                           ProductInfo::Pointer &prod, ProductVariable::Pointer &variable ){
     PolyStatsPerRegionPtr ret = std::make_shared<PolyStatsPerRegion>();
     for(auto &label:*labels) {
         PolyStatsArrayPtr k = std::make_shared<PolyStatsArray>(regionCount);
         for(size_t i = 0; i < regionCount; i++)
-            (*k)[i]=New(prod, label);
+            (*k)[i]=New(prod, variable, label);
 
         ret->insert(std::pair<size_t, PolyStatsArrayPtr>(label, k));
     }
@@ -96,7 +97,7 @@ PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_
 
 
 
-void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination, ProductInfo::Pointer product) {
+void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination) {
     if (source == nullptr)
         return;
 
@@ -122,7 +123,9 @@ void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr de
             for (size_t i = 0; i < polyStat->second->densityArray.size(); i++)
                 polyStat->second->densityArray[i] += regionStat->densityArray[i];
 
-            for(size_t i = 0; i <product->histogramBins; i++)
+
+
+            for(size_t i = 0; i <polyStat->second->variable->histogramBins; i++)
                 polyStat->second->histogram[i] += regionStat->histogram[i];
         }
     }
@@ -138,26 +141,32 @@ void PolygonStats::finalizeStatistics(PolyStatsMapPtr stats) {
             continue;
         }
 
+        /*FIX ME!
         for (size_t i = 0; i < 4; i++)
             polyStat.second->densityArray[i] = polyStat.second->product->convertPixelsToArea(polyStat.second->densityArray[i]);
         polyStat.second->computeColors();
+        */
 
 
     }
 }
 
 void PolygonStats::addToHistogram(float &value) {
+
     bool stop = false;
-    for (size_t i = 0; i < product->histogramBins && !stop; i++ ) {
+    for (size_t i = 0; i < variable->histogramBins && !stop; i++ ) {
         stop = histogramRanges[i] <= value && value <= histogramRanges[i+1];
         histogram[i] += static_cast<int>(stop);
     }
+
 }
 
 void PolygonStats::computeColors() {
-    long double area = product->convertPixelsToArea(validCount);
+
+    long double area = variable->convertPixelsToArea(validCount);
     for (size_t i = 0; i < densityArray.size(); i++)
-        densityColors[i] = product->colorInterpolation[i].interpolateColor(densityArray[i]/area*100);
+        densityColors[i] = variable->colorInterpolation[i].interpolateColor(densityArray[i]/area*100);
+
 }
 
 void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer cfg, PolyStatsMapPtr polygonData){
@@ -193,7 +202,7 @@ void PolygonStats::updateDBTmp(const size_t &productFileID, size_t& regionId, Co
 
     for(auto & polyData:*polygonData) {
         auto hist = polyData.second->histogramToJSON();
-        data  <<"(" << polyData.first << "," << productFileID << "," <<regionId << "," << polyData.second->mean <<"," <<polyData.second->sd <<","
+        data  <<"(" << polyData.first << "," << productFileID << "," << polyData.second->variable->id <<"," <<regionId << "," << polyData.second->mean <<"," <<polyData.second->sd <<","
              <<polyData.second->min <<"," << polyData.second->max <<"," << polyData.second->densityArray[0]/10000 <<","
             << polyData.second->densityArray[1]/10000 <<"," << polyData.second->densityArray[2]/10000 <<"," << polyData.second->densityArray[3]/10000 <<",'"
             << jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
@@ -202,15 +211,15 @@ void PolygonStats::updateDBTmp(const size_t &productFileID, size_t& regionId, Co
     if (data.tellp() == 0)
         return;
 
-    std::string query = "WITH tmp_data(poly_id, product_file_id, region_id, mean, sd, min_val,max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
+    std::string query = "WITH tmp_data(poly_id, product_file_id, product_file_variable_id, region_id, mean, sd, min_val,max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
                         " histogram, total_pixels, valid_pixels) AS( VALUES " + stringstreamToString(data) + ")" +
-            " INSERT INTO tmp.poly_stats_per_region(poly_id, product_file_id, region_id, mean, sd, min_val, max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
+            " INSERT INTO tmp.poly_stats_per_region(poly_id, product_file_id, product_file_variable_id, region_id, mean, sd, min_val, max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
             "  histogram, total_pixels, valid_pixels)"
-            " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, region_id::bigint, mean::double precision, sd::double precision, min_val::double precision, max_val::double precision, tdt.noval_area_ha::double precision,"
+            " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, tdt.product_file_variable_id::bigint, region_id::bigint, mean::double precision, sd::double precision, min_val::double precision, max_val::double precision, tdt.noval_area_ha::double precision,"
             " tdt.sparse_area_ha::double precision, tdt.mid_area_ha::double precision, tdt.dense_area_ha::double precision,"
             " histogram::jsonb, total_pixels::bigint, valid_pixels::bigint"
             " FROM tmp_data tdt"
-            " ON CONFLICT(poly_id, product_file_id, region_id) DO NOTHING;";
+            " ON CONFLICT(poly_id, product_file_id, product_file_variable_id, region_id) DO NOTHING;";
 
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
     cn->executeQuery(query);
