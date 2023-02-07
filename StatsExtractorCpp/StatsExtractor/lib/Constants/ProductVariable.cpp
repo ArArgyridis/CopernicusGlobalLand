@@ -28,7 +28,7 @@ firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), 
         colorInterpolation[i] = ColorInterpolation(params[colorRamps[i].c_str()]);
 
     if (firstProductPath != nullptr) {
-        if(*productType == "raw")
+        if(*productType == "raw" && firstProductPath->extension() == ".nc")
             firstProductVariablePath = std::make_shared<boost::filesystem::path>(std::string("NETCDF:") + firstProductPath->string() + ":" + variable);
 
         loadMetadata();
@@ -43,7 +43,7 @@ ProductVariable::Pointer ProductVariable::New(JsonValue &params, StringPtr prdTy
 boost::filesystem::path ProductVariable::productAbsPath(boost::filesystem::path &relPath) {
     boost::filesystem::path retPath;
 
-    if(*productType == "raw")
+    if(relPath.extension() == ".nc")
         retPath = std::string("NETCDF:") + (*rootPath/relPath).string() + ":" + variable;
     else
         retPath = *rootPath/relPath;
@@ -76,7 +76,7 @@ void ProductVariable::loadMetadata() {
     reverseScaler = &reverseNoScalerFunc;
     metadata = getMetadata(*firstProductVariablePath);
 
-    if (*productType =="raw") {
+    if (firstProductVariablePath->extension() == ".nc") {
         scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
         if((*metadata)[variable+"#add_offset"].length() > 0)
         addOffset = std::stod((*metadata)[variable+"#add_offset"]);

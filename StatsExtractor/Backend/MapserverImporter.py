@@ -57,49 +57,51 @@ def processSingleImage(params, relImagePath):
 
     dstImg = None
     variable = params["variable"]
+    if variable is None:
+        variable = ''
     variableParams = params["productInfo"].variables[params["variable"]]
     if params["productInfo"].productType == "raw":
         if image.endswith(".nc"):
-            subDataset = netCDFSubDataset(image, variable)
+            image = netCDFSubDataset(image, variable)
 
-            dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
+        dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
                                                          relImagePath[1].strftime("%Y"),
                                                          relImagePath[1].strftime("%m"),
                                                          variable,
                                                          os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
-            print("out img: ", dstImg)
+        print("out img: ", dstImg)
 
-            if not os.path.isfile(dstImg):
-                tmpDt = gdal.Open(subDataset)
-                os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
+        if not os.path.isfile(dstImg):
+            tmpDt = gdal.Open(image)
+            os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
 
-                outDrv = gdal.GetDriverByName("GTiff")
-                outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
+            outDrv = gdal.GetDriverByName("GTiff")
+            outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
                               options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
-                outDt.SetProjection(tmpDt.GetProjection())
-                outDt.SetGeoTransform(tmpDt.GetGeoTransform())
-                outBnd = outDt.GetRasterBand(1)
-                origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
+            outDt.SetProjection(tmpDt.GetProjection())
+            outDt.SetGeoTransform(tmpDt.GetGeoTransform())
+            outBnd = outDt.GetRasterBand(1)
+            origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
 
-                scaler = None
-                if variableParams.minProdValue >= 0 and variableParams.maxProdValue <= 255:
-                    scaler = plainScaller
-                else:
-                    scaler = linearScaller
-                try:
-                    for row in range(tmpDt.RasterXSize):
-                        rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
-                        fixedDt = scaler(rowDt, variableParams.minValue,
-                                         variableParams.maxValue, origNoDataValue, 255, 0, 250)
+            scaler = None
+            if variableParams.minProdValue >= 0 and variableParams.maxProdValue <= 255:
+                scaler = plainScaller
+            else:
+                scaler = linearScaller
+            try:
+                for row in range(tmpDt.RasterXSize):
+                    rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
+                    fixedDt = scaler(rowDt, variableParams.minValue,
+                                     variableParams.maxValue, origNoDataValue, 255, 0, 250)
 
-                        outBnd.WriteArray(fixedDt, row, 0)
+                    outBnd.WriteArray(fixedDt, row, 0)
 
-                    outBnd.SetNoDataValue(255)
+                outBnd.SetNoDataValue(255)
 
-                    outDt.FlushCache()
-                    outDt = None
-                except:
-                    print("issue for image: ", dstImg)
+                outDt.FlushCache()
+                outDt = None
+            except:
+                print("issue for image: ", dstImg)
 
 
     elif params["productInfo"].productType == "anomaly": #for now just copy file

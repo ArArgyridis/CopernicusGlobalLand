@@ -21,7 +21,7 @@
 
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
     GDALDatasetPtr tmpDataset =  GDALDatasetPtr(reinterpret_cast<GDALDataset*>(GDALOpenEx( dataPath.string().c_str(), GDAL_OF_RASTER, NULL, NULL, NULL )), GDALClose);
-
+    std::cout << dataPath <<"\n";
     char **meta = tmpDataset->GetMetadata();
 
     MetadataDictPtr bandMetadata = std::make_unique<MetadataDict>();
