@@ -80,8 +80,6 @@ class Constants:
                 query += " AND p.id IN (" + ",".join([str(id) for id in _cfg.enabledProductIds]) +")"
 
             query += """ ORDER BY p.id""".format(_cfg.statsInfo.schema)
-            print(query)
-
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
 
             if res != 1:
