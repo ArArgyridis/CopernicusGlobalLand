@@ -39,8 +39,18 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
                     ORDER BY pf.id
                     LIMIT 1
                 ) productPath ON TRUE
-                WHERE pfd.pattern is not NULL --AND p.category_id IS NOT NULL
-                ORDER BY p.id)"""";
+                WHERE pfd.pattern is not NULL)"""";
+
+    if (cfg->enabledProductIds.size() > 0) {
+        query += " AND p.id IN (";
+        for (auto &id:cfg->enabledProductIds){
+           query += std::to_string(id) +=",";
+        }
+        query.resize(query.size()-1);
+        query +=")";
+        std::cout << query <<"\n";
+    }
+    query += " ORDER BY p.id;";
 
 
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);

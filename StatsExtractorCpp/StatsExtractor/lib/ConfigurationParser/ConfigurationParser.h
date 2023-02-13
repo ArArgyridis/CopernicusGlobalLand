@@ -44,6 +44,8 @@ public:
     using Pointer = std::shared_ptr<Configuration>;
     FileSystem filesystem;
     StatsInfo statsInfo;
+    std::vector<std::size_t> enabledProductIds;
+
     unsigned short parse();
 
     static Pointer New(std::string cfgPath);

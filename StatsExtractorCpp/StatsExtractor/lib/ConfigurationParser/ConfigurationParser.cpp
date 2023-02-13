@@ -69,6 +69,12 @@ unsigned short Configuration::parse() {
     filesystem.tmpPath              = cfg["filesystem"]["tmp_path"].GetString();
     filesystem.mapserverPath        = cfg["filesystem"]["mapserver_data_path"].GetString();
 
+    //enabled products -- if null all products should be used
+    if(!cfg["enabled_product_ids"].IsNull() && cfg["enabled_product_ids"].IsArray()){
+        for (auto & id: cfg["enabled_product_ids"].GetArray())
+            enabledProductIds.emplace_back(id.GetInt());
+    }
+
     return 0;
 }
 
