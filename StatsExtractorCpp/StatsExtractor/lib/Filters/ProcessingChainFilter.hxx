@@ -232,7 +232,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
 }
 
 template <class TInputImage, class TPolygonDataType>
-ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId) {
+typename ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData ProcessingChainFilter<TInputImage, TPolygonDataType>::rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId) {
     //converting region to extent
     RegionData ret;
 

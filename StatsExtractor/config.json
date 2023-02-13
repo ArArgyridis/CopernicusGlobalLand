@@ -34,5 +34,6 @@
 	"mapserver": {
 		"raw_data_wms": "url_here/{0}/{1}/{2}",
 		"anomalies_wms": "url_here/{0}/{1}"
-	}
+	},
+	"enabled_product_ids": null
 } 

@@ -146,13 +146,9 @@ class StatsRequests(GenericRequest):
         SELECT ps.poly_id, 
 	jsonb_build_object(
 		'meanval_color', ps.meanval_color::jsonb, 
-		'no_area_perc', round(ps.noval_area_ha/(ps.noval_area_ha+ps.sparse_area_ha+ps.mid_area_ha+ps.dense_area_ha)*100), 
 		'noval_color', ps.noval_color::jsonb,
-		'sparse_area_perc', round(ps.sparse_area_ha/(ps.noval_area_ha+ps.sparse_area_ha+ps.mid_area_ha+ps.dense_area_ha)*100), 
 		'sparseval_color', ps.sparseval_color::jsonb,
-		'mid_area_perc', round(ps.mid_area_ha/(ps.noval_area_ha+ps.sparse_area_ha+ps.mid_area_ha+ps.dense_area_ha)*100),
 		'midval_color', ps.midval_color::jsonb,
-		'dense_area_perc', round(ps.dense_area_ha/(ps.noval_area_ha+ps.sparse_area_ha+ps.mid_area_ha+ps.dense_area_ha)*100),
 		'highval_color', ps.highval_color::jsonb
      ) res
      FROM  poly_stats ps 
@@ -208,8 +204,7 @@ class StatsRequests(GenericRequest):
             JOIN product p on pfd.product_id =p.id
             WHERE date between  '{1}' and '{2}' and pfv.id  = {3}
             GROUP BY pfv.variable, pfd.pattern,pfd.types,pfd.create_date""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
-        print(query)
-        
+       
         threads = []
         
         threads.append(Process(target=productStats, args=(self._config, query, path, self._requestData, result, "product")))
@@ -237,9 +232,7 @@ class StatsRequests(GenericRequest):
         WHERE pfv.id = {1}
         GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
         """.format(path, self._requestData["options"]["product_id"])
-        
-        print(query)
-        
+
         threads.append(Process(target=productStats, args=(self._config, mQuery, path, self._requestData, result,  "mean")))
         threads[-1].start()
         
@@ -278,7 +271,8 @@ class StatsRequests(GenericRequest):
         #converting mean and stdev dicts to doy        
         ltsStats = {}
         tmpDoys = []
-        if productType == "raw":
+        print(resultDict)
+        if productType == "raw" and resultDict["mean"] != None:
             for mn, sd in zip(resultDict["mean"]["raw"], resultDict["stdev"]["raw"]):
                 doy = datetime.fromisoformat(mn[0])
                 doy = doy.utctimetuple().tm_yday

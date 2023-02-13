@@ -45,7 +45,7 @@ class DBDeployer(object):
                                                                                           createDBOptions.user))
 
     def __loadSchema(self, createDBOptions):
-        cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} < {4}".format(
+        cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} --no-owner --role={2} < {4}".format(
             self._cfg.pgConnections["admin"].password,
             createDBOptions.db,
             self._cfg.pgConnections["admin"].user,

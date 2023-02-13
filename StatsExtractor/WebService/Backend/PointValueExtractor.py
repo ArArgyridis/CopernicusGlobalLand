@@ -79,10 +79,10 @@ class PointValueExtractor():
                     raise FileExistsError
             
                 inData = None
-                if self._data[0] is None: #that should be an anomaly....
-                    inData = gdal.Open(img)
-                else:
+                if img.endswith(".nc"):
                     inData = gdal.Open(self.__getNETCDFSubdataset(img))
+                else:
+                    inData = gdal.Open(img)
                 
                 if inData is None:
                     continue
@@ -109,7 +109,7 @@ class PointValueExtractor():
                 if value == inData.GetRasterBand(1).GetNoDataValue():
                     ret["raw"][i][1] = None
                 #applying netCDF scaling for raw data
-                elif self._data[0] is not None:
+                elif img.endswith(".nc"):
                     ret["raw"][i][1] =  np.round(scaleValue(inData.GetMetadata(), ret["raw"][i][1], self._data[0]), 4)
                 i += 1
         except FileExistsError:
@@ -119,10 +119,10 @@ class PointValueExtractor():
             print("The specified variable does not exist")
             ret = None
         except:
-            print("Unable to extract statistics. Exiting")
-            ret = None
+           print("Unable to extract statistics. Exiting")
+           ret = None
 
-        self._movingAverage(ret)
+        #self._movingAverage(ret)
         return ret
 
 def main():

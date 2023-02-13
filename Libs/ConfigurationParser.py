@@ -148,6 +148,7 @@ class ConfigurationParser(object):
         self.cfgFile = cfgFile
         self.pgConnections = {}
         self.statsInfo = None
+        self.enabledProductIds = None
 
     def getFile(self):
         return self.cfgFile
@@ -186,6 +187,10 @@ class ConfigurationParser(object):
             
             #mapserver 
             self.mapserver = MapServer(configData["mapserver"])
+
+            #enabled product ids -- if None then use all
+            self.enabledProductIds = configData["enabled_product_ids"]
+
             return 0
 
         except FileExistsError:

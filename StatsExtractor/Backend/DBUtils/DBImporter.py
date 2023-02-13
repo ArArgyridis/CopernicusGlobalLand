@@ -57,7 +57,7 @@ class DBImporter:
             DO NOTHING;""".format(self.__configuration.statsInfo.schema, self.__descriptor),
 
             """ INSERT INTO {0}.stratification_geom (stratification_id, geom, geom3857, description) SELECT s.id, ST_Transform({2},4326),
-             ST_Transform({2}, 3857), {3} FROM {4}.{5} JOIN {0}.stratification s 
+             ST_Transform({2}, 3857), dt.{3} FROM {4}.{5} dt JOIN {0}.stratification s 
              ON s.description= '{1}'; """.format(self.__configuration.statsInfo.schema,self.__descriptor,self.__geomColumn,
                                                  self.__descriptionColumn,
                                                  self.__configuration.statsInfo.tmpSchema, self.__tmpTable),

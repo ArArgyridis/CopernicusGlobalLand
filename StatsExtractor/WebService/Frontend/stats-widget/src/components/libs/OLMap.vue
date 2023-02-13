@@ -34,6 +34,7 @@ import Overlay from 'ol/Overlay';
 import {register} from 'ol/proj/proj4';
 import {LineString, Point, Polygon, MultiPolygon} from 'ol/geom';
 import TileLayer from 'ol/layer/Tile';
+//import TileLayer from 'ol/layer/WebGLTile.js';
 import TileWMS from 'ol/source/TileWMS';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -118,9 +119,11 @@ export default {
 			this.map.on('loadstart', () =>{
 				this.activateSpinner();
 			});
+			
 			this.map.on('rendercomplete', () => {
 				this.deactivateSpinner();
 			});
+			
 		},
 		activateSpinner() {
 			document.getElementById(this.id).classList.add('spinner');
@@ -377,7 +380,8 @@ export default {
 							wmsParams: {
 								LAYERS: layer.Title,
 								WIDTH:256,
-								HEIGHT:256
+								HEIGHT:256,
+								FORMAT: "image/png"
 							},
 							serverType: "mapserver",
 							crossOrigin: "anonymous",
@@ -727,6 +731,7 @@ to {
 	border: 5px solid rgba(180, 180, 180, 0.6);
 	border-top-color: rgba(0, 0, 0, 0.6);
 	animation: spinner 0.6s linear infinite;
+	z-index:10000;
 }
 
 

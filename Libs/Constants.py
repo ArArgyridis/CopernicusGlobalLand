@@ -75,8 +75,12 @@ class Constants:
             FROM product p 
             LEFT JOIN product_file_description pfd on p.id = pfd.product_id 
             LEFT JOIN product_variables pv on pv.product_file_description_id = pfd.id
-            WHERE pattern is not NULL AND p.id = 10
-            ORDER BY p.id""".format(_cfg.statsInfo.schema)
+            WHERE pattern is not NULL"""
+            if _cfg.enabledProductIds is not None:
+                query += " AND p.id IN (" + ",".join([str(id) for id in _cfg.enabledProductIds]) +")"
+
+            query += """ ORDER BY p.id""".format(_cfg.statsInfo.schema)
+            print(query)
 
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
 
