@@ -39,14 +39,18 @@ export default{
 				appendToProductsAnomaliesWMSLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers = {...state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
-					if (date != null)
+					if (date != null) {
+						state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
 						state.categories.current.products.current.currentVariable.currentAnomaly.wms.current = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
+					}
 				},
 				appendToCurrnetVariableWMSLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.wms.layers = {...state.categories.current.products.current.currentVariable.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
-					if (date != null)
+					if (date != null) {
 						state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[date];
+						state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[date];
+					}
 				},
 				changeCategory(state, dt) {
 					if (!state.categories.current == null)
@@ -79,6 +83,9 @@ export default{
 						state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[state.categories.current.products.current.currentDate];
 					else
 						state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[state.categories.current.products.current.currentDate];
+					
+					state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[state.categories.current.products.current.currentDate];
+					state.categories.current.products.current.currentVariable.currentAnomaly.wms.current =  state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[state.categories.current.products.current.currentDate];
 				},		     
 				leftPanelVisibility(state, dt) {
 					state.leftPanelVisible = dt;
