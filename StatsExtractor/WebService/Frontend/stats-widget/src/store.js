@@ -39,17 +39,19 @@ export default{
 				appendToProductsAnomaliesWMSLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers = {...state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
-					if (date != null) {
-						state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
+					if (date != null && state.categories.current.products.current.currentVariable.currentAnomaly != null) {
 						state.categories.current.products.current.currentVariable.currentAnomaly.wms.current = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
+						if(state.categories.current.products.current.statisticsViewMode == 1)
+							state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
 					}
 				},
 				appendToCurrnetVariableWMSLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.wms.layers = {...state.categories.current.products.current.currentVariable.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null) {
-						state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[date];
 						state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[date];
+						if(state.categories.current.products.current.statisticsViewMode == 0)
+							state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[date];
 					}
 				},
 				changeCategory(state, dt) {
@@ -85,7 +87,8 @@ export default{
 						state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[state.categories.current.products.current.currentDate];
 					
 					state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[state.categories.current.products.current.currentDate];
-					state.categories.current.products.current.currentVariable.currentAnomaly.wms.current =  state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[state.categories.current.products.current.currentDate];
+					if (state.categories.current.products.current.currentVariable.currentAnomaly != null)
+						state.categories.current.products.current.currentVariable.currentAnomaly.wms.current =  state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[state.categories.current.products.current.currentDate];
 				},		     
 				leftPanelVisibility(state, dt) {
 					state.leftPanelVisible = dt;
