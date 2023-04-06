@@ -80,7 +80,7 @@ class StatsRequests(GenericRequest):
         	SELECT p.id,  p.name[1], p.description, pfd.id product_file_description_id, 
         	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.description)) variables
 	        FROM product p 
-        	JOIN product_file_description pfd ON p.id = pfd.product_id
+        	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
         	JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
         	JOIN LATERAL (
         		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object('name', panom.name[1]) || row_to_json(anompfv.*)::jsonb ))  anomaly_info
