@@ -177,11 +177,19 @@ class DataCrawler:
         for fl in files:
             pattern = re.compile(self._prodInfo.pattern)
             chk = os.path.split(fl)[1]
-            if pattern.fullmatch(chk):
-                dateInfo = pattern.findall(chk)[0]
-                dbData.append("({0})".format(",".join([str(self._prodInfo.id), "'{0}'".format(
-                    os.path.relpath(fl, storageDir)),"'{0}'".format(self._prodInfo._dateptr.format(*dateInfo)) ])))
-                execute = True
+
+            match = pattern.search(chk)
+            if not match:
+                continue
+
+            subStr = chk[match.start()::]
+            if not pattern.fullmatch(subStr):
+                continue
+
+            dateInfo = pattern.findall(subStr)[0]
+            dbData.append("({0})".format(",".join([str(self._prodInfo.id), "'{0}'".format(
+                os.path.relpath(fl, storageDir)),"'{0}'".format(self._prodInfo._dateptr.format(*dateInfo)) ])))
+            execute = True
 
 
         if execute:
