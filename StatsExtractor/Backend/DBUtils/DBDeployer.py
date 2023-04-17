@@ -41,7 +41,7 @@ class DBDeployer(object):
                 query += " WITH ENCRYPTED PASSWORD '{0}'".format(createDBOptions.password)
             query +=";"
             self.__creationQueries.append(query)
-            self.__creationQueries.append("GRANT ALL ON DATABASE {0} TO USER {1};".format(createDBOptions.db,
+            self.__creationQueries.append("ALTER DATABASE {0} OWNER TO {1};".format(createDBOptions.db,
                                                                                           createDBOptions.user))
 
     def __loadSchema(self, createDBOptions):
@@ -67,17 +67,28 @@ class DBDeployer(object):
         self.dbInit(createDBOptions, dropIfExists)
 
         self.__loadSchema(createDBOptions)
-        session = self._cfg.pgConnections["admin"].getNewSession(createDBOptions.db)
-        schemas = createDBOptions.fetchQueryResult(
-            "SELECT schema_name FROM information_schema.schemata", session)
 
-        for row in schemas:
-            self._cfg.pgConnections["admin"].executeQueries(
-                ["GRANT ALL ON SCHEMA {0} TO {1}".format(row[0], createDBOptions.user),
-                 "GRANT ALL ON ALL TABLES IN SCHEMA {0} TO {1}".format(row[0], createDBOptions.user),
-                 "GRANT ALL ON ALL SEQUENCES IN SCHEMA {0} TO {1};".format(row[0], createDBOptions.user)
-                 ], session)
+        ownershipQueries = []
+        # schema ownership
+        query = """
+                SELECT DISTINCT table_schema FROM information_schema.tables 
+                WHERE table_schema not in ('pg_catalog', 'information_schema');
+                """
+        schemas = createDBOptions.fetchQueryResult(query)
+        for schema in schemas:
+            ownershipQueries.append("ALTER SCHEMA {0} OWNER TO {1}".format(schema[0], createDBOptions.user))
 
+        # table ownership
+        query = """SELECT table_schema,table_name FROM information_schema.tables 
+                WHERE table_schema not in ('pg_catalog', 'information_schema');"""
+        tables = createDBOptions.fetchQueryResult(query)
+
+        for schemaTable in tables:
+            ownershipQueries.append("""ALTER TABLE "{0}"."{1}" OWNER TO {2} """.format(schemaTable[0], schemaTable[1],
+                                                                                       createDBOptions.user))
+
+        self._cfg.pgConnections["admin"].executeQueries(ownershipQueries,
+                                                        self._cfg.pgConnections["admin"].getNewSession(db=createDBOptions.db))
 
 
 def main():
