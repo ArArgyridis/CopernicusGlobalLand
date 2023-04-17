@@ -45,7 +45,7 @@ class DBDeployer(object):
                                                                                           createDBOptions.user))
 
     def __loadSchema(self, createDBOptions):
-        cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} --no-owner --role={2} < {4}".format(
+        cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} --role={2} < {4}".format(
             self._cfg.pgConnections["admin"].password,
             createDBOptions.db,
             self._cfg.pgConnections["admin"].user,
@@ -84,6 +84,9 @@ class DBDeployer(object):
         tables = createDBOptions.fetchQueryResult(query)
 
         for schemaTable in tables:
+
+            ownershipQueries.append("""grant UPDATE, SELECT, REFERENCES, TRUNCATE, TRIGGER, INSERT, DELETE 
+            ON table "{0}"."{1}" to {2};""".format(schemaTable[0], schemaTable[1],createDBOptions.user))
             ownershipQueries.append("""ALTER TABLE "{0}"."{1}" OWNER TO {2} """.format(schemaTable[0], schemaTable[1],
                                                                                        createDBOptions.user))
 
