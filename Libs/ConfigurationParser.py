@@ -61,8 +61,8 @@ class PGOptions(object):
             return 1
 
     def executeQueries(self, queries, session=None):
-            query = None
-            #try:
+        query = None
+        try:
             if session is None:
                 session = self.getNewSession()
 
@@ -72,7 +72,7 @@ class PGOptions(object):
                 cursor.execute(query)
             session.commit()
             return 0
-            #except:
+        except:
             session.rollback()
             print(query)
             print("Unable to exequte queries. Exiting")
