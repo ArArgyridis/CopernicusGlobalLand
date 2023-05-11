@@ -9,3 +9,8 @@ if  ps -aux | grep -v grep |grep mapcache.fcgi; then
 	killall mapcache.fcgi
 	exit 0
 fi
+
+if  ps -aux | grep -v grep |grep mapserv; then
+	killall mapserv
+	exit 0
+fi

@@ -41,11 +41,11 @@ class DBDeployer(object):
                 query += " WITH ENCRYPTED PASSWORD '{0}'".format(createDBOptions.password)
             query +=";"
             self.__creationQueries.append(query)
-            self.__creationQueries.append("GRANT ALL ON DATABASE {0} TO USER {1};".format(createDBOptions.db,
+            self.__creationQueries.append("ALTER DATABASE {0} OWNER TO {1};".format(createDBOptions.db,
                                                                                           createDBOptions.user))
 
     def __loadSchema(self, createDBOptions):
-        cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} --no-owner --role={2} < {4}".format(
+        cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} --role={2} < {4}".format(
             self._cfg.pgConnections["admin"].password,
             createDBOptions.db,
             self._cfg.pgConnections["admin"].user,
