@@ -165,10 +165,6 @@ export default {
 			this.$refs.mapApp.clearWMSLayers();
 			this.$store.commit("clearProducts");
 			this.getProductInfo();
-			if (!this.activateClickOnMap) {
-				this.$refs.mapApp.toggleClickOnMap();
-				this.activateClickOnMap = true;
-			}
 		},
 		//hiding right panel
 		setRightPanelVisibility(status) {
@@ -192,10 +188,6 @@ export default {
 			document.getElementById(id).classList.toggle("hiddenBar");
 			document.getElementById(id).classList.toggle("shownBar");
 		},		
-		dateChanged() {
-			this.updateStratificationLayerStyle();
-			this.updateWMSVisibility();
-		},
 		updateStratificationInfo() {
 			this.$refs.mapApp.clearStratifications();
 			
