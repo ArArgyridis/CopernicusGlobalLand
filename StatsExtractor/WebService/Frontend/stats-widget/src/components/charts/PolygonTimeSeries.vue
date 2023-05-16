@@ -42,7 +42,6 @@ export default {
 				return;
 			
 			let variable = this.product.currentVariable;
-			let polyId = this.$store.getters.selectedPolygon;
 			
 			if (this.mode == "Anomalies")
 				variable = this.$store.getters.currentAnomaly;
@@ -50,7 +49,7 @@ export default {
 			if (variable !=null) 
 				valueRange = variable.valueRanges;
 			
-			this.updateChartData(polyId, variable, valueRange);			
+			this.updateChartData();			
 			let step = (valueRange[valueRange.length-1] - valueRange[0])/valueRange.length;
 			
 			let tmpDt = this.diagramData;
@@ -79,7 +78,9 @@ export default {
 		loads() {
 			return this.isLoading;
 		},
-		updateChartData(polyId, product) {
+		updateChartData() {
+			let product = this.$store.getters.product;
+			let polyId = this.$store.getters.selectedPolygon;
 			if (product == null || polyId == null)
 				return;
 			
