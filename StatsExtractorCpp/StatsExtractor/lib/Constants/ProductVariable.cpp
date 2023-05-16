@@ -75,8 +75,9 @@ void ProductVariable::loadMetadata() {
     scaler = &noScalerFunc;
     reverseScaler = &reverseNoScalerFunc;
     metadata = getMetadata(*firstProductVariablePath);
+    std::string s = (firstProductVariablePath->string()).substr(0,6);
 
-    if (firstProductVariablePath->extension() == ".nc") {
+    if ((firstProductVariablePath->string()).substr(0,6) == "NETCDF") {
         scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
         if((*metadata)[variable+"#add_offset"].length() > 0)
         addOffset = std::stod((*metadata)[variable+"#add_offset"]);
