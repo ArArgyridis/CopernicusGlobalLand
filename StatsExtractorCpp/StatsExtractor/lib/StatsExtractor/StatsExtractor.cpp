@@ -66,7 +66,7 @@ void StatsExtractor::process() {
                     JOIN product p ON TRUE
                     JOIN product_file_description pfd ON p.id = pfd.product_id
                     JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-                    JOIN product_file pf ON pfd.id = pf.product_file_description_id AND sg.id = 63 --AND pf.id = 867 --AND pf.id = 1 --AND p.id = 1 AND sg.id = 45
+                    JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 63 --AND pf.id = 867 --AND pf.id = 1 --AND p.id = 1 AND sg.id = 45
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
                     WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.id IS NULL
                 ),extent AS(
