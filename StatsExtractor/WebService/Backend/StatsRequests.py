@@ -141,7 +141,7 @@ class StatsRequests(GenericRequest):
         
     def __fetchStratificationDataByProductAndDate(self):
         query = """
-        SELECT ARRAY_TO_JSON(ARRAY_AGG(res ORDER BY ps.poly_id) ) FROM(
+        SELECT ARRAY_TO_JSON(ARRAY_AGG(res) ) FROM(
             SELECT jsonb_build_object(
 		'id', ps.poly_id,
                 'meanval_color', ps.meanval_color::jsonb, 
