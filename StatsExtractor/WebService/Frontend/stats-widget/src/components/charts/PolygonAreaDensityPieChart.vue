@@ -88,7 +88,10 @@ export default {
 					type: 'pie'
 				},
 				title: {
-					text: this.diagramTitle
+					text: this.diagramTitle,
+					style: {
+						fontSize: '15px' 
+					}
 				},
 				tooltip: {
 					pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'

@@ -171,7 +171,10 @@ export default {
 					enabled:false
 				},
 				title:{
-					text: this.diagramTitle
+					text: this.diagramTitle,
+					style: {
+						fontSize: '15px' 
+					}
 				},
 				series: [
 					{

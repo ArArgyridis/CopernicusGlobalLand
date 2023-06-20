@@ -394,11 +394,11 @@ export default {
 }
 
 .dashboardPrintInnerArea {
-	margin: 3%;
+	margin: 2.5%;
 	box-sizing: border-box;
-	padding: 3%;
+	padding: 2.5%;
 	border:1px solid black;
-	height: 96%;
+	height: 97.5%;
 }
 
 .modal-enter-active,
