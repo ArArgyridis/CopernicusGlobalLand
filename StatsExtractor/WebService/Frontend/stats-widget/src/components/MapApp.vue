@@ -301,10 +301,39 @@ export default {
 					styles["meanval_color"] = {}
 					
 					console.log("started!!!!");
-					Object.keys(response.data.data).forEach( id =>{
-						let rec = response.data.data[id];
+					console.log(response.data.data);
+					for (let idx = 0; idx < response.data.data.length; idx++) {
+						let rec = response.data.data[idx];
+						let id = rec.id;
+						console.log(rec)
 						Object.keys(styles).forEach(colorCol => {
 							let color = rec[colorCol];
+							//console.log(rec)
+							styles[colorCol][id] = new Style();
+							if (color != null) {
+								let joinedColor = color.join();
+								styles[colorCol][id] = new Style({
+									fill: new Fill({
+										color: "rgba(" + joinedColor + ",0.7)",
+									}),
+									stroke: new Stroke({
+										color:  "rgba(" + joinedColor + ",1.0)",
+									width: 1.2,
+									})
+								});
+							}
+						});
+						
+					
+					}
+					/*
+					
+					Object.keys(response.data.data).forEach( rec =>{
+						console.log(rec);
+						let id = rec.id;
+						Object.keys(styles).forEach(colorCol => {
+							let color = rec[colorCol];
+							//console.log(rec)
 							styles[colorCol][id] = new Style();
 							if (color != null) {
 								let joinedColor = color.join();
@@ -320,6 +349,7 @@ export default {
 							}
 						});
 					});
+					*/
 					console.log("finished!!!!");
 				
 					this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID][this.stratificationViewProps.date] = styles;
