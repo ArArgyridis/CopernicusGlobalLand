@@ -53,7 +53,7 @@ export default {
 			if (this.mode == "Anomalies")
 				variable = this.$store.getters.currentAnomaly;
 		
-			this.updateChartData();
+			//this.updateChartData();
 
 			let tmpDt = this.diagramData;
 			if (tmpDt == null)
@@ -93,6 +93,9 @@ export default {
 		updateChartData() {
 			//checking if data should be fetched
 			let product = this.$store.getters.product;
+			if(this.mode == "Anomalies")
+				product = this.$store.getters.currentAnomaly;
+				
 			let coords =this.$store.getters.clickedCoordinates;
 			if (coords != null)
 				coords = JSON.parse(JSON.stringify(coords));
@@ -113,6 +116,7 @@ export default {
 			this.resizeChart();
 
 			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, product.id, coords).then((response) => {
+				this.resizeChart();
 				let diagramData = null;
 				if (this.mode == "Raw") {
 					diagramData = [

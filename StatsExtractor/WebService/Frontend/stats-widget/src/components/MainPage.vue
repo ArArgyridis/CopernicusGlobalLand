@@ -172,6 +172,8 @@ export default {
 				this.togglePanelClasses("rightPanel");
 				this.showRightPanel = status;
 			}
+			if(status)
+				this.$refs.rightPanel.updateCurrentChart();
 		},
 		showDashboard() {
 			this.showTheDashboard = true;
@@ -199,6 +201,8 @@ export default {
 		},
 		updateStratificationLayerStyle(){
 			this.$refs.mapApp.updateStratificationLayerStyle();
+			if(this.showRightPanel)
+				this.$refs.rightPanel.updateCurrentChart();
 		},
 		updateStratificationLayerVisibility() {
 			this.setRightPanelVisibility(false);

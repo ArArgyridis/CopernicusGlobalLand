@@ -28,7 +28,7 @@ export default {
 			}
 		},
 		diagramOptions(){
-			this.updateChartData();
+			//this.updateChartData();
 			return this.__computeChartOptions();
 		},
 		diagramTitle() {
@@ -36,7 +36,7 @@ export default {
 				return "Dummy Title";
 			
 			let tmpDate = new Date(Date.parse(this.$store.getters.currentDate));
-			return "Region Histogram for " + tmpDate.toDateString();
+			return "Region Histogram for raw Product (" + tmpDate.toDateString() + ")";
 		},
 		noData() {
 			return [null, null];
@@ -68,6 +68,7 @@ export default {
 			this.date = this.$store.getters.currentDate;
 			this.polygonId = this.$store.getters.selectedPolygon;
 			requests.fetchHistogramByPolygonAndDate(this.polygonId, this.date, this.product.currentVariable.id).then((response) =>{
+				this.resizeChart();
 				let xAxisCategories = [];
 				for (let i = 0; i < response.data.data.histogram.y.length; i++) {
 					xAxisCategories.push(response.data.data.histogram.x[i].toString() +"-" + response.data.data.histogram.x[i+1].toString());

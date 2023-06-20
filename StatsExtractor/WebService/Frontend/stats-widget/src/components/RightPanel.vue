@@ -20,16 +20,15 @@
 		</div>
 		<nav class="navbar navbar-dark bg-secondary" >
 			<div class="container-fluid">
-				<a class="navbar-brand" href="#">Active Diagram: {{ navBarOptions[curActiveDiagramId].content }}</a>
-				
+				<a class="navbar-brand" href="#">{{ diagramTitle(navBarOptions[curActiveDiagramId].ref) }}</a>
 				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>
 				</button>
 				
 				<div class="collapse navbar-collapse" id="navbarNav">
 					<ul class="navbar-nav">
-						<li class="nav-item"  v-bind:class="{active: nav.id == curActiveDiagramId}"   v-for="nav in navBarOptions"  v-bind:key="nav.id">
-							<a class="nav-link" aria-current="page" href="#" v-on:click="switchActive(nav.id)">{{nav.content}}</a>
+						<li class="nav-item"  v-bind:class="{active: key == curActiveDiagramId}"   v-for="(nav, key) in navBarOptions"  v-bind:key="key" v-bind:id="'navbar_'+navBarOptions[key].ref">
+							<a class="nav-link" aria-current="page" href="#" v-on:click="switchActive(key)" v-bind:class="nav.class">{{diagramTitle(nav.ref)}}</a>
 						</li>
 					</ul>
 				</div>
@@ -38,13 +37,13 @@
 	</div>
 	<div class="row mt-3">
 		<div class="col">
-			<PointTimeSeries v-show="curActiveDiagramId == 0 && navBarOptions[0].condition() " v-bind:ref="refs[0]" mode="Raw"/>
-			<PointTimeSeries v-show="curActiveDiagramId == 1 && navBarOptions[1].condition() " v-bind:ref="refs[1]" mode="Anomalies"/>
-			<PolygonTimeSeries v-show="curActiveDiagramId == 2 && navBarOptions[2].condition() " v-bind:ref="refs[2]" mode="Raw"/>
-			<PolygonTimeSeries v-show="curActiveDiagramId == 3 && navBarOptions[3].condition() " v-bind:ref="refs[3]" mode="Anomalies"/>
-			<PolygonAreaDensityPieChart  v-show="curActiveDiagramId == 4 && navBarOptions[4].condition()" v-bind:ref="refs[4]"/>
-			<PolygonHistogramData v-show="curActiveDiagramId == 5 && navBarOptions[5].condition()" v-bind:ref="refs[5]"/>
-			<PolygonDensityTimeSeries v-show="curActiveDiagramId == 6 && navBarOptions[6].condition()" v-bind:ref="refs[6]"/>
+			<PointTimeSeries v-show="curActiveDiagramId == 0 && navBarOptions[0].condition() " v-bind:ref="navBarOptions[0].ref" mode="Raw"/>
+			<PointTimeSeries v-show="curActiveDiagramId == 1 && navBarOptions[1].condition() " v-bind:ref="navBarOptions[1].ref" mode="Anomalies"/>
+			<PolygonTimeSeries v-show="curActiveDiagramId == 2 && navBarOptions[2].condition() " v-bind:ref="navBarOptions[2].ref" mode="Raw"/>
+			<PolygonTimeSeries v-show="curActiveDiagramId == 3 && navBarOptions[3].condition() " v-bind:ref="navBarOptions[3].ref" mode="Anomalies"/>
+			<PolygonAreaDensityPieChart  v-show="curActiveDiagramId == 4 && navBarOptions[4].condition()" v-bind:ref="navBarOptions[4].ref"/>
+			<PolygonHistogramData v-show="curActiveDiagramId == 5 && navBarOptions[5].condition()" v-bind:ref="navBarOptions[5].ref"/>
+			<PolygonDensityTimeSeries v-show="curActiveDiagramId == 6 && navBarOptions[6].condition()" v-bind:ref="navBarOptions[6].ref"/>
 		</div>
 	</div>
 	<button class="btn btn-secondary mt-3 mx-3" v-on:click="this.$emit('showDashboard')" > Show Region Dashboard</button>
@@ -71,77 +70,105 @@ export default {
 		PolygonHistogramData
 	},
 	props:{},
-	computed: {},
+	computed: {
+	curActiveDiagramId: {
+		set(k) {
+			this.curDiagId = k;
+		},
+		get() {
+			return this.curDiagId;
+		}
+	}
+	},
 	data() {
 		return {
-			refs: ["PointTimeSeriesRaw", "PointTimeSeriesAnomalies", "StratificationTimeSeriesRaw",  "StratificationTimeSeriesAnomalies", "PolygonAreaDensityPieChart", "PolygonTimeSeries", "PolygonHistogramData"],
-			curActiveDiagramId: 0,
+			curDiagId: 0,
+			panelOpen: false,
 			navBarOptions: [
 				{
-					id: 0,
-					content: "Raw Timeseries on selected Point",
-					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
+					ref: "PointTimeSeriesRaw",
+					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
+					class: "text-dark"
 				},
 				{
-					id: 1,
-					content: "Anomalies Timeseries on selected Point",
-					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
+					ref: "PointTimeSeriesAnomalies",
+					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
+					class: "text-dark"
 				},
 				{
-					id: 2,
-					content: "Polygon Raw Timeseries",
-					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
+					ref: "StratificationTimeSeriesRaw",
+					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
+					class: "text-white"
 				},
 				{
-					id: 3,
-					content: "Polygon Anomalies Timeseries",
-					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;}
+					ref: "StratificationTimeSeriesAnomalies",
+					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
+					class: "text-white"
 				},
 				{
-					id: 4,
-					content: "Product Density Distribution for Polygon",
-					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;}
+					ref: "PolygonAreaDensityPieChart",
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;},
+					class: "text-white"
 				},
 				{
-					id: 5,
-					content: "Histogram Values for Polygon/Date",
-					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;}
+					ref: "PolygonTimeSeries",
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;},
+					class: "text-white"
 				},
 				{	
-					id: 6,
-					content: " Current Product Density Timeseries for Polygon",
-					condition: () => {return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null ;}
+					ref: "PolygonHistogramData",
+					condition: () => {return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null ;},
+					class: "text-white"
 				}
 			],
 
 		}
 	},
 	methods: {
+		diagramTitle(ref) {
+			if(this.$refs[ref] == null)
+				return "No Diagram";
+			return this.$refs[ref].diagramTitle;
+		},	
 		switchActive(id) {
 			if (id == null)
 				return;
-				
-			let newActive = null;
-			for(let i = 0; i < this.navBarOptions.length; i++) {
-				if (this.navBarOptions[i].id == id )
-					newActive = i;
-			}
-			if (newActive != null) 
-				this.curActiveDiagramId = newActive;	
+			document.getElementById("navbar_"+this.navBarOptions[id].ref).classList.add("selected");
+			this.curActiveDiagramId = id;
+			this.updateCurrentChart();
 		},
 		closePanel() {
 			this.resetAllCharts();
 			this.$emit("closeTimechartsPanel");
+			this.panelOpen = false;
 		},
 		resetAllCharts() {
-			this.refs.forEach( (ref) => {
-				this.$refs[ref].reset();
+			this.navBarOptions.forEach( (diag) => {
+				this.$refs[diag.ref].reset();
 			});
 		},
 		resizeChart() {
-			this.refs.forEach( (ref) => {
-				this.$refs[ref].resizeChart();
+			this.navBarOptions.forEach( (diag) => {
+				this.$refs[diag.ref].resizeChart();
 			});
+		},
+		updateCurrentChart() {
+			if (!this.panelOpen) {
+				this.panelOpen = true;
+				if(this.$store.getters.stratifiedOrRaw == 0) {
+					if ( this.$store.getters.productStatisticsViewMode == 0)
+						this.curActiveDiagramId = 2;
+					else if (this.$store.getters.productStatisticsViewMode == 1)
+						this.curActiveDiagramId = 3;
+				}
+				else if(this.$store.getters.stratifiedOrRaw == 1) {
+					if ( this.$store.getters.productStatisticsViewMode == 0)
+						this.curActiveDiagramId = 0;
+					else if (this.$store.getters.productStatisticsViewMode == 1)
+						this.curActiveDiagramId = 1;
+				}
+			}
+			this.$refs[this.navBarOptions[this.curActiveDiagramId].ref].updateChartData();
 		}
 	},
 	mounted() {}
@@ -152,5 +179,17 @@ export default {
 .base {
 	background-color: rgb(234, 234, 218, 0.7);
 	height: 100vh;
+}
+
+.text-dark:hover {
+	background-color: #bdc1c6;
+}
+
+.regionDiagramTitle {
+	color:#404040;
+}
+
+.text-white:hover {
+    background-color: #bdc1c6;
 }
 </style>

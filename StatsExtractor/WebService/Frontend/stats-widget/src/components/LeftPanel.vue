@@ -37,24 +37,6 @@
 					<li v-for ="(variable, key) in product.variables" v-bind:key="key" v-bind:value="key"  v-on:click="setVariable(variable)"><a class="dropdown-item">{{variable.description}}</a></li></ul></div>
 		</div>
 		
-
-		<div>
-			<div class="m-3 border border-2 rounded">
-				<div class="container mt-3">
-					<h5>Analysis Date Range</h5>
-					<div class="row">
-						<div class ="col text-end my-auto">Starting Date:</div>
-						<div class ="col text-start"><Datepicker v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
-					</div>
-				</div>
-				<div class="container mb-3">
-					<div class="row">
-						<div class ="col text-end my-auto">Ending Date:</div>
-						<div class ="col text-start"><Datepicker class="form-text" v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
-					</div>
-				</div>
-			</div>
-		</div>
 		<div class = "container mt-3 ml-3 mr-3" v-if="product != null">
 			<h5>View Options</h5>
 			
@@ -121,6 +103,24 @@
 				</div>
 			</div>
 			<Legend class="mt-3" ref="legend" v-bind:mode="legendMode"/>
+			
+			<div>
+				<div class="m-3 border border-2 rounded">
+					<div class="container mt-3">
+						<h5>Analysis Date Range</h5>
+						<div class="row">
+							<div class ="col text-end my-auto">Starting Date:</div>
+							<div class ="col text-start"><Datepicker v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
+						</div>
+					</div>
+					<div class="container mb-3">
+						<div class="row">
+							<div class ="col text-end my-auto">Ending Date:</div>
+							<div class ="col text-start"><Datepicker class="form-text" v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </div>

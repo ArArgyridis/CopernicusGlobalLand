@@ -35,7 +35,7 @@ export default {
 		diagramTitle() {
 			if (this.product == null)
 				return "Dummy Title";
-			return "Product Time Series for Region (" + this.mode + ")";
+			return "Region Time Series for selected Product (" + this.mode + ")";
 		},
 		diagramOptions() {
 			if (this.product == null)
@@ -49,7 +49,7 @@ export default {
 			if (variable !=null) 
 				valueRange = variable.valueRanges;
 			
-			this.updateChartData();			
+			//this.updateChartData();			
 			let step = (valueRange[valueRange.length-1] - valueRange[0])/valueRange.length;
 			
 			let tmpDt = this.diagramData;
@@ -80,6 +80,9 @@ export default {
 		},
 		updateChartData() {
 			let product = this.$store.getters.product;
+			if(this.mode == "Anomalies")
+				product = this.$store.getters.currentAnomaly;
+			
 			let polyId = this.$store.getters.selectedPolygon;
 			if (product == null || polyId == null)
 				return;
