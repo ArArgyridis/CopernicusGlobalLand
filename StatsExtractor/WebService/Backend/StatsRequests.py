@@ -159,11 +159,7 @@ class StatsRequests(GenericRequest):
         JOIN  stratification s ON s.id = sg.stratification_id
         WHERE pf.date = '{0}' and s.id = {1} and pfv.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7)a; """.format(self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
-        res = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
-        ret = {}
-        for row in res:
-            ret[row[0]]=row[1]
-        return ret
+        return self.__getResponseFromDB(query)
     
     def __fetchStratificationInfo(self):
         query = """SELECT JSON_OBJECT_AGG(id, info) 
