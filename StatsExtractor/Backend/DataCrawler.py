@@ -15,7 +15,8 @@ import os,paramiko,re,socks,sys
 sys.path.extend(['../../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Constants import Constants
-
+from osgeo import gdal
+gdal.DontUseExceptions()
 
 def scanDir(dirList, product, found=False):
     #examineList = []
@@ -170,7 +171,6 @@ class DataCrawler:
         if inDir is None:
             return
 
-        print(inDir)
         files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
         files.sort()
         dbData = []
@@ -185,6 +185,11 @@ class DataCrawler:
             subStr = chk[match.start()::]
             if not pattern.fullmatch(subStr):
                 continue
+
+            if len(self._prodInfo.variables) > 0: #try to open file with gdal
+                tmpDt = gdal.Open(fl)
+                if not tmpDt: #fails to open
+                    continue
 
             dateInfo = pattern.findall(subStr)[0]
             dbData.append("({0})".format(",".join([str(self._prodInfo.id), "'{0}'".format(
@@ -210,6 +215,7 @@ def main():
 
     if cfg.parse() != 1:
         for pid in Constants.PRODUCT_INFO:
+            print("Processing: ", Constants.PRODUCT_INFO[pid].productNames[0])
             obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False, True)
             if sys.argv[2] == "disk_import":
                 inDir = cfg.filesystem.imageryPath
