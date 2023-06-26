@@ -17,7 +17,7 @@ export default {
 	},
 	computed: {
 		diagramOptions() {
-			this.updateChartData();
+			//this.updateChartData();
 			return this.__computeChartOptions();
 		},
 		diagramTitle() {
@@ -25,7 +25,7 @@ export default {
 				return "Dummy Title";
 			
 			let tmpDate = new Date(Date.parse(this.$store.getters.currentDate));
-			return "Density Distribution for " + tmpDate.toDateString();
+			return "Region Density for raw Product (" + tmpDate.toDateString() + ")";
 		},
 		noData() {
 			return null;
@@ -57,6 +57,7 @@ export default {
 			this.polygonId 	= this.$store.getters.selectedPolygon
 
 			requests.getPieDataByDateAndPolygon(this.product.currentVariable.id, this.date, this.polygonId).then((response) => {
+				this.resizeChart();
 				let dt = [];
 				Object.keys(response.data.data).forEach( key  => {
 					dt.push({name: key, y: response.data.data[key]});
@@ -87,7 +88,10 @@ export default {
 					type: 'pie'
 				},
 				title: {
-					text: this.diagramTitle
+					text: this.diagramTitle,
+					style: {
+						fontSize: '15px' 
+					}
 				},
 				tooltip: {
 					pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'

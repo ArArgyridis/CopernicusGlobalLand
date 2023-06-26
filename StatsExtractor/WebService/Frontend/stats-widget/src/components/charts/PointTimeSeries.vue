@@ -53,14 +53,8 @@ export default {
 			if (this.mode == "Anomalies")
 				variable = this.$store.getters.currentAnomaly;
 		
-			let coords =this.$store.getters.clickedCoordinates;
-			if (coords != null)
-				coords = JSON.parse(JSON.stringify(coords));
-			let dateStart = JSON.parse(JSON.stringify(this.$store.getters.dateStart));
-			let dateEnd = JSON.parse(JSON.stringify(this.$store.getters.dateEnd));
-			
-			this.updateChartData(variable, coords, dateStart, dateEnd);
-			
+			//this.updateChartData();
+
 			let tmpDt = this.diagramData;
 			if (tmpDt == null)
 				tmpDt = this.noData;
@@ -96,8 +90,18 @@ export default {
 		loads() {
 			return this.isLoading;
 		},
-		updateChartData(product, coords, dateStart, dateEnd) {
+		updateChartData() {
 			//checking if data should be fetched
+			let product = this.$store.getters.product;
+			if(this.mode == "Anomalies")
+				product = this.$store.getters.currentAnomaly;
+				
+			let coords =this.$store.getters.clickedCoordinates;
+			if (coords != null)
+				coords = JSON.parse(JSON.stringify(coords));
+			let dateStart = JSON.parse(JSON.stringify(this.$store.getters.dateStart));
+			let dateEnd = JSON.parse(JSON.stringify(this.$store.getters.dateEnd));
+			
 			if ( this.$refs.diagram == null ||  product == null || coords == null || dateStart == null || dateEnd == null)
 				return;
 			
@@ -112,6 +116,7 @@ export default {
 			this.resizeChart();
 
 			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, product.id, coords).then((response) => {
+				this.resizeChart();
 				let diagramData = null;
 				if (this.mode == "Raw") {
 					diagramData = [
@@ -166,7 +171,10 @@ export default {
 					enabled:false
 				},
 				title:{
-					text: this.diagramTitle
+					text: this.diagramTitle,
+					style: {
+						fontSize: '15px' 
+					}
 				},
 				series: [
 					{

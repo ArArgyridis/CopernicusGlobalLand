@@ -20,7 +20,7 @@
 
 
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
-    GDALDatasetPtr tmpDataset =  GDALDatasetPtr(reinterpret_cast<GDALDataset*>(GDALOpenEx( dataPath.string().c_str(), GDAL_OF_RASTER, NULL, NULL, NULL )), GDALClose);
+    GDALDatasetUniquePtr tmpDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( dataPath.c_str(), GA_ReadOnly)));
     std::cout << dataPath <<"\n";
     char **meta = tmpDataset->GetMetadata();
 

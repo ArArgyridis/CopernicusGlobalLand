@@ -299,9 +299,9 @@ export default {
 						styles[density.color_col] = {};
 					});
 					styles["meanval_color"] = {}
-					
-					Object.keys(response.data.data).forEach( id =>{
-						let rec = response.data.data[id];
+					for (let idx = 0; idx < response.data.data.length; idx++) {
+						let rec = response.data.data[idx];
+						let id = rec.id;
 						Object.keys(styles).forEach(colorCol => {
 							let color = rec[colorCol];
 							styles[colorCol][id] = new Style();
@@ -318,7 +318,7 @@ export default {
 								});
 							}
 						});
-					});
+					}
 				
 					this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID][this.stratificationViewProps.date] = styles;
 					this.setStratificationStyle();
@@ -332,6 +332,7 @@ export default {
 			let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
 			tmpLayer.setStyle( (ft) => {
+				//console.log("hereeee");
 				return this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID][this.stratificationViewProps.date][colorCol][ft.getId()];
 			});
 			this.$refs.map1.deactivateSpinner();

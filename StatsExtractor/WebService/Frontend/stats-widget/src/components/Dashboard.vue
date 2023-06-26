@@ -163,6 +163,7 @@ export default {
 			for (let i = 0; i < 2; i++) { 
 
 				let tmpKey = "map3"+this.types[i];
+				console.log("hereee");
 				//registering end render event for report maps
 				this.$refs[tmpKey].addMapEvent("rendercomplete", ()=>{
 					this.reportMapLoads[i] = false;
@@ -170,6 +171,11 @@ export default {
 				this.$refs[tmpKey].fitToLayerExtent(this.printVectorLayer[tmpKey]);
 			}
 			
+			//updating chart data
+			this.diagramRefs.forEach((dg) => {
+				this.$refs[dg].updateChartData();
+			});
+
 			this.printTimeOut = setInterval(() => {
 				let stop = false;
 				
@@ -181,9 +187,11 @@ export default {
 				this.reportMapLoads.forEach( (load)=>{
 					stop = stop || load;
 				});
-
-				if (stop)
+				
+				//still execution needs to take place...
+				if (stop) {
 					return;
+				}
 
 				this.diagramRefs.forEach((dg) => {
 					this.$refs[dg].resizeChart();
@@ -386,11 +394,11 @@ export default {
 }
 
 .dashboardPrintInnerArea {
-	margin: 3%;
+	margin: 2.5%;
 	box-sizing: border-box;
-	padding: 3%;
+	padding: 2.5%;
 	border:1px solid black;
-	height: 96%;
+	height: 97.5%;
 }
 
 .modal-enter-active,

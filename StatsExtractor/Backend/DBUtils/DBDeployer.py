@@ -59,7 +59,6 @@ class DBDeployer(object):
         self.__createUserIfNotExists(createDBOptions)
         self._cfg.pgConnections["admin"].executeNoTransaction(self.__creationQueries)
 
-
     def process(self, dropIfExists=True, createDBOptions=None):
         if createDBOptions is None:
             createDBOptions=self._cfg.pgConnections[self._cfg.statsInfo.connectionId]
@@ -67,31 +66,36 @@ class DBDeployer(object):
         self.dbInit(createDBOptions, dropIfExists)
 
         self.__loadSchema(createDBOptions)
+        
+        session = self._cfg.pgConnections["admin"].getNewSession(createDBOptions.db)
+        schemas = createDBOptions.fetchQueryResult(
+            "SELECT schema_name FROM information_schema.schemata", session)
 
-        ownershipQueries = []
-        # schema ownership
-        query = """
-                SELECT DISTINCT table_schema FROM information_schema.tables 
-                WHERE table_schema not in ('pg_catalog', 'information_schema');
-                """
-        schemas = createDBOptions.fetchQueryResult(query)
-        for schema in schemas:
-            ownershipQueries.append("ALTER SCHEMA {0} OWNER TO {1}".format(schema[0], createDBOptions.user))
+        for row in schemas:
+            self._cfg.pgConnections["admin"].executeQueries(
+                ["GRANT ALL ON SCHEMA {0} TO {1}".format(row[0], createDBOptions.user),
+                 "GRANT ALL ON ALL TABLES IN SCHEMA {0} TO {1}".format(row[0], createDBOptions.user),
+                 "GRANT ALL ON ALL SEQUENCES IN SCHEMA {0} TO {1};".format(row[0], createDBOptions.user)
+                 ], session)
+                
+        refreshQueries = []
+        execQueries = [ ("""SELECT table_schema || '.' || table_name 
+                FROM information_schema.tables 
+                WHERE table_schema  IN('public','tmp') 
+                AND table_name NOT IN ('spatial_ref_sys','geography_columns','geometry_columns')""",
+                """ALTER TABLE {0} OWNER TO {1};"""),
+                (""" SELECT sequence_schema || '.' || sequence_name FROM information_schema.sequences  ORDER BY sequence_name""",
+                """ALTER SEQUENCE {0} OWNER TO {1}; """)]
+    
+        for ptrn in execQueries:
 
-        # table ownership
-        query = """SELECT table_schema,table_name FROM information_schema.tables 
-                WHERE table_schema not in ('pg_catalog', 'information_schema');"""
-        tables = createDBOptions.fetchQueryResult(query)
+            res = self._cfg.pgConnections[self._cfg.statsInfo.connectionId].fetchQueryResult(ptrn[0])
 
-        for schemaTable in tables:
+            for row in res:
+                refreshQueries.append(ptrn[1].format(row[0], createDBOptions.user))
 
-            ownershipQueries.append("""grant UPDATE, SELECT, REFERENCES, TRUNCATE, TRIGGER, INSERT, DELETE 
-            ON table "{0}"."{1}" to {2};""".format(schemaTable[0], schemaTable[1],createDBOptions.user))
-            ownershipQueries.append("""ALTER TABLE "{0}"."{1}" OWNER TO {2} """.format(schemaTable[0], schemaTable[1],
-                                                                                       createDBOptions.user))
+        self._cfg.pgConnections["admin"].executeQueries(refreshQueries, session)
 
-        self._cfg.pgConnections["admin"].executeQueries(ownershipQueries,
-                                                        self._cfg.pgConnections["admin"].getNewSession(db=createDBOptions.db))
 
 
 def main():

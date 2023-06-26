@@ -165,10 +165,6 @@ export default {
 			this.$refs.mapApp.clearWMSLayers();
 			this.$store.commit("clearProducts");
 			this.getProductInfo();
-			if (!this.activateClickOnMap) {
-				this.$refs.mapApp.toggleClickOnMap();
-				this.activateClickOnMap = true;
-			}
 		},
 		//hiding right panel
 		setRightPanelVisibility(status) {
@@ -176,6 +172,8 @@ export default {
 				this.togglePanelClasses("rightPanel");
 				this.showRightPanel = status;
 			}
+			if(status)
+				this.$refs.rightPanel.updateCurrentChart();
 		},
 		showDashboard() {
 			this.showTheDashboard = true;
@@ -192,10 +190,6 @@ export default {
 			document.getElementById(id).classList.toggle("hiddenBar");
 			document.getElementById(id).classList.toggle("shownBar");
 		},		
-		dateChanged() {
-			this.updateStratificationLayerStyle();
-			this.updateWMSVisibility();
-		},
 		updateStratificationInfo() {
 			this.$refs.mapApp.clearStratifications();
 			
@@ -207,6 +201,8 @@ export default {
 		},
 		updateStratificationLayerStyle(){
 			this.$refs.mapApp.updateStratificationLayerStyle();
+			if(this.showRightPanel)
+				this.$refs.rightPanel.updateCurrentChart();
 		},
 		updateStratificationLayerVisibility() {
 			this.setRightPanelVisibility(false);

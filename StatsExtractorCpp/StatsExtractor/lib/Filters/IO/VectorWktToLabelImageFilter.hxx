@@ -80,9 +80,14 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
            << "LINEOFFSET=" << sizeof(OutputImageInternalPixelType) * nbBands * bufferedRegion.GetSize()[0] << ","
            << "BANDOFFSET=" << sizeof(OutputImageInternalPixelType);
 
-    GDALDatasetPtr memRasterDataset = GDALDatasetPtr(reinterpret_cast<GDALDataset*>(GDALOpen(stream.str().c_str(), GA_Update)), GDALClose);
-    if (memRasterDataset.get() == nullptr)
+
+    GDALDatasetUniquePtr memRasterDataset;
+    memRasterDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( stream.str().c_str(), GA_Update )));;
+    //memRasterDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(stream.str().c_str(), GA_Update)));
+    /*
+    if (memRasterDataset->get() == nullptr)
         return;
+*/
 
     //projection
     memRasterDataset->SetProjection(m_OutputProjectionRef.c_str());

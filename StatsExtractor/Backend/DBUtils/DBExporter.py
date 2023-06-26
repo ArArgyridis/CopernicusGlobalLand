@@ -43,8 +43,8 @@ class DBExporter:
         print("truncating uneeded data")
         #emptying tables which are not needed
         self._cfg.pgConnections[self._cfg.statsInfo.exportId].executeQueries([
-            """TRUNCATE product_file RESTART IDENTITY CASCADE;""",
-            """TRUNCATE stratification RESTART IDENTITY CASCADE;"""
+            """TRUNCATE stratification RESTART IDENTITY CASCADE;""",
+            """TRUNCATE product_file RESTART IDENTITY CASCADE;"""
         ])
 
         print("writing final backup")

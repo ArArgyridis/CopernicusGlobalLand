@@ -31,14 +31,13 @@ export default {
 	},
 	computed:{
 		diagramOptions() {
-			this.updateChartData();
+			//this.updateChartData();
 			return this.__computeChartOptions();
-		
 		},
 		diagramTitle() {
 			if (this.$store.getters.product == null || this.$store.getters.areaDensity == null)
 				return "Dummy Title";
-			return "Product Density Timeseries (" + this.$store.getters.areaDensity.description +")";
+			return "Region Density Timeseries for raw Product (" + this.$store.getters.areaDensity.description +")";
 		},
 		noData() {
 			return  [null];
@@ -99,7 +98,10 @@ export default {
 					enabled:false
 				},
 				title:{
-					text: this.diagramTitle
+					text: this.diagramTitle,
+					style: {
+						fontSize: '15px' 
+					}
 				},
 				series: [{
 					data: this.diagramData

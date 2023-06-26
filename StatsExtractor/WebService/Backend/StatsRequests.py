@@ -40,7 +40,6 @@ class StatsRequests(GenericRequest):
         super().__init__(cfg, ConfigurationParser, requestData)
 
     def __getResponseFromDB(self, query):
-        print(query)
         ret = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
         if isinstance(ret, list):
             ret = ret[0][0]
@@ -138,34 +137,29 @@ class StatsRequests(GenericRequest):
             WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7)
             SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date"))
             FROM dt""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
-        print(query)
         return self.__getResponseFromDB(query)
         
     def __fetchStratificationDataByProductAndDate(self):
         query = """
-        SELECT ps.poly_id, 
-	jsonb_build_object(
-		'meanval_color', ps.meanval_color::jsonb, 
+        SELECT ARRAY_TO_JSON(ARRAY_AGG(res) ) FROM(
+            SELECT jsonb_build_object(
+		'id', ps.poly_id,
+                'meanval_color', ps.meanval_color::jsonb, 
 		'noval_color', ps.noval_color::jsonb,
 		'sparseval_color', ps.sparseval_color::jsonb,
 		'midval_color', ps.midval_color::jsonb,
 		'highval_color', ps.highval_color::jsonb
-     ) res
-     FROM  poly_stats ps 
-     JOIN  product_file pf ON ps.product_file_id = pf.id
-     JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
-     JOIN  product_file_description pfd ON pf.product_file_description_id = pfd.id
-     JOIN  product p ON pfd.product_id = p.id
-     JOIN  stratification_geom sg ON sg.id = ps.poly_id
-     JOIN  stratification s ON s.id = sg.stratification_id
-     WHERE pf.date = '{0}' and s.id = {1} and pfv.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7""".format(self._requestData["options"]["date"],
+        ) res
+        FROM  poly_stats ps 
+        JOIN  product_file pf ON ps.product_file_id = pf.id
+        JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+        JOIN  product_file_description pfd ON pf.product_file_description_id = pfd.id
+        JOIN  product p ON pfd.product_id = p.id
+        JOIN  stratification_geom sg ON sg.id = ps.poly_id
+        JOIN  stratification s ON s.id = sg.stratification_id
+        WHERE pf.date = '{0}' and s.id = {1} and pfv.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7)a; """.format(self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
-        print(query)
-        res = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
-        ret = {}
-        for row in res:
-            ret[row[0]]=row[1]
-        return ret
+        return self.__getResponseFromDB(query)
     
     def __fetchStratificationInfo(self):
         query = """SELECT JSON_OBJECT_AGG(id, info) 
@@ -271,7 +265,6 @@ class StatsRequests(GenericRequest):
         #converting mean and stdev dicts to doy        
         ltsStats = {}
         tmpDoys = []
-        print(resultDict)
         if productType == "raw" and resultDict["mean"] != None:
             for mn, sd in zip(resultDict["mean"]["raw"], resultDict["stdev"]["raw"]):
                 doy = datetime.fromisoformat(mn[0])

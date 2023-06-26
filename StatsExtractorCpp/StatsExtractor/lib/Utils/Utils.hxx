@@ -35,9 +35,9 @@ using MetadataDict      = std::map<std::string, std::string>;
 using MetadataDictPtr   = std::unique_ptr<MetadataDict>;
 
 /** Typedefs to handle GDAL structures through smart pointers */
-using GDALDatasetPtr    = std::unique_ptr<GDALDataset, void(*)(GDALDatasetH) > ;
-using OGRFeaturePtr     = std::unique_ptr<OGRFeature, void(*)( OGRFeature * )>;
-using OGRGeometryPtr    = std::unique_ptr<OGRGeometry, void(*)( OGRGeometry * )> ;
+using GDALDatasetPtr    = std::unique_ptr<GDALDataset>;
+using OGRFeaturePtr     = std::unique_ptr<OGRFeature,  void(*)(OGRFeature *)>;
+using OGRGeometryPtr    = std::unique_ptr<OGRGeometry, void(*)(OGRGeometry *)>;
 
 using OGRSpatialReferencePtr    = std::unique_ptr<OGRSpatialReference> ;
 using OGRFeatureDefnPtr         = std::unique_ptr<OGRFeatureDefn> ;

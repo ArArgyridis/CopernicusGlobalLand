@@ -66,19 +66,19 @@ void StatsExtractor::process() {
                     JOIN product p ON TRUE
                     JOIN product_file_description pfd ON p.id = pfd.product_id
                     JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-                    JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND pf.id = 867 --AND pf.id = 1 --AND p.id = 1 AND sg.id = 45
+                    JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 63 --AND pf.id = 867 --AND pf.id = 1 --AND p.id = 1 AND sg.id = 45
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
                     WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.id IS NULL
                 ),extent AS(
                     SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids
                     FROM (SELECT distinct geomid FROM info) a
                     JOIN stratification_geom sg ON a.geomid = sg.id
-                ),images AS( -- partition images into groups each having 50 images
+                ),images AS( -- partition images into groups each having 5 images
                     SELECT ARRAY_TO_JSON(ARRAY_AGG(images)) images
                     FROM(
                         SELECT ARRAY_TO_JSON(ARRAY_AGG(image ORDER BY grpid)) images
                         FROM (
-                            SELECT (ROW_NUMBER() OVER(ORDER BY image[1]))/50 grpid, image
+                            SELECT (ROW_NUMBER() OVER(ORDER BY image[1]))/5 grpid, image
                             FROM(
                                 SELECT DISTINCT image --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
                                 FROM info

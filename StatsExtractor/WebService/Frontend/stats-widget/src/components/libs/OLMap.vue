@@ -572,7 +572,6 @@ export default {
 		__addVectorTileLayerToMap(source, zIndex=null) {
 			let tmpLayer = new VectorTileLayer({
 				source: source,
-				declutter: true,
 				renderMode: "hybrid"
 			});
 			return this.__addGenericLayer(tmpLayer, zIndex);

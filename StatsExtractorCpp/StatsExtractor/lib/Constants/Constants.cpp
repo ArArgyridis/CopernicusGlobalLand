@@ -48,7 +48,7 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
         }
         query.resize(query.size()-1);
         query +=")";
-        std::cout << query <<"\n";
+        //std::cout << query <<"\n";
     }
     query += " ORDER BY p.id;";
 
