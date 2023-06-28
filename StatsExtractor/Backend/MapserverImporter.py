@@ -57,97 +57,105 @@ def processSingleImage(params, relImagePath):
     ret = []
 
     dstImg = None
+    dstOverviews = None
     variable = params["variable"]
     if variable is None:
         variable = ''
     variableParams = params["productInfo"].variables[params["variable"]]
     buildOverviews = False
-    if params["productInfo"].productType == "raw":
-        if image.endswith(".nc"):
-            image = netCDFSubDataset(image, variable)
+    try:
+        if params["productInfo"].productType == "raw":
+            if image.endswith(".nc"):
+                image = netCDFSubDataset(image, variable)
 
-        dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
-                                                         relImagePath[1].strftime("%Y"),
-                                                         relImagePath[1].strftime("%m"),
-                                                         variable,
-                                                         os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
-        print("out img: ", dstImg)
+            dstImg = os.path.join(params["mapserverPath"], *["raw", params["productInfo"].productNames[0],
+                                                             relImagePath[1].strftime("%Y"),
+                                                             relImagePath[1].strftime("%m"),
+                                                             variable,
+                                                             os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
+            print("out img: ", dstImg)
 
-        if not gdal.Open(dstImg):
-            buildOverviews = True
-            tmpDt = gdal.Open(image)
-            os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
+            if not gdal.Open(dstImg):
+                buildOverviews = True
+                tmpDt = gdal.Open(image)
+                os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
 
-            outDrv = gdal.GetDriverByName("GTiff")
-            outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
-                              options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
-            outDt.SetProjection(tmpDt.GetProjection())
-            outDt.SetGeoTransform(tmpDt.GetGeoTransform())
-            outBnd = outDt.GetRasterBand(1)
-            origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
+                outDrv = gdal.GetDriverByName("GTiff")
+                outDt = outDrv.Create(dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
+                                  options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
+                outDt.SetProjection(tmpDt.GetProjection())
+                outDt.SetGeoTransform(tmpDt.GetGeoTransform())
+                outBnd = outDt.GetRasterBand(1)
+                origNoDataValue = tmpDt.GetRasterBand(1).GetNoDataValue()
 
-            scaler = None
-            if variableParams.minProdValue >= 0 and variableParams.maxProdValue <= 255:
-                scaler = plainScaller
-            else:
-                scaler = linearScaller
-            try:
-                for row in range(tmpDt.RasterXSize):
-                    rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
-                    fixedDt = scaler(rowDt, variableParams.minValue,
-                                     variableParams.maxValue, origNoDataValue, 255, 0, 250)
+                scaler = None
+                if variableParams.minProdValue >= 0 and variableParams.maxProdValue <= 255:
+                    scaler = plainScaller
+                else:
+                    scaler = linearScaller
+                try:
+                    for row in range(tmpDt.RasterXSize):
+                        rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
+                        fixedDt = scaler(rowDt, variableParams.minValue,
+                                         variableParams.maxValue, origNoDataValue, 255, 0, 250)
 
-                    outBnd.WriteArray(fixedDt, row, 0)
+                        outBnd.WriteArray(fixedDt, row, 0)
 
-                outBnd.SetNoDataValue(255)
+                    outBnd.SetNoDataValue(255)
 
-                outDt.FlushCache()
-                outDt = None
-            except:
-                print("issue for image: ", dstImg)
-
-
-    elif params["productInfo"].productType == "anomaly": #for now just copy file
-        dstImg = os.path.join(params["mapserverPath"], *["anomaly", relImagePath[0]])
-        if not gdal.Open(dstImg):
-            buildOverviews = True
-            os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
-            shutil.copy(image, dstImg)
+                    outDt.FlushCache()
+                    outDt = None
+                except:
+                    print("issue for image: ", dstImg)
 
 
-    if variableParams.style is not None:
-        applyColorTable(dstImg, variableParams.style)
+        elif params["productInfo"].productType == "anomaly": #for now just copy file
+            dstImg = os.path.join(params["mapserverPath"], *["anomaly", relImagePath[0]])
+            if not gdal.Open(dstImg):
+                buildOverviews = True
+                os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
+                shutil.copy(image, dstImg)
 
-    #print(dstImg)
-    dstOverviews = dstImg + ".ovr"
-    outDt = None
-    if buildOverviews:
-        outDt = gdal.Open(dstImg)
-        print("Building overviews for: " + os.path.split(dstImg)[1])
 
-        callbackData = {
-            "cnt": 0
-        }
+        if variableParams.style is not None:
+            applyColorTable(dstImg, variableParams.style)
+
+        #print(dstImg)
+        dstOverviews = dstImg + ".ovr"
+        outDt = None
+        if buildOverviews:
+            outDt = gdal.Open(dstImg)
+            print("Building overviews for: " + os.path.split(dstImg)[1])
+
+            callbackData = {
+                "cnt": 0
+            }
+
+            if os.path.isfile(dstOverviews):
+                os.remove(dstOverviews)
+
+            outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64], callback=myProgress,
+                                     callback_data=callbackData)
+            outDt = None
+
+        ptr = re.compile(params["productInfo"].pattern)
+        date = params["productInfo"].createDate(ptr.findall(os.path.split(relImagePath[0])[1])[0])
+
+        layerName = None
+        if params["productInfo"].productType == "raw":
+            layerName = "{0}_{1}".format(date[0:10], variable)
+        elif params["productInfo"].productType == "anomaly":
+            layerName = date[0:10]
+
+        ret.append(LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
+                             params["productInfo"].id))
+        return ret
+    except: #rolling back filesystem
+        if os.path.isfile(dstImg):
+            os.remove(dstImg)
 
         if os.path.isfile(dstOverviews):
             os.remove(dstOverviews)
-
-        outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64], callback=myProgress,
-                                 callback_data=callbackData)
-        outDt = None
-
-    ptr = re.compile(params["productInfo"].pattern)
-    date = params["productInfo"].createDate(ptr.findall(os.path.split(relImagePath[0])[1])[0])
-
-    layerName = None
-    if params["productInfo"].productType == "raw":
-        layerName = "{0}_{1}".format(date[0:10], variable)
-    elif params["productInfo"].productType == "anomaly":
-        layerName = date[0:10]
-
-    ret.append(LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
-                         params["productInfo"].id))
-    return ret
 
 
 class MapserverImporter(object):
