@@ -130,7 +130,7 @@ class DataCrawler:
 
                 else:
                     #download file if not exists in DB
-                    dateInfo = pattern.findall(chk)[0]
+                    productParams = pattern.findall(chk)[0]
                     outFilePath = fl.replace(inProdDir, outProdDir)
                     outFileDir = os.path.split(outFilePath)[0]
                     if not os.path.isdir(outFileDir):
@@ -140,25 +140,30 @@ class DataCrawler:
                     print("Downloading: ", chk)
                     self._sshCn.open_sftp().get(fl, outFilePath)
 
+                    rtFlag = 'NULL'
+                    if self._prodInfo.rtFlag is not None:
+                        rtFlag = self._prodInfo.rtFlag.format(productParams)
+
                     self._store(["({0})".format(",".join([str(self._prodInfo.id),
                                                       "'{0}'".format(os.path.relpath(outFilePath, storageDir)),
-                                                      "'{0}'".format(self._prodInfo._dateptr.format(*dateInfo))]))])
+                                                      "'{0}'".format(self._prodInfo._dateptr.format(*productParams)),
+                                                          rtFlag]))])
 
                     print("Downloading Finished!")
 
 
     def _store(self, dbData):
         query = """
-            WITH tmp_data(product_file_description_id, rel_file_path, date) AS (
+            WITH tmp_data(product_file_description_id, rel_file_path, date, rt_flag) AS (
             VALUES {0}
             )
                     
-            INSERT INTO product_file(product_file_description_id, rel_file_path, date) 
-                SELECT product_file_description_id, max(rel_file_path), date::timestamp without time zone
+            INSERT INTO product_file(product_file_description_id, rel_file_path, date, rt_flag) 
+                SELECT product_file_description_id, max(rel_file_path), date::timestamp without time zone, rt_flag::smallint
                 FROM tmp_data
-                GROUP BY product_file_description_id,date 
+                GROUP BY product_file_description_id,date,rt_flag 
             
-                ON CONFLICT(product_file_description_id, "date") DO NOTHING;"""
+                ON CONFLICT(product_file_description_id, "date", rt_flag) DO NOTHING;"""
         self._cn.pgConnections[self._cn.statsInfo.connectionId].executeQueries([query.format(",\n".join(dbData)), ])
 
     def importProductFromLocalStorage(self, storageDir):
@@ -191,9 +196,30 @@ class DataCrawler:
                 if not tmpDt: #fails to open
                     continue
 
-            dateInfo = pattern.findall(subStr)[0]
-            dbData.append("({0})".format(",".join([str(self._prodInfo.id), "'{0}'".format(
-                os.path.relpath(fl, storageDir)),"'{0}'".format(self._prodInfo._dateptr.format(*dateInfo)) ])))
+            relFilePath = os.path.relpath(fl, storageDir)
+
+            # check if product exists in DB
+            checkQuery = """SELECT EXISTS (
+                SELECT *
+                FROM product_file pf 
+                JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
+                JOIN product p ON p.id = pfd.product_id 
+                WHERE pf.rel_file_path LIKE '%{0}'
+                AND p.id = {1});""".format(relFilePath, self._prodInfo.id)
+
+            res = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
+            if res[0][0]:
+                continue
+
+
+            productParams = pattern.findall(subStr)[0]
+            rtFlag = 'NULL'
+            if self._prodInfo.rtFlag is not None:
+                rtFlag = self._prodInfo.rtFlag.format(*productParams)
+
+            dbData.append("({0})".format(",".join([str(self._prodInfo.id), "'{0}'".format(relFilePath),
+                                                   "'{0}'".format(self._prodInfo._dateptr.format(*productParams)),
+                                                   rtFlag ])))
             execute = True
 
 

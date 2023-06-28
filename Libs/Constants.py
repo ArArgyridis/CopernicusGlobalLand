@@ -49,8 +49,7 @@ class ProductInfo:
         if isinstance(row[7], list):
             for ptrn in row[7]:
                 self.variables[ptrn["variable"] ] = ProductVariable(ptrn)
-
-
+        self.rtFlag = row[8]
 
     def createDate(self, ptr):
         return self._dateptr.format(*ptr)
@@ -71,7 +70,7 @@ class Constants:
 	            GROUP BY pfv.product_file_description_id 
             )
             SELECT p.name, p.type, pfd.id, pfd.pattern, pfd."types", pfd.create_date, pfd.file_name_creation_pattern, 
-            pv.product_variables
+            pv.product_variables, pfd.rt_flag_pattern
             FROM product p 
             LEFT JOIN product_file_description pfd on p.id = pfd.product_id 
             LEFT JOIN product_variables pv on pv.product_file_description_id = pfd.id
