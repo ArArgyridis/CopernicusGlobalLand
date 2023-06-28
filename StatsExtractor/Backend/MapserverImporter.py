@@ -60,6 +60,7 @@ def processSingleImage(params, relImagePath):
     if variable is None:
         variable = ''
     variableParams = params["productInfo"].variables[params["variable"]]
+    buildOverviews = False
     if params["productInfo"].productType == "raw":
         if image.endswith(".nc"):
             image = netCDFSubDataset(image, variable)
@@ -71,7 +72,8 @@ def processSingleImage(params, relImagePath):
                                                          os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
         print("out img: ", dstImg)
 
-        if not os.path.isfile(dstImg):
+        if not gdal.Open(dstImg):
+            buildOverviews = True
             tmpDt = gdal.Open(image)
             os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
 
@@ -106,7 +108,8 @@ def processSingleImage(params, relImagePath):
 
     elif params["productInfo"].productType == "anomaly": #for now just copy file
         dstImg = os.path.join(params["mapserverPath"], *["anomaly", relImagePath[0]])
-        if not os.path.isfile(dstImg):
+        if not gdal.Open(dstImg):
+            buildOverviews = True
             os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
             shutil.copy(image, dstImg)
 
@@ -116,14 +119,18 @@ def processSingleImage(params, relImagePath):
 
     #print(dstImg)
     dstOverviews = dstImg + ".ovr"
-    outDt = gdal.Open(dstImg)
-    if not os.path.isfile(dstOverviews):
+    outDt = None
+    if buildOverviews:
         outDt = gdal.Open(dstImg)
         print("Building overviews for: " + os.path.split(dstImg)[1])
 
         callbackData = {
             "cnt": 0
         }
+
+        if os.path.isfile(dstOverviews):
+            os.remove(dstOverviews)
+
         outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64], callback=myProgress,
                                  callback_data=callbackData)
         outDt = None
