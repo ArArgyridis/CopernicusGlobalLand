@@ -16,6 +16,7 @@ import os, re, numpy as np, shutil, sys, xml.etree.ElementTree as ET, multiproce
 from osgeo import gdal, osr
 from concurrent.futures import ProcessPoolExecutor
 gdal.SetConfigOption("COMPRESS_OVERVIEW", "DEFLATE")
+gdal.DontUseExceptions()
 
 sys.path.extend(['../../']) #to properly import modules from other dirs
 
