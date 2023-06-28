@@ -75,7 +75,7 @@ def processSingleImage(params, relImagePath):
                                                              os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
             print("out img: ", dstImg)
 
-            if not gdal.Open(dstImg):
+            if gdal.Open(dstImg) is None:
                 buildOverviews = True
                 tmpDt = gdal.Open(image)
                 os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
@@ -111,7 +111,7 @@ def processSingleImage(params, relImagePath):
 
         elif params["productInfo"].productType == "anomaly": #for now just copy file
             dstImg = os.path.join(params["mapserverPath"], *["anomaly", relImagePath[0]])
-            if not gdal.Open(dstImg):
+            if gdal.Open(dstImg) is None:
                 buildOverviews = True
                 os.makedirs(os.path.split(dstImg)[0], exist_ok=True)
                 shutil.copy(image, dstImg)
