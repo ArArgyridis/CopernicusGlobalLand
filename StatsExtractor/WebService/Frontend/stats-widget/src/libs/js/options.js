@@ -8,8 +8,8 @@ export default {
 */
 
 export default {
-	endpointURL: "http://64.225.130.160/endpoint",
-	wmsURL: "http://64.225.130.160/wms/",
-	anomaliesWMSURL: "http://64.225.130.160/anomalieswms/",
+	endpointURL: "https://natstat.cgls.dev/endpoint",
+	wmsURL: "https://natstat.cgls.dev/wms/",
+	anomaliesWMSURL: "https://natstat.cgls.dev/anomalieswms/",
 	bingKey: "Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl"
 }
