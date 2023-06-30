@@ -73,7 +73,7 @@ def processSingleImage(params, relImagePath):
                                                              relImagePath[1].strftime("%m"),
                                                              variable,
                                                              os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
-            print("out img: ", dstImg)
+            #print("out img: ", dstImg)
 
             if gdal.Open(dstImg) is None:
                 buildOverviews = True
@@ -166,7 +166,7 @@ class MapserverImporter(object):
 
         self._layerInfo = []
 
-    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=12):
+    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
         executor = ProcessPoolExecutor(max_workers=nThreads)
         rootPath = self._config.filesystem.imageryPath
         if Constants.PRODUCT_INFO[productId].productType == "anomaly":
