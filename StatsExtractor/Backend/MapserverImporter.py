@@ -97,7 +97,8 @@ def processSingleImage(params, relImagePath):
                     for row in range(tmpDt.RasterXSize):
                         rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
                         fixedDt = scaler(rowDt, variableParams.minValue,
-                                         variableParams.maxValue, origNoDataValue, 255, 0, 250)
+                                         variableParams.maxValue, origNoDataValue, 255,
+                                         variableParams.minProdValue, variableParams.maxProdValue)
 
                         outBnd.WriteArray(fixedDt, row, 0)
 
