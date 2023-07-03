@@ -73,7 +73,7 @@ def processSingleImage(params, relImagePath):
                                                              relImagePath[1].strftime("%m"),
                                                              variable,
                                                              os.path.split(relImagePath[0])[-1].split(".")[0] + ".tif"])
-            print("out img: ", dstImg)
+            #print("out img: ", dstImg)
 
             if gdal.Open(dstImg) is None:
                 buildOverviews = True
