@@ -14,6 +14,7 @@
 
 import os, re, numpy as np, shutil, sys, xml.etree.ElementTree as ET, multiprocessing
 from osgeo import gdal, osr
+from libs.Utils import GDALErrorHandler
 from concurrent.futures import ProcessPoolExecutor
 gdal.SetConfigOption("COMPRESS_OVERVIEW", "DEFLATE")
 gdal.DontUseExceptions()
@@ -50,7 +51,8 @@ def applyColorTable(dstImg, style):
     outDt = None
 
 def processSingleImage(params, relImagePath):
-
+    errorHandler =  GDALErrorHandler()
+    gdal.PushErrorHandler(errorHandler)
     image = os.path.join(params["dataPath"],relImagePath[0])
     print("processing: ", image)
     ret = []
@@ -122,6 +124,14 @@ def processSingleImage(params, relImagePath):
 
         outDt = None
         dstOverviews = dstImg + ".ovr"
+        if os.path.isfile(dstOverviews):
+            try:
+                overviewDt = gdal.Open(dstOverviews)
+                errorHandler.capture()
+            except:
+                os.remove(dstOverviews)
+                buildOverviews = True
+
         if buildOverviews:
             outDt = gdal.Open(dstImg)
             print("Building overviews for: " + os.path.split(dstImg)[1])
@@ -148,6 +158,7 @@ def processSingleImage(params, relImagePath):
 
         ret.append(LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
                              params["productInfo"].id))
+        gdal.PopErrorHandler(errorHandler)
         return ret
     except: #rolling back filesystem
         if os.path.isfile(dstImg):
@@ -155,6 +166,8 @@ def processSingleImage(params, relImagePath):
 
         if os.path.isfile(dstOverviews):
             os.remove(dstOverviews)
+
+        gdal.PopErrorHandler(errorHandler)
 
 
 class MapserverImporter(object):

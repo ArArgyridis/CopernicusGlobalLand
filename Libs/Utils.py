@@ -16,19 +16,18 @@ import numpy as np, os, socket
 from osgeo import gdal, ogr
 
 
-class GdalErrorHandler(object):
-    def __init__(self):
-        self.reset()
+class GDALErrorHandler(object):
+	def __init__(self):
+		self.lastError = None
 
-    def handler(self, lvl, no, msg):
-        self.errLevel = lvl
-        self.errNo = no
-        self.errMsg = msg
+	def handler(self, errorLevel, errorNo, errorMsg):
+		self.lastError = (errorLevel, errorNo, errorMsg)
 
-    def reset(self):
-        self.errLevel = gdal.CE_None
-        self.errNo = 0
-        self.errMsg = ''
+	def capture(self):
+		if self.lastError is not None:
+			errorLevel, errorNo, errorMsg = self.lastError
+			self.lastError = None
+			raise RuntimeError("GDAL Error {0}: {1}".format(errorNo, errorMsg))
 
 netCDFSubDataset = lambda  fl, var: """NETCDF:"{0}":{1}""".format(fl, var)
 
