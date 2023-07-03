@@ -21,7 +21,7 @@ gdal.DontUseExceptions()
 sys.path.extend(['../../']) #to properly import modules from other dirs
 
 from Libs.MapServer import MapServer, LayerInfo
-from Libs.Utils import getImageExtent, netCDFSubDataset, plainScaller, linearScaller
+from Libs.Utils import GDALErrorHandler, getImageExtent, netCDFSubDataset, plainScaller, linearScaller
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
 
@@ -41,7 +41,6 @@ def applyColorTable(dstImg, style):
     root = ET.fromstring(style)
 
     colors = gdal.ColorTable()
-
     for color in root.findall(".//*[@quantity]", ns):
         h = color.attrib["color"].lstrip("#")
         colors.SetColorEntry(int(color.attrib["quantity"]), tuple(int(h[i:i + 2], 16) for i in (0, 2, 4)))
@@ -51,7 +50,6 @@ def applyColorTable(dstImg, style):
     outDt = None
 
 def processSingleImage(params, relImagePath):
-
     image = os.path.join(params["dataPath"],relImagePath[0])
     print("processing: ", image)
     ret = []
@@ -59,6 +57,7 @@ def processSingleImage(params, relImagePath):
     dstImg = None
     dstOverviews = None
     variable = params["variable"]
+    errorHandler = params["errorHandler"]
     if variable is None:
         variable = ''
     variableParams = params["productInfo"].variables[params["variable"]]
@@ -97,7 +96,8 @@ def processSingleImage(params, relImagePath):
                     for row in range(tmpDt.RasterXSize):
                         rowDt = tmpDt.ReadAsArray(row, 0, 1, tmpDt.RasterYSize)
                         fixedDt = scaler(rowDt, variableParams.minValue,
-                                         variableParams.maxValue, origNoDataValue, 255, 0, 250)
+                                         variableParams.maxValue, origNoDataValue, 255,
+                                         variableParams.minProdValue, variableParams.maxProdValue)
 
                         outBnd.WriteArray(fixedDt, row, 0)
 
@@ -120,9 +120,16 @@ def processSingleImage(params, relImagePath):
         if variableParams.style is not None:
             applyColorTable(dstImg, variableParams.style)
 
-        #print(dstImg)
-        dstOverviews = dstImg + ".ovr"
         outDt = None
+        dstOverviews = dstImg + ".ovr"
+        if os.path.isfile(dstOverviews):
+            try:
+                overviewDt = gdal.Open(dstOverviews)
+                errorHandler.capture()
+            except:
+                os.remove(dstOverviews)
+                buildOverviews = True
+
         if buildOverviews:
             outDt = gdal.Open(dstImg)
             print("Building overviews for: " + os.path.split(dstImg)[1])
@@ -149,6 +156,7 @@ def processSingleImage(params, relImagePath):
 
         ret.append(LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
                              params["productInfo"].id))
+
         return ret
     except: #rolling back filesystem
         if os.path.isfile(dstImg):
@@ -157,15 +165,16 @@ def processSingleImage(params, relImagePath):
         if os.path.isfile(dstOverviews):
             os.remove(dstOverviews)
 
-
 class MapserverImporter(object):
     def __init__(self, cfg):
         self._config = ConfigurationParser(cfg)
         self._config.parse()
 
         self._layerInfo = []
+        self._errorHandler = GDALErrorHandler()
+        gdal.PushErrorHandler(self._errorHandler.handler)
 
-    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=12):
+    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
         executor = ProcessPoolExecutor(max_workers=nThreads)
         rootPath = self._config.filesystem.imageryPath
         if Constants.PRODUCT_INFO[productId].productType == "anomaly":
@@ -185,7 +194,8 @@ class MapserverImporter(object):
             "dataPath":rootPath,
             "mapserverPath": self._config.filesystem.mapserverPath,
             "productInfo":Constants.PRODUCT_INFO[productId],
-            "variable": variable
+            "variable": variable,
+            "errorHandler": self._errorHandler
             }]*productFiles.rowcount, productFiles)
 
         for result in threads:
