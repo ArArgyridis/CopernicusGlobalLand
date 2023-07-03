@@ -50,8 +50,6 @@ def applyColorTable(dstImg, style):
     outDt = None
 
 def processSingleImage(params, relImagePath):
-    errorHandler =  GDALErrorHandler()
-    gdal.PushErrorHandler(errorHandler.handler)
     image = os.path.join(params["dataPath"],relImagePath[0])
     print("processing: ", image)
     ret = []
@@ -59,6 +57,7 @@ def processSingleImage(params, relImagePath):
     dstImg = None
     dstOverviews = None
     variable = params["variable"]
+    errorHandler = params["errorHandler"]
     if variable is None:
         variable = ''
     variableParams = params["productInfo"].variables[params["variable"]]
@@ -157,7 +156,7 @@ def processSingleImage(params, relImagePath):
 
         ret.append(LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
                              params["productInfo"].id))
-        gdal.PopErrorHandler(errorHandler.handler)
+
         return ret
     except: #rolling back filesystem
         if os.path.isfile(dstImg):
@@ -166,15 +165,14 @@ def processSingleImage(params, relImagePath):
         if os.path.isfile(dstOverviews):
             os.remove(dstOverviews)
 
-        gdal.PopErrorHandler(errorHandler.handler)
-
-
 class MapserverImporter(object):
     def __init__(self, cfg):
         self._config = ConfigurationParser(cfg)
         self._config.parse()
 
         self._layerInfo = []
+        self._errorHandler = GDALErrorHandler()
+        gdal.PushErrorHandler(self._errorHandler.handler)
 
     def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
         executor = ProcessPoolExecutor(max_workers=nThreads)
@@ -196,7 +194,8 @@ class MapserverImporter(object):
             "dataPath":rootPath,
             "mapserverPath": self._config.filesystem.mapserverPath,
             "productInfo":Constants.PRODUCT_INFO[productId],
-            "variable": variable
+            "variable": variable,
+            "errorHandler": self._errorHandler
             }]*productFiles.rowcount, productFiles)
 
         for result in threads:
