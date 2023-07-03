@@ -14,7 +14,7 @@
 
 import mapscript, os
 from datetime import datetime
-
+from osgeo import osr
 class LayerInfo(object):
 	def __init__(self, processFile, layerName, epsgStr, width, height, extent, date=None, productKey=None, style=None):
 		self.processFile = processFile
@@ -40,6 +40,15 @@ class MapServer:
 
 		if self._projection is None:
 			self._projection = self._layerInfoList[0].epsgStr
+
+
+		ss = osr.SpatialReference()
+		ss.ImportFromEPSG(int(self._projection.split(":")[1]))
+		unit = ss.GetAttrValue("UNIT")
+		if unit == "degree":
+			self._units = mapscript.MS_DD
+		elif unit == "metre":
+			self._units = mapscript.MS_METERS
 
 		self._extent = extent
 		if self._extent is None:
@@ -71,7 +80,7 @@ class MapServer:
 			inFileName = os.path.splitext(layerInfo.processFile.split("/")[-1])[0]
 
 			layer = mapscript.layerObj()
-			imageryMap.web.metadata.set("wms_title", layerInfo.layerName)
+			imageryMap.web.metadata.set("wms_title", self._wmsTitle)
 			imageryMap.web.metadata.set("wms_srs", layerInfo.epsgStr)
 
 			layer.data =layerInfo.processFile
@@ -82,6 +91,7 @@ class MapServer:
 					layer.addProcessing("SCALE_{0}={1},{2}".format(style[0], style[1], style[2]) )
 
 			layer.setProjection(layerInfo.epsgStr)
+			layer.units = self._units
 			layer.metadata.set("wms_srs", layerInfo.epsgStr)
 			layer.metadata.set("STATUS", "ON")
 			if layerInfo.date != None:

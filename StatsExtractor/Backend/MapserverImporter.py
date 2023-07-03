@@ -21,7 +21,7 @@ gdal.DontUseExceptions()
 sys.path.extend(['../../']) #to properly import modules from other dirs
 
 from Libs.MapServer import MapServer, LayerInfo
-from Libs.Utils import getImageExtent, netCDFSubDataset, plainScaller, linearScaller
+from Libs.Utils import GdalErrorHandler, getImageExtent, netCDFSubDataset, plainScaller, linearScaller
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
 
@@ -41,7 +41,6 @@ def applyColorTable(dstImg, style):
     root = ET.fromstring(style)
 
     colors = gdal.ColorTable()
-
     for color in root.findall(".//*[@quantity]", ns):
         h = color.attrib["color"].lstrip("#")
         colors.SetColorEntry(int(color.attrib["quantity"]), tuple(int(h[i:i + 2], 16) for i in (0, 2, 4)))
@@ -121,9 +120,8 @@ def processSingleImage(params, relImagePath):
         if variableParams.style is not None:
             applyColorTable(dstImg, variableParams.style)
 
-        #print(dstImg)
-        dstOverviews = dstImg + ".ovr"
         outDt = None
+        dstOverviews = dstImg + ".ovr"
         if buildOverviews:
             outDt = gdal.Open(dstImg)
             print("Building overviews for: " + os.path.split(dstImg)[1])

@@ -15,6 +15,21 @@
 import numpy as np, os, socket
 from osgeo import gdal, ogr
 
+
+class GdalErrorHandler(object):
+    def __init__(self):
+        self.reset()
+
+    def handler(self, lvl, no, msg):
+        self.errLevel = lvl
+        self.errNo = no
+        self.errMsg = msg
+
+    def reset(self):
+        self.errLevel = gdal.CE_None
+        self.errNo = 0
+        self.errMsg = ''
+
 netCDFSubDataset = lambda  fl, var: """NETCDF:"{0}":{1}""".format(fl, var)
 
 def chunkIt(seq, num):
