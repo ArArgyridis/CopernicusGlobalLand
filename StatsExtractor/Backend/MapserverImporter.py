@@ -14,7 +14,6 @@
 
 import os, re, numpy as np, shutil, sys, xml.etree.ElementTree as ET, multiprocessing
 from osgeo import gdal, osr
-from libs.Utils import GDALErrorHandler
 from concurrent.futures import ProcessPoolExecutor
 gdal.SetConfigOption("COMPRESS_OVERVIEW", "DEFLATE")
 gdal.DontUseExceptions()
