@@ -51,7 +51,7 @@ def applyColorTable(dstImg, style):
 
 def processSingleImage(params, relImagePath):
     errorHandler =  GDALErrorHandler()
-    gdal.PushErrorHandler(errorHandler)
+    gdal.PushErrorHandler(errorHandler.handler)
     image = os.path.join(params["dataPath"],relImagePath[0])
     print("processing: ", image)
     ret = []
@@ -157,7 +157,7 @@ def processSingleImage(params, relImagePath):
 
         ret.append(LayerInfo(dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
                              params["productInfo"].id))
-        gdal.PopErrorHandler(errorHandler)
+        gdal.PopErrorHandler(errorHandler.handler)
         return ret
     except: #rolling back filesystem
         if os.path.isfile(dstImg):
@@ -166,7 +166,7 @@ def processSingleImage(params, relImagePath):
         if os.path.isfile(dstOverviews):
             os.remove(dstOverviews)
 
-        gdal.PopErrorHandler(errorHandler)
+        gdal.PopErrorHandler(errorHandler.handler)
 
 
 class MapserverImporter(object):
