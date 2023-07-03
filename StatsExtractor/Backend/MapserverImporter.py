@@ -21,7 +21,7 @@ gdal.DontUseExceptions()
 sys.path.extend(['../../']) #to properly import modules from other dirs
 
 from Libs.MapServer import MapServer, LayerInfo
-from Libs.Utils import GdalErrorHandler, getImageExtent, netCDFSubDataset, plainScaller, linearScaller
+from Libs.Utils import GDALErrorHandler, getImageExtent, netCDFSubDataset, plainScaller, linearScaller
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
 
