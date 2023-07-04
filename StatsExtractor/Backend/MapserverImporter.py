@@ -54,12 +54,15 @@ class SingleImageProcessor:
         self._dstImg = None
         self._dstOverviews = None
         import signal as lsignal
+        self.lsignal = lsignal
+        self._originalSIGTERMHandler = lsignal.getsignal(signal.SIGTERM)
         lsignal.signal(lsignal.SIGTERM, self.rollBack)
-        #lsignal.signal(lsignal.SIGKILL, self.rollBack)
         self._processSingleImage()
+    def __del__(self):
+        self.lsignal.signal(self.lsignal.SIGTERM, self._originalSIGTERMHandler)
 
-    def rollBack(self):
-        print("rolling back")
+    def rollBack(self, **kwargs):
+        print("rolling back for images: {0}\t {1}".format(self._dstImg, self._dstOverviews))
         if self._dstImg is not None and os.path.isfile(self._dstImg):
             os.remove(self._dstImg)
 
