@@ -152,15 +152,10 @@ class SingleImageProcessor:
                 outDt = gdal.Open(self._dstImg)
                 print("Building overviews for: " + os.path.split(self._dstImg)[1])
 
-                callbackData = {
-                    "cnt": 0
-                }
-
                 if os.path.isfile(dstOverviews):
                     os.remove(dstOverviews)
 
-                outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64], callback=myProgress,
-                                         callback_data=callbackData)
+                outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64])
                 outDt = None
 
             ptr = re.compile(self._params["productInfo"].pattern)
@@ -177,6 +172,7 @@ class SingleImageProcessor:
             return ret
         except Exception as e:#rolling back filesystem
             self.rollBack()
+            return None
 
 
 
