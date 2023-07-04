@@ -14,23 +14,21 @@
 
 import numpy as np, os, socket
 from osgeo import gdal, ogr
-import threading
-
 class GDALErrorHandler(object):
 	def __init__(self):
 		self.lastError = None
-		self._lock = threading.Lock()
+		#self._manager = Manager()
+		#self._lock = self._manager.Lock()
 
 	def handler(self, errorLevel, errorNo, errorMsg):
-		with self._lock:
-			self.lastError = (errorLevel, errorNo, errorMsg)
+		print("here", errorLevel, errorNo, errorMsg)
+		self.lastError = (errorLevel, errorNo, errorMsg)
 
 	def capture(self):
-		with self._lock:
-			if self.lastError is not None:
-				errorLevel, errorNo, errorMsg = self.lastError
-				self.lastError = None
-				raise RuntimeError("GDAL Error {0}: {1}".format(errorNo, errorMsg))
+		if self.lastError is not None:
+			errorLevel, errorNo, errorMsg = self.lastError
+			self.lastError = None
+			raise RuntimeError("GDAL Error {0}: {1}".format(errorNo, errorMsg))
 
 netCDFSubDataset = lambda  fl, var: """NETCDF:"{0}":{1}""".format(fl, var)
 
