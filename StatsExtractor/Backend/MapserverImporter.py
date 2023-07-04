@@ -172,7 +172,7 @@ class SingleImageProcessor:
             elif self._params["productInfo"].productType == "anomaly":
                 layerName = date[0:10]
 
-            ret.append(LayerInfo(self._dstImg, layerName, "EPSG:4326",None, None, getImageExtent(dstImg), date,
+            ret.append(LayerInfo(self._dstImg, layerName, "EPSG:4326",None, None, getImageExtent(self._dstImg), date,
                                  self._params["productInfo"].id))
             return ret
         except Exception as e:#rolling back filesystem
