@@ -96,7 +96,9 @@ class SingleImageProcessor:
                                                                  self._relImagePath[1].strftime("%m"),
                                                                  variable,
                                                                  os.path.split(self._relImagePath[0])[-1].split(".")[0] + ".tif"])
-
+                
+                self._dstOverviews = self._dstImg + ".ovr"
+                
                 try:
                     gdal.Open(self._dstImg)
                 except:
@@ -151,17 +153,17 @@ class SingleImageProcessor:
                 applyColorTable(self._dstImg, variableParams.style)
 
             outDt = None
-            dstOverviews = self._dstImg + ".ovr"
+            
 
-            if not os.path.isfile(dstOverviews):
+            if not os.path.isfile(self._dstOverviews ):
                 buildOverviews = True
 
             if buildOverviews:
                 outDt = gdal.Open(self._dstImg)
                 print("Building overviews for: " + os.path.split(self._dstImg)[1])
 
-                if os.path.isfile(dstOverviews):
-                    os.remove(dstOverviews)
+                if os.path.isfile(self._dstOverviews ):
+                    os.remove(self._dstOverviews )
 
                 outDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64])
                 outDt = None
