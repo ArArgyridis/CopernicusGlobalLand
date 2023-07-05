@@ -21,7 +21,7 @@ from Libs.MapServer import MapServer, LayerInfo
 from Libs.Utils import GDALErrorHandler, getImageExtent, netCDFSubDataset, plainScaller, linearScaller
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
-gdal.UseExceptions()
+
 
 def myProgress(progress, progressData, callbackData):
     progress = np.round(progress,2)*100
@@ -183,7 +183,7 @@ class MapserverImporter(object):
 
         self._layerInfo = []
 
-    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
+    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=1):
         executor = ProcessPoolExecutor(max_workers=nThreads)
         rootPath = self._config.filesystem.imageryPath
         if Constants.PRODUCT_INFO[productId].productType == "anomaly":
