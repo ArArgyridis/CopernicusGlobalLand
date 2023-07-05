@@ -46,6 +46,13 @@ def applyColorTable(dstImg, style):
     outDt = gdal.Open(dstImg, gdal.GA_Update)
     outDt.GetRasterBand(1).SetRasterColorTable(colors)
     outDt = None
+    
+def runSingleImage(params, relImagePath):
+    obj = SingleImageProcessor(params, relImagePath)
+    ret = obj.processSingleImage()
+    obj = None
+    return ret
+
 
 class SingleImageProcessor:
     def __init__(self, params, relImagePath):
@@ -57,9 +64,10 @@ class SingleImageProcessor:
         self.lsignal = lsignal
         self._originalSIGTERMHandler = lsignal.getsignal(signal.SIGTERM)
         lsignal.signal(lsignal.SIGTERM, self.rollBack)
-        self._processSingleImage()
+        
     def __del__(self):
         self.lsignal.signal(self.lsignal.SIGTERM, self._originalSIGTERMHandler)
+        self.lsignal = None
 
     def rollBack(self, **kwargs):
         print("rolling back for images: {0}\t {1}".format(self._dstImg, self._dstOverviews))
@@ -69,7 +77,7 @@ class SingleImageProcessor:
         if self._dstOverviews is not None and os.path.isfile(self._dstOverviews):
             os.remove(self._dstOverviews)
 
-    def _processSingleImage(self):
+    def processSingleImage(self):
         image = os.path.join(self._params["dataPath"],self._relImagePath[0])
         ret = []
 
@@ -189,7 +197,7 @@ class MapserverImporter(object):
         if Constants.PRODUCT_INFO[productId].productType == "anomaly":
             rootPath = self._config.filesystem.anomalyProductsPath
 
-        threads = executor.map(SingleImageProcessor, [{
+        threads = executor.map(runSingleImage, [{
             "dataPath":rootPath,
             "mapserverPath": self._config.filesystem.mapserverPath,
             "productInfo":Constants.PRODUCT_INFO[productId],
