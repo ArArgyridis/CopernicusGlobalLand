@@ -16,7 +16,6 @@ sys.path.extend(['../../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Constants import Constants
 from osgeo import gdal
-gdal.DontUseExceptions()
 
 def scanDir(dirList, product, found=False):
     #examineList = []
@@ -192,10 +191,12 @@ class DataCrawler:
                 continue
 
             if len(self._prodInfo.variables) > 0: #try to open file with gdal
-                tmpDt = gdal.Open(fl)
-                if not tmpDt: #fails to open
+                try:
+                    tmpDt = gdal.Open(fl)
+                except Exception as e:
+                    print(e)
                     continue
-
+                
             relFilePath = os.path.relpath(fl, storageDir)
 
             # check if product exists in DB

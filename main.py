@@ -21,6 +21,8 @@ from AnomalyDetectors.LongTermComparisonAnomalyDetector import run as runLongTer
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
 from StatsExtractor.WebService.Backend.PointValueExtractor import PointValueExtractor
+from osgeo import gdal
+gdal.UseExceptions()
 
 def main():
 	if len(sys.argv) < 2:
