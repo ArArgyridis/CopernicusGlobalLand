@@ -108,7 +108,7 @@ class SingleImageProcessor:
                     tmpDt = gdal.Open(image)
                     os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
 
-                    outDrv = gdal.GetDriverByName("GTiff")
+                    outDrv = gdal.GetDriverByName("COG")
                     outDt = outDrv.Create(self._dstImg, tmpDt.RasterXSize, tmpDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
                                       options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
                     outDt.SetProjection(tmpDt.GetProjection())
