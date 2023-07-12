@@ -63,11 +63,12 @@ class SingleImageProcessor:
         import signal as lsignal
         self.lsignal = lsignal
         self._originalSIGTERMHandler = lsignal.getsignal(signal.SIGTERM)
-        lsignal.signal(lsignal.SIGTERM, self.rollBack)
+        self.lsignal.signal(lsignal.SIGTERM, self.rollBack)
         
     def __del__(self):
         self.lsignal.signal(self.lsignal.SIGTERM, self._originalSIGTERMHandler)
         self.lsignal = None
+        print("destroyed image processor")
 
     def rollBack(self, **kwargs):
         print("rolling back for images: {0}\t {1}".format(self._dstImg, self._dstOverviews))
