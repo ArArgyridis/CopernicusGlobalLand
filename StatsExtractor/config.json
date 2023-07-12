@@ -33,7 +33,8 @@
 	},
 	"mapserver": {
 		"raw_data_wms": "url_here/{0}/{1}/{2}",
-		"anomalies_wms": "url_here/{0}/{1}"
+		"anomalies_wms": "url_here/{0}/{1}",
+		"use_cog":true
 	},
 	"enabled_product_ids": null
 } 

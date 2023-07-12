@@ -140,8 +140,9 @@ class FileSystem(object):
 
 class MapServer(object):
     def __init__(self, cfg):
-        self.rawDataWMS = cfg["raw_data_wms"]
-        self.anomaliesWMS = cfg["anomalies_wms"]
+        self.rawDataWMS     = cfg["raw_data_wms"]
+        self.anomaliesWMS   = cfg["anomalies_wms"]
+        self.useCOG         = cfg["use_cog"]
 
 class ConfigurationParser(object):
     def __init__(self, cfgFile):

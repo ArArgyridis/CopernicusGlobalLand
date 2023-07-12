@@ -14,23 +14,12 @@
 
 import numpy as np, os, socket
 from osgeo import gdal, ogr
-class GDALErrorHandler(object):
-	def __init__(self):
-		self.lastError = None
-		#self._manager = Manager()
-		#self._lock = self._manager.Lock()
-
-	def handler(self, errorLevel, errorNo, errorMsg):
-		print("here", errorLevel, errorNo, errorMsg)
-		self.lastError = (errorLevel, errorNo, errorMsg)
-
-	def capture(self):
-		if self.lastError is not None:
-			errorLevel, errorNo, errorMsg = self.lastError
-			self.lastError = None
-			raise RuntimeError("GDAL Error {0}: {1}".format(errorNo, errorMsg))
 
 netCDFSubDataset = lambda  fl, var: """NETCDF:"{0}":{1}""".format(fl, var)
+
+def checkAndDeleteFile(fl):
+	if fl is not None and os.path.isfile(fl):
+		os.remove(fl)
 
 def chunkIt(seq, num):
 	avg = len(seq) / float(num)
@@ -54,23 +43,6 @@ def getImageExtent(inImage):
 	]
 	inData = None
 	return bounds
-
-def getListOfFiles(dirName):
-	# create a list of file and sub directories
-	# names in the given directory
-	listOfFile = os.listdir(dirName)
-	allFiles = list()
-	# Iterate over all the entries
-	for entry in listOfFile:
-		# Create full path
-		fullPath = os.path.join(dirName, entry)
-		# If entry is a directory then get the list of files in this directory
-		if os.path.isdir(fullPath):
-			allFiles = allFiles + getListOfFiles(fullPath)
-		else:
-			allFiles.append(fullPath)
-
-	return allFiles
 
 def geomRasterizer(rasterExtents, dstResolution, ft, dstOSR):
 		outRasterXSize = int(np.round((rasterExtents[1][0] - rasterExtents[0][0]) / dstResolution))
@@ -104,8 +76,6 @@ def geomRasterizer(rasterExtents, dstResolution, ft, dstOSR):
 		memVSource = None
 
 		return rasterFt.GetRasterBand(1).ReadAsArray()
-
-
 
 def pixelsToAreaM2Degrees(pxCount, pixelSize):
 	return pxCount*np.power((pixelSize*np.pi/180*6371000),2)

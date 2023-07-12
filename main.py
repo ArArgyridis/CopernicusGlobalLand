@@ -38,7 +38,6 @@ def main():
 	if cfg.parse() != 1:
 		while True:
 			for pid in Constants.PRODUCT_INFO:
-				print(pid)
 				inDir = cfg.filesystem.imageryPath
 				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
 					inDir = cfg.filesystem.anomalyProductsPath
