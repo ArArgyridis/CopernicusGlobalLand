@@ -237,7 +237,7 @@ class MapserverImporter(object):
 
         self._layerInfo = []
 
-    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=1):
+    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
         executor = ProcessPoolExecutor(max_workers=nThreads)
         rootPath = self._config.filesystem.imageryPath
         if Constants.PRODUCT_INFO[productId].productType == "anomaly":
