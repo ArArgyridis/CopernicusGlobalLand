@@ -135,8 +135,9 @@ class SingleImageProcessor:
 
                         outDt.FlushCache()
                         outDt = None
-                    except:
+                    except Exception as e:
                         print("issue for image: ", self._dstImg)
+                        print ("issue: ", e)
                         self.rollBack()
 
 
@@ -182,6 +183,8 @@ class SingleImageProcessor:
                                  self._params["productInfo"].id))
             return ret
         except Exception as e:#rolling back filesystem
+            print("issue for image: ", self._dstImg)
+            print("issue: ", e)
             self.rollBack()
             return None
 
