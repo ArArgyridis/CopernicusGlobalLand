@@ -133,23 +133,25 @@ class SFTPConnectionParams(object):
 
 class FileSystem(object):
     def __init__(self, cfg):
-        self.imageryPath = cfg["imagery_path"]
-        self.anomalyProductsPath = cfg["anomaly_products_path"]
-        self.tmpPath = cfg["tmp_path"]
-        self.mapserverPath = cfg["mapserver_data_path"]
+        self.imageryPath            = cfg["imagery_path"]
+        self.anomalyProductsPath    = cfg["anomaly_products_path"]
+        self.tmpPath                = cfg["tmp_path"]
+        self.mapserverPath          = cfg["mapserver_data_path"]
+        self.mapserverFilePath      = cfg["mapserver_mapfile_path"]
 
 class MapServer(object):
     def __init__(self, cfg):
         self.rawDataWMS     = cfg["raw_data_wms"]
         self.anomaliesWMS   = cfg["anomalies_wms"]
         self.useCOG         = cfg["use_cog"]
+        self.configOption   = cfg["config"]
 
 class ConfigurationParser(object):
     def __init__(self, cfgFile):
-        self.cfgFile = cfgFile
-        self.pgConnections = {}
-        self.statsInfo = None
-        self.enabledProductIds = None
+        self.cfgFile            = cfgFile
+        self.pgConnections      = {}
+        self.statsInfo          = None
+        self.enabledProductIds  = None
 
     def getFile(self):
         return self.cfgFile

@@ -258,8 +258,6 @@ class MapserverImporter(object):
 
     def process(self, productId):
         productGroups = dict()
-        #for productId in Constants.PRODUCT_INFO:
-        #print(Constants.PRODUCT_INFO[productId].productType)
         query = """SELECT rel_file_path, date FROM product_file WHERE product_file_description_id = {0} 
         ORDER BY rel_file_path""".format(productId)
 
@@ -301,12 +299,13 @@ class MapserverImporter(object):
                             outPathParams.insert(-1, variable)
 
 
-                        outFile = os.path.join(self._config.filesystem.mapserverPath, *outPathParams)
+                        outFile = os.path.join(self._config.filesystem.mapserverFilePath, *outPathParams)
 
                         #print(outFile)
                         mapserv = MapServer(productGroups[productKey][year][month],
                                         mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0],
-                                                          year,month, variable), outFile)
+                                                          year,month, variable), outFile,
+                                            "NatStats CGLS WMS Service", self._config.mapserver.configOption)
                         mapserv.process()
 
 

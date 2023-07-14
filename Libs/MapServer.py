@@ -31,12 +31,13 @@ class LayerInfo(object):
 class MapServer:
 	
 	def __init__(self, layerInfoList, wmsServerURL, outMapFile = "mapserver.map", wmsTitle = "A TEMP NAME",
-				 projection = None, extent = None):
+				 mapFileConfigs = {}, projection = None, extent = None):
 		self._layerInfoList = layerInfoList
 		self._wmsServerURL = wmsServerURL
 		self._outMapFile = outMapFile
 		self._wmsTitle = wmsTitle
 		self._projection = projection
+		self._mapFileConfigs = mapFileConfigs
 
 		if self._projection is None:
 			self._projection = self._layerInfoList[0].epsgStr
@@ -63,8 +64,12 @@ class MapServer:
 		imageryMap.name = self._wmsTitle
 		imageryMap.setSize(256, 256)
 		imageryMap.maxsize = 256
+		imageryMap.units = self._units
 		imageryMap.setProjection(self._projection)
 		imageryMap.setExtent(*self._extent)
+		for key in self._mapFileConfigs:
+			imageryMap.setConfigOption(key, self._mapFileConfigs[key])
+		imageryMap.applyConfigOptions()
 
 		outputFormat = mapscript.outputFormatObj("GD/JPEG")
 		imageryMap.setOutputFormat(outputFormat)

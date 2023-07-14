@@ -29,12 +29,28 @@
 		"imagery_path": "/home/argyros/Projects/JRC/ExperimentalData/Imagery/",
 		"anomaly_products_path": "/home/argyros/Projects/JRC/AnomalyProducts/",
 		"tmp_path":  "/home/argyros/Projects/JRC/tmp/",
-		"mapserver_data_path": "/home/argyros/Projects/JRC/mapserver/"
+		"mapserver_data_path": "/home/argyros/Projects/JRC/mapserver/",
+		"mapserver_mapfile_path":"/home/argyros/Projects/JRC/DataInventory/mapfile/"
 	},
 	"mapserver": {
 		"raw_data_wms": "url_here/{0}/{1}/{2}",
 		"anomalies_wms": "url_here/{0}/{1}",
-		"use_cog":true
+		"use_cog":true,
+		"config":{
+			"AWS_S3_ENDPOINT":"s3.waw3-1.cloudferro.com",
+			"AWS_SECRET_ACCESS_KEY": "*********",
+			"AWS_ACCESS_KEY_ID":"******",
+			"AWS_HTTPS":"YES",
+			"GDAL_DISABLE_READDIR_ON_OPEN":"YES",
+			"CPL_VSIL_CURL_ALLOWED_EXTENSIONS":".tif,.ovr",
+			"AWS_VIRTUAL_HOSTING":"TRUE",
+			"GDAL_HTTP_TCP_KEEPALIVE":"YES",
+			"GDAL_HTTP_TCP_KEEPIDLE":"120",
+			"GDAL_HTTP_MULTIPLEX":"YES",
+			"GDAL_HTTP_MERGE_CONSECUTIVE_RANGES":"YES",
+			"VSI_CACHE":"TRUE",
+			"AWS_REQUEST_PAYER":"requester"
+		}
 	},
 	"enabled_product_ids": null
 } 
