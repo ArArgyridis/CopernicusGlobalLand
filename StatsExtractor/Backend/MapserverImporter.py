@@ -264,7 +264,7 @@ class MapserverImporter(object):
     def process(self, productId):
         productGroups = dict()
         query = """SELECT rel_file_path, date FROM product_file WHERE product_file_description_id = {0} 
-        ORDER BY rel_file_path LIMIT 1""".format(productId)
+        ORDER BY rel_file_path""".format(productId)
 
         for variable in Constants.PRODUCT_INFO[productId].variables:
             res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(query)
