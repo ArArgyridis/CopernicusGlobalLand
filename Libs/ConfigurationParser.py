@@ -144,6 +144,9 @@ class MapServer(object):
         self.rawDataWMS     = cfg["raw_data_wms"]
         self.anomaliesWMS   = cfg["anomalies_wms"]
         self.useCOG         = cfg["use_cog"]
+        self.virtualPrefix  = cfg["virtual_prefix_path"]
+        if self.virtualPrefix[-1] == "/":
+            self.virtualPrefix = self.virtualPrefix[0:-1]
         self.configOption   = cfg["config"]
 
 class ConfigurationParser(object):

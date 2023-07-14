@@ -219,7 +219,11 @@ class SingleImageProcessor:
             elif self._params["productInfo"].productType == "anomaly":
                 layerName = date[0:10]
 
-            return LayerInfo(self._dstImg, layerName, "EPSG:4326", None, None, getImageExtent(self._dstImg), date,
+            layerImg = self._dstImg
+            if self._params["virtualPrefixPath"] is not None:
+                layerImg = self._params["virtualPrefixPath"] + layerImg
+
+            return LayerInfo(layerImg, layerName, "EPSG:4326", None, None, getImageExtent(self._dstImg), date,
                                  self._params["productInfo"].id)
 
         except Exception as e:#rolling back filesystem
@@ -246,6 +250,7 @@ class MapserverImporter(object):
         threads = executor.map(runSingleImage, [{
             "dataPath":rootPath,
             "mapserverPath": self._config.filesystem.mapserverPath,
+            "virtualPrefixPath": self._config.mapserver.virtualPrefix,
             "tmpPath": self._config.filesystem.tmpPath,
             "useCOG": self._config.mapserver.useCOG,
             "productInfo":Constants.PRODUCT_INFO[productId],
@@ -259,7 +264,7 @@ class MapserverImporter(object):
     def process(self, productId):
         productGroups = dict()
         query = """SELECT rel_file_path, date FROM product_file WHERE product_file_description_id = {0} 
-        ORDER BY rel_file_path""".format(productId)
+        ORDER BY rel_file_path LIMIT 1""".format(productId)
 
         for variable in Constants.PRODUCT_INFO[productId].variables:
             res = self._config.pgConnections[self._config.statsInfo.connectionId].getIteratableResult(query)
