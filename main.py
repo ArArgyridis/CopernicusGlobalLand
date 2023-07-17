@@ -37,6 +37,10 @@ def main():
 	
 	if cfg.parse() != 1:
 		while True:
+			if os.path.isdir(cfg.filesystem.tmpPath):
+				os.rmdir(cfg.filesystem.tmpPath)
+			os.makedirs(cfg.filesystem.tmpPath, exist_ok=True)
+
 			for pid in Constants.PRODUCT_INFO:
 				inDir = cfg.filesystem.imageryPath
 				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
