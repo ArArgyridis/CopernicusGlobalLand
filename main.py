@@ -13,6 +13,7 @@
 """
 
 import os, sys, threading
+import shutil
 from time import sleep
 from StatsExtractor.Backend.DataCrawler import DataCrawler
 from StatsExtractor.Backend.ZonalStatsExtractor import ZonalStatsExtractor
@@ -38,7 +39,7 @@ def main():
 	if cfg.parse() != 1:
 		while True:
 			if os.path.isdir(cfg.filesystem.tmpPath):
-				os.rmdir(cfg.filesystem.tmpPath)
+				shutil.rmtree(cfg.filesystem.tmpPath)
 			os.makedirs(cfg.filesystem.tmpPath, exist_ok=True)
 
 			for pid in Constants.PRODUCT_INFO:
