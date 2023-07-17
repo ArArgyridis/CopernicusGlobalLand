@@ -69,7 +69,7 @@ class SingleImageProcessor:
         self._originalSIGTERMHandler = lsignal.getsignal(signal.SIGTERM)
         self.lsignal.signal(lsignal.SIGTERM, self.rollBack)
         
-    def __del__(self):
+    def _release(self):
         self.lsignal.signal(self.lsignal.SIGTERM, self._originalSIGTERMHandler)
         self.lsignal = None
         checkAndDeleteFile(self._tmpImg)
@@ -222,13 +222,14 @@ class SingleImageProcessor:
             layerImg = self._dstImg
             if self._params["virtualPrefixPath"] is not None:
                 layerImg = self._params["virtualPrefixPath"] + layerImg
-
+            self._release()
             return LayerInfo(layerImg, layerName, "EPSG:4326", None, None, getImageExtent(self._dstImg), date,
                                  self._params["productInfo"].id)
 
         except Exception as e:#rolling back filesystem
             print("issue for image: ", self._dstImg)
             print("issue 2: ", e)
+            self._release()
             self.rollBack()
             return None
 
@@ -260,6 +261,8 @@ class MapserverImporter(object):
         for result in threads:
             if result is not None:
                 self._layerInfo.append(result)
+
+        executor.shutdown()
 
     def process(self, productId):
         productGroups = dict()
