@@ -36,10 +36,11 @@
 		"raw_data_wms": "url_here/{0}/{1}/{2}",
 		"anomalies_wms": "url_here/{0}/{1}",
 		"use_cog":true,
+		"virtual_prefix_path": "/vsis3/",
 		"config":{
 			"AWS_S3_ENDPOINT":"s3.waw3-1.cloudferro.com",
-			"AWS_SECRET_ACCESS_KEY": "*********",
-			"AWS_ACCESS_KEY_ID":"******",
+			"AWS_SECRET_ACCESS_KEY": "97d7c011250640f0ab00d79c3c211998",
+			"AWS_ACCESS_KEY_ID":"108e464f549b404eb1d1869deb6abb46",
 			"AWS_HTTPS":"YES",
 			"GDAL_DISABLE_READDIR_ON_OPEN":"YES",
 			"CPL_VSIL_CURL_ALLOWED_EXTENSIONS":".tif,.ovr",

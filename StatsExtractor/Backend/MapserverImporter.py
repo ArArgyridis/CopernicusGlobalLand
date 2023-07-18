@@ -11,7 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import copy
 import os, re, numpy as np, shutil, signal, sys, xml.etree.ElementTree as ET, multiprocessing
 from osgeo import gdal, osr
 from concurrent.futures import ProcessPoolExecutor
@@ -21,7 +21,7 @@ from Libs.MapServer import MapServer, LayerInfo
 from Libs.Utils import checkAndDeleteFile, getImageExtent, netCDFSubDataset, plainScaller, linearScaller
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
-
+gdal.UseExceptions()
 
 def myProgress(progress, progressData, callbackData):
     progress = np.round(progress,2)*100
@@ -47,17 +47,14 @@ def applyColorTable(dstImg, style):
     outDt.GetRasterBand(1).SetRasterColorTable(colors)
     outDt = None
     
-def runSingleImage(params, relImagePath):
-    obj = SingleImageProcessor(params, relImagePath)
-    ret = obj.processSingleImage()
-    del obj
-    return ret
+
 
 
 
 
 class SingleImageProcessor:
     def __init__(self, params, relImagePath):
+        print("starting!")
         self._params = params
         self._relImagePath = relImagePath
         self._dstImg = None
@@ -65,13 +62,12 @@ class SingleImageProcessor:
         self._tmpImg = None
         self._tmpOverviews = None
         import signal as lsignal
-        self.lsignal = lsignal
-        self._originalSIGTERMHandler = lsignal.getsignal(signal.SIGTERM)
-        self.lsignal.signal(lsignal.SIGTERM, self.rollBack)
+        self._signal = lsignal
+        self._originalSIGTERMHandler = self._signal.getsignal(signal.SIGTERM)
+
         
-    def _release(self):
-        self.lsignal.signal(self.lsignal.SIGTERM, self._originalSIGTERMHandler)
-        self.lsignal = None
+    def __del__(self):
+        self._signal.signal(self._signal.SIGTERM, self._originalSIGTERMHandler)
         checkAndDeleteFile(self._tmpImg)
         checkAndDeleteFile(self._tmpOverviews)
         print("destroyed image processor")
@@ -82,8 +78,11 @@ class SingleImageProcessor:
         checkAndDeleteFile(self._dstOverviews)
         checkAndDeleteFile(self._tmpImg)
         checkAndDeleteFile(self._tmpOverviews)
+        self._signal.signal(self._signal.SIGTERM, self._originalSIGTERMHandler)
 
     def processSingleImage(self):
+        self._signal.signal(signal.SIGTERM, self.rollBack)
+
         image = os.path.join(self._params["dataPath"],self._relImagePath[0])
 
         variable = self._params["variable"]
@@ -91,147 +90,150 @@ class SingleImageProcessor:
             variable = ''
         variableParams = self._params["productInfo"].variables[self._params["variable"]]
         buildOverviews = False
-        try:
-            if self._params["productInfo"].productType == "raw":
-                if variable != "": #netcdf-like subdataset
-                    image = netCDFSubDataset(image, variable)
 
-                self._dstImg = os.path.join(self._params["mapserverPath"], *["raw", self._params["productInfo"].productNames[0],
-                                                                 self._relImagePath[1].strftime("%Y"),
-                                                                 self._relImagePath[1].strftime("%m"),
-                                                                 variable,
-                                                                 os.path.split(self._relImagePath[0])[-1].split(".")[0] + ".tif"])
+        if self._params["productInfo"].productType == "raw":
+            if variable != "": #netcdf-like subdataset
+                image = netCDFSubDataset(image, variable)
 
-                if not self._params["useCOG"]:
-                    self._dstOverviews = self._dstImg + ".ovr"
-                
-                try:
-                    gdal.Open(self._dstImg)
-                except:
-                    print("processing: ", image)
-
-                    buildOverviews = True
-                    inDt = gdal.Open(image)
-                    
-
-                    tmpDrv = gdal.GetDriverByName("GTiff")
-
-                    self._tmpImg = os.path.join(self._params["tmpPath"],
-                                                *["raw", self._params["productInfo"].productNames[0],
-                                                  self._relImagePath[1].strftime("%Y"),
-                                                  self._relImagePath[1].strftime("%m"),
-                                                  variable,
-                                                  os.path.split(self._relImagePath[0])[-1].split(".")[0] + ".tif"])
-                    
-                    #creating respective directories
-                    os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
-                    os.makedirs(os.path.split(self._tmpImg)[0], exist_ok=True)
-
-                    checkAndDeleteFile(self._tmpImg)
-
-                    tmpDt = tmpDrv.Create(self._tmpImg, inDt.RasterXSize, inDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
-                                      options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
-                    tmpDt.SetProjection(inDt.GetProjection())
-                    tmpDt.SetGeoTransform(inDt.GetGeoTransform())
-                    outBnd = tmpDt.GetRasterBand(1)
-                    origNoDataValue = inDt.GetRasterBand(1).GetNoDataValue()
-
-                    scaler = None
-                    if variableParams.minProdValue >= 0 and variableParams.maxProdValue <= 255:
-                        scaler = plainScaller
-                    else:
-                        scaler = linearScaller
-                    try:
-                        for row in range(inDt.RasterXSize):
-                            rowDt = inDt.ReadAsArray(row, 0, 1, inDt.RasterYSize)
-                            fixedDt = scaler(rowDt, variableParams.minValue,
-                                             variableParams.maxValue, origNoDataValue, 255,
-                                             variableParams.minProdValue, variableParams.maxProdValue)
-
-                            outBnd.WriteArray(fixedDt, row, 0)
-
-                        outBnd.SetNoDataValue(255)
-
-                        tmpDt.FlushCache()
-                        tmpDt = None
-                    except Exception as e:
-                        print("issue for image: ", self._dstImg)
-                        print ("issue 1: ", e)
-                        self.rollBack()
-
-
-            elif self._params["productInfo"].productType == "anomaly": #for now just copy file
-                self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath[0]])
-                try:
-                    gdal.Open(self._dstImg)
-                except:
-                    print("processing: ", image)
-                    buildOverviews = True
-                    os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
-                    shutil.copy(image, self._dstImg)
-                    self._tmpImg = self._dstImg
-
-            if self._tmpImg is not None and variableParams.style is not None:
-                applyColorTable(self._tmpImg, variableParams.style)
-
-            tmpDt = None
-
-            if self._dstOverviews is not None and not os.path.isfile(self._dstOverviews):
-                buildOverviews = True
+            self._dstImg = os.path.join(self._params["mapserverPath"],
+                                        *["raw", self._params["productInfo"].productNames[0],
+                                          self._relImagePath[1].strftime("%Y"),
+                                          self._relImagePath[1].strftime("%m"),
+                                          variable,
+                                          os.path.split(self._relImagePath[0])[-1].split(".")[0] + ".tif"])
 
             if not self._params["useCOG"]:
-                if buildOverviews:
-                    tmpDt = gdal.Open(self._tmpImg)
-                    print("Building overviews for: " + os.path.split(self._tmpImg)[1])
+                self._dstOverviews = self._dstImg + ".ovr"
+                
+            try:
+                gdal.Open(self._dstImg)
+            except:
+                print("processing: ", image)
 
-                    checkAndDeleteFile(self._dstOverviews)
-                    self._tmpOverviews = self._tmpImg + ".ovr"
-                    checkAndDeleteFile(self._tmpOverviews)
+                buildOverviews = True
+                inDt = gdal.Open(image)
 
-                    tmpDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64])
+
+                tmpDrv = gdal.GetDriverByName("GTiff")
+
+                self._tmpImg = os.path.join(self._params["tmpPath"],
+                                            *["raw", self._params["productInfo"].productNames[0],
+                                              self._relImagePath[1].strftime("%Y"),
+                                              self._relImagePath[1].strftime("%m"),
+                                              variable,
+                                              os.path.split(self._relImagePath[0])[-1].split(".")[0] + ".tif"])
+
+                #creating respective directories
+                os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
+                os.makedirs(os.path.split(self._tmpImg)[0], exist_ok=True)
+
+                checkAndDeleteFile(self._tmpImg)
+
+                tmpDt = tmpDrv.Create(self._tmpImg, inDt.RasterXSize, inDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
+                                  options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
+                tmpDt.SetProjection(inDt.GetProjection())
+                tmpDt.SetGeoTransform(inDt.GetGeoTransform())
+                outBnd = tmpDt.GetRasterBand(1)
+                origNoDataValue = inDt.GetRasterBand(1).GetNoDataValue()
+
+                scaler = None
+                if variableParams.minProdValue >= 0 and variableParams.maxProdValue <= 255:
+                    scaler = plainScaller
+                else:
+                    scaler = linearScaller
+                try:
+                    for row in range(inDt.RasterXSize):
+                        rowDt = inDt.ReadAsArray(row, 0, 1, inDt.RasterYSize)
+                        fixedDt = scaler(rowDt, variableParams.minValue,
+                                         variableParams.maxValue, origNoDataValue, 255,
+                                         variableParams.minProdValue, variableParams.maxProdValue)
+
+                        outBnd.WriteArray(fixedDt, row, 0)
+
+                    outBnd.SetNoDataValue(255)
+
+                    tmpDt.FlushCache()
                     tmpDt = None
-            elif self._tmpImg is not None:
-                #convert tmp image to cog
-                splitTmpImg = list(os.path.split(self._tmpImg))
-                splitTmpImg[1] = "cog_" + splitTmpImg[1]
-                cogImg = os.path.join(*splitTmpImg)
-                checkAndDeleteFile(cogImg)
-                kwargs = {'format': 'COG'}
-                gdal.Warp(cogImg, self._tmpImg, **kwargs)
-                checkAndDeleteFile(self._tmpImg)
-                self._tmpImg = cogImg
+                except Exception as e:
+                    print("issue for image: ", self._dstImg)
+                    print ("issue 1: ", e)
+                    self.rollBack()
 
-            #copying files to destination directory
-            if self._tmpImg is not None:
-                shutil.copy(self._tmpImg, self._dstImg)
-                checkAndDeleteFile(self._tmpImg)
+        elif self._params["productInfo"].productType == "anomaly": #for now just copy file
+            self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath[0]])
+            if not self._params["useCOG"]:
+                self._dstOverviews = self._dstImg + ".ovr"
+            try:
+                gdal.Open(self._dstImg)
+            except:
+                print("processing: ", image)
+                buildOverviews = True
+                os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
+                shutil.copy(image, self._dstImg)
+                self._tmpImg = self._dstImg
 
-                if self._dstOverviews is not None:
-                    shutil.copy(self._tmpOverviews, self._dstOverviews)
-                    checkAndDeleteFile(self._tmpOverviews)
+        if self._tmpImg is not None and variableParams.style is not None:
+            applyColorTable(self._tmpImg, variableParams.style)
 
-            ptr = re.compile(self._params["productInfo"].pattern)
-            date = self._params["productInfo"].createDate(ptr.findall(os.path.split(self._relImagePath[0])[1])[0])
+        tmpDt = None
 
-            layerName = None
-            if self._params["productInfo"].productType == "raw":
-                layerName = "{0}_{1}".format(date[0:10], variable)
-            elif self._params["productInfo"].productType == "anomaly":
-                layerName = date[0:10]
+        if self._dstOverviews is not None and not os.path.isfile(self._dstOverviews):
+            buildOverviews = True
 
-            layerImg = self._dstImg
-            if self._params["virtualPrefixPath"] is not None:
-                layerImg = self._params["virtualPrefixPath"] + layerImg
-            self._release()
-            return LayerInfo(layerImg, layerName, "EPSG:4326", None, None, getImageExtent(self._dstImg), date,
-                                 self._params["productInfo"].id)
+        if not self._params["useCOG"]:
+            if buildOverviews:
+                tmpDt = gdal.Open(self._tmpImg)
+                print("Building overviews for: " + os.path.split(self._tmpImg)[1])
 
-        except Exception as e:#rolling back filesystem
-            print("issue for image: ", self._dstImg)
-            print("issue 2: ", e)
-            self._release()
-            self.rollBack()
-            return None
+                checkAndDeleteFile(self._dstOverviews)
+                self._tmpOverviews = self._tmpImg + ".ovr"
+                checkAndDeleteFile(self._tmpOverviews)
+
+                tmpDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64])
+                tmpDt = None
+        elif self._tmpImg is not None:
+            #convert tmp image to cog
+            splitTmpImg = list(os.path.split(self._tmpImg))
+            splitTmpImg[1] = "cog_" + splitTmpImg[1]
+            cogImg = os.path.join(*splitTmpImg)
+            checkAndDeleteFile(cogImg)
+            kwargs = {'format': 'COG'}
+            gdal.Warp(cogImg, self._tmpImg, **kwargs)
+            checkAndDeleteFile(self._tmpImg)
+            self._tmpImg = cogImg
+
+        #copying files to destination directory
+        if self._tmpImg is not None:
+            shutil.copy(self._tmpImg, self._dstImg)
+            checkAndDeleteFile(self._tmpImg)
+
+            if self._dstOverviews is not None:
+                shutil.copy(self._tmpOverviews, self._dstOverviews)
+                checkAndDeleteFile(self._tmpOverviews)
+
+        ptr = re.compile(self._params["productInfo"].pattern)
+        date = self._params["productInfo"].createDate(ptr.findall(os.path.split(self._relImagePath[0])[1])[0])
+
+        layerName = None
+        if self._params["productInfo"].productType == "raw":
+            layerName = "{0}_{1}".format(date[0:10], variable)
+        elif self._params["productInfo"].productType == "anomaly":
+            layerName = date[0:10]
+
+        layerImg = self._dstImg
+        if self._params["virtualPrefixPath"] is not None:
+            layerImg = self._params["virtualPrefixPath"] + layerImg
+
+        #cleaning up handler
+        self._signal.signal(self._signal.SIGTERM, self._originalSIGTERMHandler)
+        return LayerInfo(layerImg, layerName, "EPSG:4326", None, None, getImageExtent(self._dstImg), date,
+                             self._params["productInfo"].id)
+
+def runSingleImage(params, relImagePath):
+    obj = SingleImageProcessor(params, relImagePath)
+    ret = obj.processSingleImage()
+    del obj
+    return ret
 
 
 
@@ -243,26 +245,27 @@ class MapserverImporter(object):
         self._layerInfo = []
 
     def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
-        executor = ProcessPoolExecutor(max_workers=nThreads)
-        rootPath = self._config.filesystem.imageryPath
-        if Constants.PRODUCT_INFO[productId].productType == "anomaly":
-            rootPath = self._config.filesystem.anomalyProductsPath
+        with ProcessPoolExecutor(max_workers=nThreads) as executor:
+            rootPath = self._config.filesystem.imageryPath
 
-        threads = executor.map(runSingleImage, [{
-            "dataPath":rootPath,
-            "mapserverPath": self._config.filesystem.mapserverPath,
-            "virtualPrefixPath": self._config.mapserver.virtualPrefix,
-            "tmpPath": self._config.filesystem.tmpPath,
-            "useCOG": self._config.mapserver.useCOG,
-            "productInfo":Constants.PRODUCT_INFO[productId],
-            "variable": variable,
-            }]*productFiles.rowcount, productFiles)
+            if Constants.PRODUCT_INFO[productId].productType == "anomaly":
+                rootPath = self._config.filesystem.anomalyProductsPath
 
-        for result in threads:
-            if result is not None:
-                self._layerInfo.append(result)
+            threads = executor.map(runSingleImage, [{
+                "dataPath":rootPath,
+                "mapserverPath": self._config.filesystem.mapserverPath,
+                "virtualPrefixPath": self._config.mapserver.virtualPrefix,
+                "tmpPath": self._config.filesystem.tmpPath,
+                "useCOG": self._config.mapserver.useCOG,
+                "productInfo":Constants.PRODUCT_INFO[productId],
+                "variable": variable,
+                }]*productFiles.rowcount, productFiles)
 
-        executor.shutdown()
+            for result in threads:
+                if result is not None:
+                    self._layerInfo.append(result)
+
+
 
     def process(self, productId):
         productGroups = dict()

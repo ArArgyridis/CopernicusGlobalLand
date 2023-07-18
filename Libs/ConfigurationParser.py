@@ -202,8 +202,9 @@ class ConfigurationParser(object):
         except FileExistsError:
             print("Configuration file does not exists! Exiting.")
             return 1
-        except:
+        except Exception as e:
             print("Unable to parse configuration file! exiting")
+            print(e)
             return 1
 
 
