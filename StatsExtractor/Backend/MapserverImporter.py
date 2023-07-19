@@ -153,7 +153,10 @@ class SingleImageProcessor:
                     outBnd.SetNoDataValue(255)
 
                     tmpDt.FlushCache()
+                    del tmpDt
                     tmpDt = None
+                    del inDt
+                    inDt = None
                 except Exception as e:
                     print("issue for image: ", self._dstImg)
                     print ("issue 1: ", e)
@@ -164,7 +167,9 @@ class SingleImageProcessor:
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
             try:
-                gdal.Open(self._dstImg)
+                tmpDt = gdal.Open(self._dstImg)
+                del tmpDt
+                tmpDt = None
             except:
                 print("processing: ", image)
                 buildOverviews = True
@@ -316,7 +321,8 @@ class MapserverImporter(object):
                         mapserv = MapServer(productGroups[productKey][year][month],
                                         mapservURL.format(Constants.PRODUCT_INFO[productKey].productNames[0],
                                                           year,month, variable), outFile,
-                                            "NatStats CGLS WMS Service", self._config.mapserver.configOption)
+                                            "NatStats CGLS WMS Service", self._config.mapserver.configOption,
+                                            7000)
                         mapserv.process()
 
 
