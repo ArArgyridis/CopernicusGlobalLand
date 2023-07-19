@@ -193,6 +193,8 @@ class DataCrawler:
             if len(self._prodInfo.variables) > 0: #try to open file with gdal
                 try:
                     tmpDt = gdal.Open(fl)
+                    del tmpDt
+                    tmpDt = None
                 except Exception as e:
                     print(e)
                     continue
