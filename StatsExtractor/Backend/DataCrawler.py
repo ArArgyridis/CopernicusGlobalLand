@@ -194,13 +194,12 @@ class DataCrawler:
                 tmpDt = None
                 try:
                     tmpDt = gdal.Open(fl)
-                    del tmpDt
-                    tmpDt = None
                 except Exception as e:
-                    del tmpDt
-                    tmpDt = None
                     print(e)
                     continue
+                finally:
+                    del tmpDt
+                    tmpDt = None
                 
             relFilePath = os.path.relpath(fl, storageDir)
 
