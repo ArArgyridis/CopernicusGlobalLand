@@ -104,9 +104,12 @@ class SingleImageProcessor:
 
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
-                
+
+            dstImgDt = None
+            inDt = None
+            tmpDt = None
             try:
-                gdal.Open(self._dstImg)
+                dstImgDt = gdal.Open(self._dstImg)
             except:
                 print("processing: ", image)
 
@@ -153,34 +156,38 @@ class SingleImageProcessor:
                     outBnd.SetNoDataValue(255)
 
                     tmpDt.FlushCache()
-                    del tmpDt
-                    tmpDt = None
-                    del inDt
-                    inDt = None
+
                 except Exception as e:
                     print("issue for image: ", self._dstImg)
                     print ("issue 1: ", e)
                     self.rollBack()
+            finally:
+                del tmpDt
+                tmpDt = None
+                del inDt
+                inDt = None
+                del dstImgDt
+                dstImgDt = None
 
         elif self._params["productInfo"].productType == "anomaly": #for now just copy file
             self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath[0]])
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
+            tmpDt = None
             try:
                 tmpDt = gdal.Open(self._dstImg)
-                del tmpDt
-                tmpDt = None
             except:
                 print("processing: ", image)
                 buildOverviews = True
                 os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
                 shutil.copy(image, self._dstImg)
                 self._tmpImg = self._dstImg
+            finally:
+                del tmpDt
+                tmpDt = None
 
         if self._tmpImg is not None and variableParams.style is not None:
             applyColorTable(self._tmpImg, variableParams.style)
-
-        tmpDt = None
 
         if self._dstOverviews is not None and not os.path.isfile(self._dstOverviews):
             buildOverviews = True
