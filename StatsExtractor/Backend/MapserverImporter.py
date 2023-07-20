@@ -21,7 +21,7 @@ from Libs.MapServer import MapServer, LayerInfo
 from Libs.Utils import checkAndDeleteFile, getImageExtent, netCDFSubDataset, plainScaller, linearScaller
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
-gdal.UseExceptions()
+gdal.DontUseExceptions()
 
 def myProgress(progress, progressData, callbackData):
     progress = np.round(progress,2)*100
@@ -104,12 +104,8 @@ class SingleImageProcessor:
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
 
-            dstImgDt = None
-            inDt = None
-            tmpDt = None
-            try:
-                dstImgDt = gdal.Open(self._dstImg)
-            except:
+            dstImgDt = gdal.Open(self._dstImg)
+            if dstImgDt is None:
                 print("processing: ", image)
                 buildOverviews = True
                 inDt = gdal.Open(image)
@@ -154,7 +150,6 @@ class SingleImageProcessor:
 
                 tmpDt.FlushCache()
 
-            finally:
                 del tmpDt
                 tmpDt = None
                 del inDt
@@ -166,16 +161,14 @@ class SingleImageProcessor:
             self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath[0]])
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
-            tmpDt = None
-            try:
-                tmpDt = gdal.Open(self._dstImg)
-            except:
+
+            tmpDt = gdal.Open(self._dstImg)
+            if tmpDt is None:
                 print("processing: ", image)
                 buildOverviews = True
                 os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
                 shutil.copy(image, self._dstImg)
                 self._tmpImg = self._dstImg
-            finally:
                 del tmpDt
                 tmpDt = None
 

@@ -15,6 +15,7 @@
 import mapscript, os
 from datetime import datetime
 from osgeo import osr
+
 class LayerInfo(object):
 	def __init__(self, processFile, layerName, epsgStr, width, height, extent, date=None, productKey=None, style=None):
 		self.processFile = processFile

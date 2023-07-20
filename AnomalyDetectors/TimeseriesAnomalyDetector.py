@@ -5,6 +5,7 @@ from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import xyToColRow
 from WebService.Backend.PointValueExtractor import PointValueExtractor
 from multiprocessing import Process, cpu_count
+gdal.DontUseExceptions()
 
 def runTimeSeriesMovingAverage(images, products, startRow, endRow, cols):
     # creating proxies

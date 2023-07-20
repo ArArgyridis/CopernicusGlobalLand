@@ -17,6 +17,7 @@ sys.path.extend(['../../../'])
 
 from osgeo import gdal, osr
 from Libs.Utils import xyToColRow, scaleValue
+gdal.DontUseExceptions()
 
 
 

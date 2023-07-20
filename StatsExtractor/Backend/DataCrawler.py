@@ -17,6 +17,8 @@ from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Constants import Constants
 from osgeo import gdal
 
+gdal.DontUseExceptions()
+
 def scanDir(dirList, product, found=False):
     #examineList = []
     for dir in dirList:
@@ -192,15 +194,12 @@ class DataCrawler:
                 continue
 
             if len(self._prodInfo.variables) > 0: #try to open file with gdal
-                tmpDt = None
-                try:
-                    tmpDt = gdal.Open(fl)
-                except Exception as e:
-                    print(e)
-                finally:
-                    del tmpDt
-                    tmpDt = None
+                tmpDt = gdal.Open(fl)
+                if tmpDt is None:
                     continue
+
+                del tmpDt
+                tmpDt = None
 
             relFilePath = os.path.relpath(fl, storageDir)
 

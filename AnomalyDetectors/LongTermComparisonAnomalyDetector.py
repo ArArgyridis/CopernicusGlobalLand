@@ -8,6 +8,7 @@ from Libs.Utils import xyToColRow, netCDFSubDataset, scaleValue
 from Libs.Constants import Constants
 from multiprocessing import Process, cpu_count
 from shutil import rmtree
+gdal.DontUseExceptions()
 
 
 def computeAnomaly(outImg, products, ltsmedian, ltsStd, startRow, endRow, noDataValue, variableName="NDVI"):
