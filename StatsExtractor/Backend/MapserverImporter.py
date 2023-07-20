@@ -125,11 +125,11 @@ class SingleImageProcessor:
 
                 checkAndDeleteFile(self._tmpImg)
 
-                tmpDt = tmpDrv.Create(self._tmpImg, inDt.RasterXSize, inDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
+                dstImgDt = tmpDrv.Create(self._tmpImg, inDt.RasterXSize, inDt.RasterYSize, bands=1, eType=gdal.GDT_Byte,
                                   options=["COMPRESS=LZW", "TILED=YES", "PREDICTOR=2"])
-                tmpDt.SetProjection(inDt.GetProjection())
-                tmpDt.SetGeoTransform(inDt.GetGeoTransform())
-                outBnd = tmpDt.GetRasterBand(1)
+                dstImgDt.SetProjection(inDt.GetProjection())
+                dstImgDt.SetGeoTransform(inDt.GetGeoTransform())
+                outBnd = dstImgDt.GetRasterBand(1)
                 origNoDataValue = inDt.GetRasterBand(1).GetNoDataValue()
 
                 scaler = None
@@ -148,29 +148,27 @@ class SingleImageProcessor:
 
                 outBnd.SetNoDataValue(255)
 
-                tmpDt.FlushCache()
-
-                del tmpDt
-                tmpDt = None
                 del inDt
                 inDt = None
-                del dstImgDt
-                dstImgDt = None
+
+            del dstImgDt
+            dstImgDt = None
 
         elif self._params["productInfo"].productType == "anomaly": #for now just copy file
             self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath[0]])
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
 
-            tmpDt = gdal.Open(self._dstImg)
-            if tmpDt is None:
+            dstImgDt = gdal.Open(self._dstImg)
+            if dstImgDt is None:
                 print("processing: ", image)
                 buildOverviews = True
                 os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
                 shutil.copy(image, self._dstImg)
                 self._tmpImg = self._dstImg
-                del tmpDt
-                tmpDt = None
+
+            del dstImgDt
+            dstImgDt = None
 
         if self._tmpImg is not None and variableParams.style is not None:
             applyColorTable(self._tmpImg, variableParams.style)
