@@ -55,6 +55,7 @@ def main():
 				#compute anomalies
 				del obj
 				obj = None
+
 				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
 					print("Computing anomalies!")
 					runLongTermComparisonAnomalyDetector(pid, config)

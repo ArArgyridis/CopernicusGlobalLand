@@ -82,10 +82,9 @@ class SingleImageProcessor:
 
     def processSingleImage(self):
         self._signal.signal(signal.SIGTERM, self.rollBack)
-
         image = os.path.join(self._params["dataPath"],self._relImagePath[0])
-
         variable = self._params["variable"]
+
         if variable is None:
             variable = ''
         variableParams = self._params["productInfo"].variables[self._params["variable"]]
@@ -112,10 +111,8 @@ class SingleImageProcessor:
                 dstImgDt = gdal.Open(self._dstImg)
             except:
                 print("processing: ", image)
-
                 buildOverviews = True
                 inDt = gdal.Open(image)
-
 
                 tmpDrv = gdal.GetDriverByName("GTiff")
 
@@ -144,23 +141,19 @@ class SingleImageProcessor:
                     scaler = plainScaller
                 else:
                     scaler = linearScaller
-                try:
-                    for row in range(inDt.RasterXSize):
-                        rowDt = inDt.ReadAsArray(row, 0, 1, inDt.RasterYSize)
-                        fixedDt = scaler(rowDt, variableParams.minValue,
-                                         variableParams.maxValue, origNoDataValue, 255,
-                                         variableParams.minProdValue, variableParams.maxProdValue)
 
-                        outBnd.WriteArray(fixedDt, row, 0)
+                for row in range(inDt.RasterXSize):
+                    rowDt = inDt.ReadAsArray(row, 0, 1, inDt.RasterYSize)
+                    fixedDt = scaler(rowDt, variableParams.minValue,
+                                     variableParams.maxValue, origNoDataValue, 255,
+                                     variableParams.minProdValue, variableParams.maxProdValue)
 
-                    outBnd.SetNoDataValue(255)
+                    outBnd.WriteArray(fixedDt, row, 0)
 
-                    tmpDt.FlushCache()
+                outBnd.SetNoDataValue(255)
 
-                except Exception as e:
-                    print("issue for image: ", self._dstImg)
-                    print ("issue 1: ", e)
-                    self.rollBack()
+                tmpDt.FlushCache()
+
             finally:
                 del tmpDt
                 tmpDt = None
@@ -281,7 +274,8 @@ class MapserverImporter(object):
 
     def process(self, productId):
         productGroups = dict()
-        query = """SELECT rel_file_path, date FROM product_file WHERE product_file_description_id = {0} 
+        query = """SELECT rel_file_path, date FROM product_file 
+        WHERE product_file_description_id = {0} 
         ORDER BY rel_file_path""".format(productId)
 
         for variable in Constants.PRODUCT_INFO[productId].variables:

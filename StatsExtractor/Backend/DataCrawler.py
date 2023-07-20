@@ -196,11 +196,11 @@ class DataCrawler:
                     tmpDt = gdal.Open(fl)
                 except Exception as e:
                     print(e)
-                    continue
                 finally:
                     del tmpDt
                     tmpDt = None
-                
+                    continue
+
             relFilePath = os.path.relpath(fl, storageDir)
 
             # check if product exists in DB
