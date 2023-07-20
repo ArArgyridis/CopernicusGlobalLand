@@ -63,7 +63,8 @@ class DataCrawler:
         self._prodInfo = product
 
     def __del__(self):
-        self._outLog = None
+        self._outLog = self._cn = self.sock = self._download = self._sshCn = self._prodInfo = None
+
 
     def fetchOrValidateAgainstVITO(self, dir, storageDir):
         self._sshCn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
