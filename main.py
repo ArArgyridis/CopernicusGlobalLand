@@ -53,12 +53,16 @@ def main():
 				obj.importProductFromLocalStorage(inDir)
 				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 				#compute anomalies
+				del obj
+				obj = None
 				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
 					print("Computing anomalies!")
 					runLongTermComparisonAnomalyDetector(pid, config)
 
 				mapserver = MapserverImporter(config)
 				mapserver.process(pid)
+				del mapserver
+				mapserver = None
 
 			#fetching stratifications and compute stats for each strata
 			"""
