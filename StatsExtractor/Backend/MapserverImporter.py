@@ -241,7 +241,7 @@ class MapserverImporter(object):
 
         self._layerInfo = []
 
-    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=1):
+    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
         with ProcessPoolExecutor(max_workers=nThreads) as executor:
             rootPath = self._config.filesystem.imageryPath
 
