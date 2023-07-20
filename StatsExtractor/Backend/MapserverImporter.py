@@ -54,7 +54,7 @@ def applyColorTable(dstImg, style):
 
 class SingleImageProcessor:
     def __init__(self, params, relImagePath):
-        print("starting!")
+        print("starting! ", relImagePath)
         self._params = params
         self._relImagePath = relImagePath
         self._dstImg = None
@@ -147,7 +147,8 @@ class SingleImageProcessor:
                     outBnd.WriteArray(fixedDt, row, 0)
 
                 outBnd.SetNoDataValue(255)
-
+                del outBnd
+                outBnd = None
                 del inDt
                 inDt = None
 
@@ -240,7 +241,7 @@ class MapserverImporter(object):
 
         self._layerInfo = []
 
-    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=8):
+    def __prepareLayerForImport(self, productId, variable, productFiles, nThreads=1):
         with ProcessPoolExecutor(max_workers=nThreads) as executor:
             rootPath = self._config.filesystem.imageryPath
 

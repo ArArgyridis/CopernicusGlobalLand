@@ -210,7 +210,7 @@ class DataCrawler:
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                 JOIN product p ON p.id = pfd.product_id 
                 WHERE pf.rel_file_path LIKE '%{0}'
-                AND p.id = {1});""".format(relFilePath, self._prodInfo.id)
+                AND pfd.id = {1});""".format(relFilePath, self._prodInfo.id)
 
             res = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
             if res[0][0]:
