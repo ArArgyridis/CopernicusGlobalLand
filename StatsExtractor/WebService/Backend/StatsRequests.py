@@ -91,7 +91,7 @@ class StatsRequests(GenericRequest):
         	
         	) anomaly_info ON TRUE    	
         	WHERE p.category_id = {0} AND p."type"='raw' 
-        	GROUP BY p.id,  p.name[1], p.description, pfd.id 
+        	GROUP BY p.id,  p.name[1], p.description, pfv.id 
         ),dates AS(
         	SELECT dt.id, ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates
         	FROM dt 
