@@ -76,7 +76,7 @@ class StatsRequests(GenericRequest):
     def __fetchProductInfo(self):
         query = """
              WITH dt AS( 
-        	SELECT p.id,  p.name[1], p.description, pfd.id product_file_description_id, 
+        	SELECT pfv.id,  p.name[1], p.description, pfd.id product_file_description_id, 
         	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.description)) variables
 	        FROM product p 
         	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
@@ -112,7 +112,7 @@ class StatsRequests(GenericRequest):
         JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
         JOIN product_file pf ON ps.product_file_id = pf.id
         JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
-        WHERE ps.poly_id = {1} AND pfd.product_id ={2} AND pf.date BETWEEN '{3}' AND '{4}'
+        WHERE ps.poly_id = {1} AND pfv.id ={2} AND pf.date BETWEEN '{3}' AND '{4}'
         """.format(self._requestData["options"]["area_type"], self._requestData["options"]["poly_id"],
                    self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"])
@@ -312,7 +312,9 @@ class StatsRequests(GenericRequest):
             FROM stratification_geom sg 
             JOIN poly_stats ps ON sg.id =ps.poly_id 
             JOIN product_file pf ON ps.product_file_id =pf.id
-            WHERE sg.stratification_id = {1} AND pf.date='{2}'  AND pf.product_description_id = {3} AND {0} IS NOT NULL""".format(self._requestData["options"]["density"],
+            JOIN product_file_description pfd ON pf.product_description_id = pfd.id
+            JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+            WHERE sg.stratification_id = {1} AND pf.date='{2}'  AND pfv.id = {3} AND {0} IS NOT NULL""".format(self._requestData["options"]["density"],
                                                                                                                                   self._requestData["options"]["stratification_id"], self._requestData["options"]["date"], self._requestData["options"]["product_id"])
         return self.__getResponseFromDB(query)
 
