@@ -276,7 +276,7 @@ export default {
 							variable		= this.$store.getters.currentAnomaly;
 							
 						if (variable.wms.current == null)
-							continue
+							return;
 
 						let layerProps = {
 							url: variable.wms.current.url,
