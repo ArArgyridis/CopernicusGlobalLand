@@ -69,7 +69,7 @@ export default {
 				return;
 			
 			this.polygonId= this.$store.getters.selectedPolygon;
-			this.product = this.$store.getters.product;
+			this.product = this.$store.getters.product.currentVariable;
 			this.areaDensity = this.$store.getters.areaDensity;
 			
 			requests.densityStatsByPolygonAndDateRange(this.polygonId, this.$store.getters.dateStart, this.$store.getters.dateEnd, this.product.id, this.areaDensity.col).then((response) =>{

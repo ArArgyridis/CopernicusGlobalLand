@@ -92,7 +92,7 @@ export default {
 		},
 		updateChartData() {
 			//checking if data should be fetched
-			let product = this.$store.getters.product;
+			let product = this.$store.getters.product.currentVariable;
 			if(this.mode == "Anomalies")
 				product = this.$store.getters.currentAnomaly;
 				
