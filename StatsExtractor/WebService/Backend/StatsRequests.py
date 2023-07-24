@@ -76,7 +76,7 @@ class StatsRequests(GenericRequest):
     def __fetchProductInfo(self):
         query = """
              WITH dt AS( 
-        	SELECT pfv.id,  p.name[1], p.description, pfd.id product_file_description_id, 
+        	SELECT pfv.id,  p.name[1], p.description, product_file_description_id, 
         	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.description)) variables
 	        FROM product p 
         	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
