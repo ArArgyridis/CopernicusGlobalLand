@@ -289,9 +289,9 @@ export default {
 				this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID] = {};
 
 			if (!(this.stratificationViewProps.date in this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID])) {
-				this.$refs.map1.activateSpinner();
+				//this.$refs.map1.activateSpinner();
 				requests.fetchStratificationDataByProductAndDate(this.stratificationViewProps.date, this.stratificationViewProps.variableID, this.stratificationViewProps.stratID).then((response)=>{
-					this.$refs.map1.activateSpinner();
+					//this.$refs.map1.activateSpinner();
 					let styles = {};
 
 					let areaDensityInfo = new areaDensityOptions();
@@ -328,14 +328,14 @@ export default {
 				this.setStratificationStyle();
 		},
 		setStratificationStyle() {
-			//this.$refs.map1.activateSpinner();
+			this.$refs.map1.activateSpinner();
 			let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
 			tmpLayer.setStyle( (ft) => {
 				//console.log("hereeee");
 				return this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID][this.stratificationViewProps.date][colorCol][ft.getId()];
 			});
-			//this.$refs.map1.deactivateSpinner();
+			this.$refs.map1.deactivateSpinner();
 		},
 		updateStratificationLayerVisibility() {
 			if (this.$store.getters.previousStratification != null)
