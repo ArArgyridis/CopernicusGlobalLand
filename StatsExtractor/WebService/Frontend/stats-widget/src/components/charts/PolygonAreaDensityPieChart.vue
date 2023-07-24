@@ -56,7 +56,7 @@ export default {
 			this.date 		= this.$store.getters.currentDate;
 			this.polygonId 	= this.$store.getters.selectedPolygon
 
-			requests.getPieDataByDateAndPolygon(this.product.currentVariable.id, this.date, this.polygonId).then((response) => {
+			requests.getPieDataByDateAndPolygon(this.product.id, this.date, this.polygonId).then((response) => {
 				this.resizeChart();
 				let dt = [];
 				Object.keys(response.data.data).forEach( key  => {
