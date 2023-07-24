@@ -23,6 +23,9 @@ from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import *
 from Libs.Constants import Constants
 
+gdal.DontUseExceptions()
+
+
 def interpolateColor(areaPerc, palette):
     keys = [int(k) for k in palette.keys()]
     keys.sort()

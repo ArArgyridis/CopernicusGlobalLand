@@ -13,6 +13,7 @@
 """
 
 from osgeo import gdal,ogr,osr
+gdal.DontUseExceptions()
 
 class AlignToImage:
     def __init__(self, dataset,  grid):

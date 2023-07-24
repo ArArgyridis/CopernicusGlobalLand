@@ -15,6 +15,7 @@
 import mapscript, os
 from datetime import datetime
 from osgeo import osr
+
 class LayerInfo(object):
 	def __init__(self, processFile, layerName, epsgStr, width, height, extent, date=None, productKey=None, style=None):
 		self.processFile = processFile
@@ -31,13 +32,14 @@ class LayerInfo(object):
 class MapServer:
 	
 	def __init__(self, layerInfoList, wmsServerURL, outMapFile = "mapserver.map", wmsTitle = "A TEMP NAME",
-				 mapFileConfigs = {}, projection = None, extent = None):
+				 mapFileConfigs = {},  maxOutputImageSize = 256, projection = None, extent = None):
 		self._layerInfoList = layerInfoList
 		self._wmsServerURL = wmsServerURL
 		self._outMapFile = outMapFile
 		self._wmsTitle = wmsTitle
 		self._projection = projection
 		self._mapFileConfigs = mapFileConfigs
+		self._maxOutputImageSize = maxOutputImageSize
 
 		if self._projection is None:
 			self._projection = self._layerInfoList[0].epsgStr
@@ -63,8 +65,8 @@ class MapServer:
 
 		imageryMap.name = self._wmsTitle
 		imageryMap.setSize(256, 256)
-		imageryMap.maxsize = 256
 		imageryMap.units = self._units
+		imageryMap.maxsize = self._maxOutputImageSize
 		imageryMap.setProjection(self._projection)
 		imageryMap.setExtent(*self._extent)
 		for key in self._mapFileConfigs:

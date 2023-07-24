@@ -14,6 +14,7 @@
 
 import numpy as np, os, socket
 from osgeo import gdal, ogr
+gdal.DontUseExceptions()
 
 netCDFSubDataset = lambda  fl, var: """NETCDF:"{0}":{1}""".format(fl, var)
 

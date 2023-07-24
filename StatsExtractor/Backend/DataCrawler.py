@@ -17,6 +17,8 @@ from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Constants import Constants
 from osgeo import gdal
 
+gdal.DontUseExceptions()
+
 def scanDir(dirList, product, found=False):
     #examineList = []
     for dir in dirList:
@@ -63,7 +65,8 @@ class DataCrawler:
         self._prodInfo = product
 
     def __del__(self):
-        self._outLog = None
+        self._outLog = self._cn = self.sock = self._download = self._sshCn = self._prodInfo = None
+
 
     def fetchOrValidateAgainstVITO(self, dir, storageDir):
         self._sshCn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -191,12 +194,13 @@ class DataCrawler:
                 continue
 
             if len(self._prodInfo.variables) > 0: #try to open file with gdal
-                try:
-                    tmpDt = gdal.Open(fl)
-                except Exception as e:
-                    print(e)
+                tmpDt = gdal.Open(fl)
+                if tmpDt is None:
                     continue
-                
+
+                del tmpDt
+                tmpDt = None
+
             relFilePath = os.path.relpath(fl, storageDir)
 
             # check if product exists in DB
@@ -206,7 +210,7 @@ class DataCrawler:
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                 JOIN product p ON p.id = pfd.product_id 
                 WHERE pf.rel_file_path LIKE '%{0}'
-                AND p.id = {1});""".format(relFilePath, self._prodInfo.id)
+                AND pfd.id = {1});""".format(relFilePath, self._prodInfo.id)
 
             res = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
             if res[0][0]:
