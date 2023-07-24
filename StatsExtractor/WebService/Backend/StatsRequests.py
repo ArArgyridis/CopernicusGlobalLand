@@ -76,7 +76,7 @@ class StatsRequests(GenericRequest):
     def __fetchProductInfo(self):
         query = """
              WITH dt AS( 
-        	SELECT pfv.id,  p.name[1], p.description, product_file_description_id, 
+        	SELECT pfd.id,  p.name[1], p.description, product_file_description_id, 
         	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.description)) variables
 	        FROM product p 
         	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
@@ -91,7 +91,7 @@ class StatsRequests(GenericRequest):
         	
         	) anomaly_info ON TRUE    	
         	WHERE p.category_id = {0} AND p."type"='raw' 
-        	GROUP BY p.id,  p.name[1], p.description, pfv.id 
+        	GROUP BY p.id,  p.name[1], p.description, pfd.id 
         ),dates AS(
         	SELECT dt.id, ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates
         	FROM dt 
@@ -370,36 +370,3 @@ class StatsRequests(GenericRequest):
             raise SystemError
         return ret
 
-if __name__ == "__main__":
-    productId = 1
-    polyId = 8
-    date = '2021-08-21'
-    cfg="../../active_config.json"
-    
-    from Libs.ConfigurationParser import ConfigurationParser
-    _config = ConfigurationParser(cfg)
-    _config.parse()
-
-    query = """
-    with img AS(
-        SELECT rel_file_path from product_file pf     WHERE product_description_id = {0} and date='{1}'
-    ),  geom AS(
-        SELECT id, st_astext(geom), st_srid(geom) FROM stratification_geom WHERE id = {2}
-    )SELECT * 
-    FROM img 
-    JOIN geom ON true""".format(productId, date, polyId)
-
-    dt = _config.pgConnections[_config.statsInfo.connectionId].fetchQueryResult(query)
-    if len(dt) > 0:
-        dt = dt[0]
-        from osgeo import ogr
-        defn = ogr.FeatureDefn()
-        defn.SetGeomType(ogr.wkbMultiPolygon)
-        dstSRS = osr.SpatialReference()
-        dstSRS.ImportFromEPSG(dt[3])
-
-        geom = ogr.CreateGeometryFromWkt(dt[2], dstSRS)
-        ft = ogr.Feature(defn)
-
-        ft.SetGeometry(geom)
-        ft.SetFID(dt[1])
