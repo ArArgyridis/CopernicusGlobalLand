@@ -275,7 +275,7 @@ export default {
 						if (type == "anom") 						
 							variable		= this.$store.getters.currentAnomaly;
 							
-						if (variable.wms.current == null)
+						if (variable == null || variable.wms.current == null)
 							return;
 
 						let layerProps = {
