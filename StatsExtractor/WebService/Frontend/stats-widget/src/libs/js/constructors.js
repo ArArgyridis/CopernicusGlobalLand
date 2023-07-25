@@ -34,6 +34,29 @@ export function	areaDensityOptions() {
 		];
 	}
 
+export function consolidationPeriods() {
+	return  [
+	{
+		id: 0,
+		description: "Near Realtime (RT-0)"
+	},
+	{
+		id: 1,
+		description: "1 - Dekad (RT-1)"
+	},
+	{
+		id: 2,
+		description: "2 - Dekads (RT-2)"
+	},
+	{
+		id: 6,
+		description: "6 - Dekads (RT-6)"
+	}
+	]
+	
+}
+	
+	
 export function	Categories() {
 		this.info= null;
 		this.current = null;

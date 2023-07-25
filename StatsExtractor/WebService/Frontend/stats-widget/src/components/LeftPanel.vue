@@ -24,14 +24,21 @@
 		</div>
 		
 		<div class="row mt-1">
-			<div class="col d-flex justify-content-end my-auto">Current Product: </div>
+			<div class="col-2 d-flex justify-content-end ml-2 my-auto">Product:</div>
 			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{productDescription}}</button>
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setProduct(product)"><a class="dropdown-item">{{product.description}}</a></li></ul></div>
 		</div>
 		
 		<div class="row mt-1" v-if="product != null">
-			<div class="col d-flex justify-content-end my-auto">Current Variable: </div>
+			<div class="col-2 d-flex justify-content-end my-auto">Variable:</div>
+			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.currentVariable.description}}</button>
+				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+					<li v-for ="(variable, key) in product.variables" v-bind:key="key" v-bind:value="key"  v-on:click="setVariable(variable)"><a class="dropdown-item">{{variable.description}}</a></li></ul></div>
+		</div>
+		
+		<div class="row mt-1" v-if="product != null">
+			<div class="col-2 d-flex justify-content-end my-auto">Consolidation period:</div>
 			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.currentVariable.description}}</button>
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(variable, key) in product.variables" v-bind:key="key" v-bind:value="key"  v-on:click="setVariable(variable)"><a class="dropdown-item">{{variable.description}}</a></li></ul></div>
@@ -46,7 +53,7 @@
 			
 			<div  class="mt-3"><!--STRATIFICATION -->
 				<div class="row">
-					<div class="col d-flex justify-content-end my-auto">Stratification:</div>
+					<div class="col-3 d-flex justify-content-end my-auto">Stratification:</div>
 					<div class="col d-flex justify-content-start">
 						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
 						<ul id="stratificationDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
@@ -57,7 +64,7 @@
 			</div>
 			
 			<div class="row mt-2" v-if="currentStratificationName != 'Select stratification'">
-				<div class="col d-flex justify-content-end my-auto">Date:</div>
+				<div class="col-3 d-flex justify-content-end my-auto">Date:</div>
 				<div class="col d-flex justify-content-start">
 					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{currentDate.substring(0,10)}} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
@@ -67,7 +74,7 @@
 			</div>
 				
 			<div class="row mt-2" v-if="product != null">
-				<div class="col d-flex justify-content-end my-auto">Statistics Mode:</div>
+				<div class="col-3 d-flex justify-content-end my-auto">Statistics Mode:</div>
 				<div class="col d-flex justify-content-start">
 					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ currentStatisticsViewMode}} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
