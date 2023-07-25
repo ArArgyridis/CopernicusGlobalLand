@@ -51,6 +51,7 @@ export default {
 			anomaliesZIndex: 2,
 			markerZIndex: 4,
 			stratificationColorData: {},
+			rtFlag: {id: null},
 			stratificationViewProps: {
 				stratID: null,
 				variableID: null,
@@ -263,14 +264,16 @@ export default {
 				return;
 			
 			//if no change, stop
+			console.log(this.stratificationViewProps.date);
 			if (this.stratificationViewProps.stratID == this.$store.getters.currentStratification.id && this.stratificationViewProps.date == this.$store.getters.currentDate && 
-			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw)
+			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw && this.$store.getters.variable.rtFlag.id == this.rtFlag.id)
 				return;
 			
 			this.stratificationViewProps.stratID 			= this.$store.getters.currentStratification.id;
 			this.stratificationViewProps.date 			= this.$store.getters.currentDate;
 			this.stratificationViewProps.variableID 		= this.$store.getters.product.currentVariable.id;
 			this.stratificationViewProps.stratifiedOrRaw 	= this.$store.getters.stratifiedOrRaw;
+			this.rtFlag 								= this.$store.getters.variable.rtFlag;
 			
 
 			if (this.$store.getters.productStatisticsViewMode == 1 && this.$store.getters.currentAnomaly != null) //seeing anomalies

@@ -97,7 +97,7 @@ export function VariableProperties(product) {
 		variable.density 				= new areaDensityOptions()[2];
 		
 		variable.rtFlag 				= new consolidationPeriods(product.rt)[0]
-			
+		variable.previousRtFlag		= null;
 		variable.density.description 	= utils.computeDensityDescription(variable.density.description, variable.valueRanges[2], variable.valueRanges[3]);
 		variable.style 				= new styleBuilder(variable.style);
 		variable.stratificationInfo 		= new stratificationViewProps("meanval_color");
@@ -130,9 +130,9 @@ export function	styleBuilder(style) {
 export function	ProductViewProperties(product) {
 	product.statisticsViewMode 			= 0;
 	product.previousStatisticsViewMode 	= null;
-	product.currentDate 					= product.dates[0];
 	VariableProperties(product);
 	product.currentVariable				= product.variables[0];
+	product.currentDate 					= product.dates[product.currentVariable.rtFlag.id][0];
 }
 
 export function	ProductsProps() {
@@ -147,13 +147,15 @@ export function WMSProps(name, dates, variable, wmsURL=options.wmsURL) {
 	this.next 	= null;
 	this.urls 		= new Set();
 	this.layers 	= {};
-
-	dates.forEach(date =>{
-		let splitDate	= date.split("-");
-		let url		= wmsURL + name + "/" + splitDate[0] +"/" +splitDate[1];
-		if (variable.length > 0)
-			url += "/" + variable;
-		this.urls.add(url);
+	
+	Object.keys(dates).forEach(rt => {
+		dates[rt].forEach(date=> {
+			let splitDate	= date.split("-");
+			let url		= wmsURL + name + "/" + splitDate[0] +"/" +splitDate[1];
+			if (variable.length > 0)
+				url += "/" + variable;
+			this.urls.add(url);
+		});
 	});
 }
 

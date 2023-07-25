@@ -119,7 +119,13 @@ export default{
 					}
 				},
 				setConsolidationPeriod(state, dt) {
+					state.categories.current.products.current.currentVariable.previousRtFlag = state.categories.current.products.current.currentVariable.rtFlag;
 					state.categories.current.products.current.currentVariable.rtFlag = dt;
+					
+					let variable = state.categories.current.products.current.currentVariable;
+					
+					state.categories.current.products.current.currentDate = state.categories.current.products.current.dates[variable.rtFlag.id][0];
+					state.categories.current.products.current.currentVariable.wms.previous = state.categories.current.products.current.currentVariable.wms.current;
 				},
 				setProduct(state, dt) {	
 					initProduct(dt);
@@ -324,7 +330,7 @@ export default{
 				},
 				productDates: (state) => {
 					try {
-						return state.categories.current.products.current.dates;
+						return state.categories.current.products.current.dates[state.categories.current.products.current.currentVariable.rtFlag.id];
 					}
 					catch {
 						return null;
