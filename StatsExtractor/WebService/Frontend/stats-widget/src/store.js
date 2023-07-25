@@ -118,6 +118,9 @@ export default{
 							state.categories.current = state.categories.info[i];
 					}
 				},
+				setConsolidationPeriod(state, dt) {
+					state.categories.current.products.current.currentVariable.rtFlag = dt;
+				},
 				setProduct(state, dt) {	
 					initProduct(dt);
 					state.categories.current.products.current = dt;

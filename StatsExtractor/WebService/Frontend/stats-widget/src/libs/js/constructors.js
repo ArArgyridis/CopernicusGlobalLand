@@ -34,7 +34,13 @@ export function	areaDensityOptions() {
 		];
 	}
 
-export function consolidationPeriods() {
+export function consolidationPeriods(hasRT) {
+	if (!hasRT){
+		return[{
+				id: -1,
+				description: "No Consolidation"
+			}]
+	}
 	return  [
 	{
 		id: 0,
@@ -89,6 +95,9 @@ export function VariableProperties(product) {
 		variable.wms 				= new WMSProps(product.name, product.dates, variable.variable)
 		variable.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
 		variable.density 				= new areaDensityOptions()[2];
+		
+		variable.rtFlag 				= new consolidationPeriods(product.rt)[0]
+			
 		variable.density.description 	= utils.computeDensityDescription(variable.density.description, variable.valueRanges[2], variable.valueRanges[3]);
 		variable.style 				= new styleBuilder(variable.style);
 		variable.stratificationInfo 		= new stratificationViewProps("meanval_color");
