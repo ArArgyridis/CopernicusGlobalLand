@@ -99,11 +99,12 @@ class StatsRequests(GenericRequest):
         			SELECT dt.id, pf.date, CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END rt_flag --ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates
         			FROM dt 
         			JOIN product_file pf ON dt.product_file_description_id = pf.product_file_description_id
-        			WHERE pf."date" BETWEEN '{0}' AND '{1}'        	
+        			WHERE pf."date" BETWEEN '{1}' AND '{2}'        	
         		)a
         		GROUP BY a.id, a.rt_flag
         	)b
                 GROUP BY b.id
+        )
         SELECT ARRAY_TO_JSON(ARRAY_AGG(json_build_object('id', dt.id, 'name', name, 'description', dt.description, 'rt', dt.has_rt, 'dates', dates.dates, 'variables', dt.variables) ORDER BY dt.description))
         FROM dt        
         JOIN dates ON dt.id = dates.id
