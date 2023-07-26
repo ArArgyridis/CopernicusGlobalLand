@@ -58,12 +58,13 @@ export default {
 		postParams["options"] = null;
 		return axios.post(options.endpointURL, postParams);
 	},
-	fetchStratificationDataByProductAndDate(date, product, stratification) {
+	fetchStratificationDataByProductAndDate(date, variableID, rtFlag, stratification) {
 		let postParams = {};
 		postParams["request"] = "stratificationinfobyproductanddate"
 		postParams["options"] = {
 			date: date,
-			product_id: product,
+			product_variable_id: variableID,
+			rt_flag: rtFlag,
 			stratification_id: stratification
 		}
 		return axios.post(options.endpointURL, postParams);

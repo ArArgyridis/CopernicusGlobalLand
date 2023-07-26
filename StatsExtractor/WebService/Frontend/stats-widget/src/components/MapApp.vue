@@ -51,10 +51,10 @@ export default {
 			anomaliesZIndex: 2,
 			markerZIndex: 4,
 			stratificationColorData: {},
-			rtFlag: {id: null},
 			stratificationViewProps: {
 				stratID: null,
 				variableID: null,
+				rtFlag: {id: null},
 				date: null,
 				statisticsViewMode: null,
 				stratifiedOrRaw: null,
@@ -266,14 +266,14 @@ export default {
 			//if no change, stop
 			console.log(this.stratificationViewProps.date);
 			if (this.stratificationViewProps.stratID == this.$store.getters.currentStratification.id && this.stratificationViewProps.date == this.$store.getters.currentDate && 
-			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw && this.$store.getters.variable.rtFlag.id == this.rtFlag.id)
+			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw && this.$store.getters.variable.rtFlag.id == this.stratificationViewProps.rtFlag.id)
 				return;
 			
 			this.stratificationViewProps.stratID 			= this.$store.getters.currentStratification.id;
 			this.stratificationViewProps.date 			= this.$store.getters.currentDate;
 			this.stratificationViewProps.variableID 		= this.$store.getters.product.currentVariable.id;
 			this.stratificationViewProps.stratifiedOrRaw 	= this.$store.getters.stratifiedOrRaw;
-			this.rtFlag 								= this.$store.getters.variable.rtFlag;
+			this.stratificationViewProps.rtFlag 			= this.$store.getters.variable.rtFlag;
 			
 
 			if (this.$store.getters.productStatisticsViewMode == 1 && this.$store.getters.currentAnomaly != null) //seeing anomalies
@@ -293,7 +293,7 @@ export default {
 
 			if (!(this.stratificationViewProps.date in this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID])) {
 				this.$refs.map1.activateSpinner();
-				requests.fetchStratificationDataByProductAndDate(this.stratificationViewProps.date, this.stratificationViewProps.variableID, this.stratificationViewProps.stratID).then((response)=>{
+				requests.fetchStratificationDataByProductAndDate(this.stratificationViewProps.date, this.stratificationViewProps.variableID, this.stratificationViewProps.rtFlag.id, this.stratificationViewProps.stratID).then((response)=>{
 					this.$refs.map1.activateSpinner();
 					let styles = {};
 

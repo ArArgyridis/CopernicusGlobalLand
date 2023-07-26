@@ -61,7 +61,7 @@ class StatsRequests(GenericRequest):
 		JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
 		JOIN product_file pf ON ps.product_file_id =pf.id 
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
-		WHERE pfv.id = {1} AND ps.poly_id={0}
+		WHERE  ps.poly_id={0} AND pfv.id = {1}
 	)
 	SELECT json_build_object(
 	'type', 'Feature',
@@ -163,8 +163,14 @@ class StatsRequests(GenericRequest):
         JOIN  product p ON pfd.product_id = p.id
         JOIN  stratification_geom sg ON sg.id = ps.poly_id
         JOIN  stratification s ON s.id = sg.stratification_id
-        WHERE pf.date = '{0}' and s.id = {1} and pfv.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7)a; """.format(self._requestData["options"]["date"],
-                      self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
+        WHERE pf.date = '{0}' AND s.id = {1} AND pfv.id = {2} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels > 0.7 """.format(self._requestData["options"]["date"],
+                      self._requestData["options"]["stratification_id"], self._requestData["options"]["product_variable_id"])
+        
+        if  self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+        
+        query += ")a"; 
+        
         return self.__getResponseFromDB(query)
     
     def __fetchStratificationInfo(self):
