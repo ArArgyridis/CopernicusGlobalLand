@@ -36,6 +36,9 @@ export default {
 		stratification(){
 			return this.$store.getters.currentStratification;
 		},
+		variableRT(){
+			return this.$store.getters.product.currentVariable.rtFlag
+		}
 	},
 	data() {
 		return {
@@ -190,11 +193,13 @@ export default {
 			
 			this.$store.getters.product.currentVariable.wms.urls.forEach( url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.productVariableZIndex).then((data) => {
+					console.log(data);
 					let dt = {};
 					data.forEach(lyr => {
 						lyr["url"] = url;
 						dt[lyr.datetime] = lyr;
 					});
+					console.log(dt);
 					this.$store.commit("appendToCurrnetVariableWMSLayers",dt);
 					if(displayFirst)
 						this.updateWMSVisibility();

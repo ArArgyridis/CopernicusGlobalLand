@@ -53,10 +53,12 @@ def applyColorTable(dstImg, style):
 
 
 class SingleImageProcessor:
-    def __init__(self, params, relImagePath):
-        print("starting! ", relImagePath)
+    def __init__(self, params, info):
+        print("starting! ", info)
         self._params = params
-        self._relImagePath = relImagePath
+        self._relImagePath = info[0]
+        self._date = info[1]
+        self._rtFlag = info[2]
         self._dstImg = None
         self._dstOverviews = None
         self._tmpImg = None
@@ -82,7 +84,7 @@ class SingleImageProcessor:
 
     def processSingleImage(self):
         self._signal.signal(signal.SIGTERM, self.rollBack)
-        image = os.path.join(self._params["dataPath"],self._relImagePath[0])
+        image = os.path.join(self._params["dataPath"],self._relImagePath)
         variable = self._params["variable"]
 
         if variable is None:
@@ -96,10 +98,10 @@ class SingleImageProcessor:
 
             self._dstImg = os.path.join(self._params["mapserverPath"],
                                         *["raw", self._params["productInfo"].productNames[0],
-                                          self._relImagePath[1].strftime("%Y"),
-                                          self._relImagePath[1].strftime("%m"),
+                                          self._date.strftime("%Y"),
+                                          self._date.strftime("%m"),
                                           variable,
-                                          os.path.split(self._relImagePath[0])[-1].split(".")[0] + ".tif"])
+                                          os.path.split(self._relImagePath)[-1].split(".")[0] + ".tif"])
 
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
@@ -114,10 +116,10 @@ class SingleImageProcessor:
 
                 self._tmpImg = os.path.join(self._params["tmpPath"],
                                             *["raw", self._params["productInfo"].productNames[0],
-                                              self._relImagePath[1].strftime("%Y"),
-                                              self._relImagePath[1].strftime("%m"),
+                                              self._date.strftime("%Y"),
+                                              self._date.strftime("%m"),
                                               variable,
-                                              os.path.split(self._relImagePath[0])[-1].split(".")[0] + ".tif"])
+                                              os.path.split(self._relImagePath)[-1].split(".")[0] + ".tif"])
 
                 #creating respective directories
                 os.makedirs(os.path.split(self._dstImg)[0], exist_ok=True)
@@ -156,7 +158,7 @@ class SingleImageProcessor:
             dstImgDt = None
 
         elif self._params["productInfo"].productType == "anomaly": #for now just copy file
-            self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath[0]])
+            self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath])
             if not self._params["useCOG"]:
                 self._dstOverviews = self._dstImg + ".ovr"
 
@@ -209,13 +211,16 @@ class SingleImageProcessor:
                 checkAndDeleteFile(self._tmpOverviews)
 
         ptr = re.compile(self._params["productInfo"].pattern)
-        date = self._params["productInfo"].createDate(ptr.findall(os.path.split(self._relImagePath[0])[1])[0])
+        date = self._params["productInfo"].createDate(ptr.findall(os.path.split(self._relImagePath)[1])[0])
 
         layerName = None
         if self._params["productInfo"].productType == "raw":
             layerName = "{0}_{1}".format(date[0:10], variable)
         elif self._params["productInfo"].productType == "anomaly":
             layerName = date[0:10]
+
+        if self._rtFlag is not None:
+            layerName += "_RT{0}".format(self._rtFlag)
 
         layerImg = self._dstImg
         if self._params["virtualPrefixPath"] is not None:
@@ -266,7 +271,7 @@ class MapserverImporter(object):
 
     def process(self, productId):
         productGroups = dict()
-        query = """SELECT rel_file_path, date FROM product_file 
+        query = """SELECT rel_file_path, date, rt_flag FROM product_file 
         WHERE product_file_description_id = {0} 
         ORDER BY rel_file_path""".format(productId)
 
