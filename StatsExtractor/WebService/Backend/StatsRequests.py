@@ -140,9 +140,13 @@ class StatsRequests(GenericRequest):
                 and EXTRACT('doy' FROM pfltaimean."date") between EXTRACT('doy' FROM pf."date") - 2	and EXTRACT('doy' FROM pf."date") +2
                 LEFT JOIN poly_stats psltai ON psltai.product_file_id = pfltaimean.id AND psltai.product_file_variable_id = pfvltaimean.id 
                 AND psltai.poly_id = ps.poly_id
-            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7)
-            SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date"))
-            FROM dt""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
+            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0 
+            AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
+        
+        if self._requestData["options"]["rt_flag"] >=0:
+            query += "AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+        
+        query += """)SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date")) FROM dt"""
         return self.__getResponseFromDB(query)
         
     def __fetchStratificationDataByProductAndDate(self):
@@ -167,7 +171,7 @@ class StatsRequests(GenericRequest):
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_variable_id"])
         
         if  self._requestData["options"]["rt_flag"] >= 0:
-            query += " AND rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
         
         query += ")a"; 
         
@@ -316,6 +320,10 @@ class StatsRequests(GenericRequest):
             WHERE pfv.id = {0} AND pf."date" = '{1}' AND ps.poly_id = {2}
         """.format(self._requestData["options"]["product_id"],
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        
+        if self._requestData["options"]["rt_flag"] >=0:
+            query += "AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+            
         return self.__getResponseFromDB(query)
     
     def __rankStrataByDensity(self):
@@ -341,6 +349,10 @@ class StatsRequests(GenericRequest):
             JOIN product p ON pfd.product_id = p.id
             WHERE pfv.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2}) a
         """.format(self._requestData["options"]["product_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        
+        if  self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+        
         return self.__getResponseFromDB(query)
     
     def polygonDescription(self):

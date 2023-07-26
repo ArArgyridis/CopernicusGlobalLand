@@ -19,14 +19,15 @@ export default {
 		};
 		return axios.post(options.endpointURL, postParams); 
 	},
-	fetchHistogramByPolygonAndDate(polyId, date, productId) {
+	fetchHistogramByPolygonAndDate(polyId, date, productVariableID, rtFlag) {
 		let postParams  = {};
 
 		postParams["request"] = "histogrambypolygonanddate";
 		postParams["options"] = {
 			poly_id: polyId,
 			date: date,
-			product_id: productId
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag
 		}
 		return axios.post(options.endpointURL, postParams); 
 	},
@@ -69,11 +70,12 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
-	getPieDataByDateAndPolygon(productId, date, polyId) {
+	getPieDataByDateAndPolygon(productVariableID, rtFlag, date, polyId) {
 		let postParams = {};
 		postParams["request"] = "piedatabydateandpolygon";
 		postParams["options"] = {
-			product_id: productId,
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag,
 			date: date,
 			poly_id: polyId
 		}
@@ -98,14 +100,15 @@ export default {
 		postParams["options"] = {...postParams["options"], ...coordInfo};
 		return axios.post(options.endpointURL, postParams);
 	},
-	polygonStatsTimeSeries(polyId, dateStart, dateEnd, productId) {
+	polygonStatsTimeSeries(polyId, dateStart, dateEnd, productVariableID, rtFlag) {
 		let postParams = {};
 		postParams["request"] = "polygonStatsTimeseries";
 		postParams["options"] = {
 			date_start: dateStart,
 			date_end: dateEnd,
-			product_id: productId,
-			poly_id: polyId
+			product_variable_id: productVariableID,
+			poly_id: polyId,
+			rt_flag:rtFlag
 		};
 		return axios.post(options.endpointURL, postParams);
 	},

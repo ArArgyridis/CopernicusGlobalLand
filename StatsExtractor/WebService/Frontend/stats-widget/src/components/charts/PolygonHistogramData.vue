@@ -47,7 +47,7 @@ export default {
 			isLoading: true,
 			dgDt: this.noData,
 			polygonId: null,
-			product:{id: null},
+			productVariable:{id: null},
 			date: null
 		}
 	},
@@ -60,14 +60,14 @@ export default {
 			if (this.$store.getters.product == null || this.$store.getters.currentDate == null || this.$store.getters.selectedPolygon ==null)
 				return;
 			
-			if (this.product.id == this.$store.getters.product.id && this.polygonId == this.$store.getters.selectedPolygon && this.date == this.$store.getters.currentDate)
+			if (this.productVariable.id == this.$store.getters.product.id && this.polygonId == this.$store.getters.selectedPolygon && this.date == this.$store.getters.currentDate)
 				return;
 
 			this.isLoading = true;
-			this.product = this.$store.getters.product.currentVariable;
+			this.productVariable = this.$store.getters.product.currentVariable;
 			this.date = this.$store.getters.currentDate;
 			this.polygonId = this.$store.getters.selectedPolygon;
-			requests.fetchHistogramByPolygonAndDate(this.polygonId, this.date, this.product.id).then((response) =>{
+			requests.fetchHistogramByPolygonAndDate(this.polygonId, this.date, this.productVariable.id, this.productVariable.rtFlag.id).then((response) =>{
 				this.resizeChart();
 				let xAxisCategories = [];
 				for (let i = 0; i < response.data.data.histogram.y.length; i++) {

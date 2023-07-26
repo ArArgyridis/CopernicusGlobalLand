@@ -71,7 +71,7 @@ export default {
 			diagramData: this.noData,
 			isLoading: true,
 			previousPolyId: null,
-			curProduct: {id:null}
+			curProductVariable: {id:null}
 		}
 	},
 	methods:{
@@ -79,23 +79,23 @@ export default {
 			return this.isLoading;
 		},
 		updateChartData() {
-			let product = this.$store.getters.product.currentVariable;
+			let productVariable = this.$store.getters.product.currentVariable;
 			if(this.mode == "Anomalies")
-				product = this.$store.getters.currentAnomaly;
+				productVariable = this.$store.getters.currentAnomaly;
 			
 			let polyId = this.$store.getters.selectedPolygon;
-			if (product == null || polyId == null)
+			if (productVariable == null || polyId == null)
 				return;
 			
-			if(this.curProduct.id == product.id && this.previousPolyId ==polyId)
+			if(this.curProductVariable.id == productVariable.id && this.previousPolyId ==polyId)
 				return;
 			
 			this.isLoading = true;
-			this.curProduct = product;			
+			this.curProductVariable = productVariable;			
 			this.previousPolyId = polyId;			
 			
-			if(polyId != null && product != null) { 
-				requests.polygonStatsTimeSeries(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, product.id)
+			if(polyId != null && productVariable != null) { 
+				requests.polygonStatsTimeSeries(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, productVariable.id, productVariable.rtFlag.id)
 				.then((response) =>{
 					if (response.data.data != null) {
 					

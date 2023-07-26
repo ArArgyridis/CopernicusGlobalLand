@@ -35,7 +35,7 @@ export default {
 		return {
 			isLoading: true,
 			diagramData: this.noData,
-			product: {id: null},
+			productVariable: {id: null},
 			date: null,
 			polygonId: null
 		}	
@@ -48,15 +48,15 @@ export default {
 			if (this.$store.getters.product == null || this.$store.getters.currentDate == null || this.$store.getters.selectedPolygon == null)
 				return;
 			
-			if(this.$store.getters.product.id == this.product.id && this.date == this.$store.getters.currentDate && this.$store.getters.selectedPolygon == this.polygonId)
+			if(this.$store.getters.product.id == this.productVariable.id && this.date == this.$store.getters.currentDate && this.$store.getters.selectedPolygon == this.polygonId)
 				return;
 	
-			this.isLoading 	= true;
-			this.product 		= this.$store.getters.product.currentVariable;
-			this.date 		= this.$store.getters.currentDate;
-			this.polygonId 	= this.$store.getters.selectedPolygon
+			this.isLoading 			= true;
+			this.productVariable 		= this.$store.getters.product.currentVariable;
+			this.date 				= this.$store.getters.currentDate;
+			this.polygonId 			= this.$store.getters.selectedPolygon
 
-			requests.getPieDataByDateAndPolygon(this.product.id, this.date, this.polygonId).then((response) => {
+			requests.getPieDataByDateAndPolygon(this.productVariable.id, this.productVariable.rtFlag.id, this.date, this.polygonId).then((response) => {
 				this.resizeChart();
 				let dt = [];
 				Object.keys(response.data.data).forEach( key  => {
