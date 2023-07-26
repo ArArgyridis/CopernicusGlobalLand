@@ -215,9 +215,13 @@ class StatsRequests(GenericRequest):
             JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
             JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
             JOIN product p on pfd.product_id =p.id
-            WHERE date between  '{1}' and '{2}' and pfv.id  = {3}
-            GROUP BY pfv.variable, pfd.pattern,pfd.types,pfd.create_date""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
-       
+            WHERE date between  '{1}' and '{2}' and pfv.id  = {3}""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
+            
+        if  self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+            
+        query += """ GROUP BY pfv.variable, pfd.pattern,pfd.types,pfd.create_date"""
+              
         threads = []
         
         threads.append(Process(target=productStats, args=(self._config, query, path, self._requestData, result, "product")))

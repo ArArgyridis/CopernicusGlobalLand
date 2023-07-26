@@ -90,13 +90,14 @@ export default {
 		};
 		return axios.post(options.endpointURL, postParams);
 	},
-	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productId, coordInfo) {
+	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariableID, rtFlag, coordInfo) {
 		let postParams = {};
 		postParams["request"] = "rawtimeseriesdataforregion";
 		postParams["options"] = {
 			date_start: dateStart,
 			date_end: dateEnd,
-			product_id: productId
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag
 		};
 		postParams["options"] = {...postParams["options"], ...coordInfo};
 		return axios.post(options.endpointURL, postParams);

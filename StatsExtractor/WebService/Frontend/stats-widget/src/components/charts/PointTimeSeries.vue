@@ -92,9 +92,9 @@ export default {
 		},
 		updateChartData() {
 			//checking if data should be fetched
-			let product = this.$store.getters.product.currentVariable;
+			let productVariable = this.$store.getters.product.currentVariable;
 			if(this.mode == "Anomalies")
-				product = this.$store.getters.currentAnomaly;
+				productVariable = this.$store.getters.currentAnomaly;
 				
 			let coords =this.$store.getters.clickedCoordinates;
 			if (coords != null)
@@ -102,20 +102,20 @@ export default {
 			let dateStart = JSON.parse(JSON.stringify(this.$store.getters.dateStart));
 			let dateEnd = JSON.parse(JSON.stringify(this.$store.getters.dateEnd));
 			
-			if ( this.$refs.diagram == null ||  product == null || coords == null || dateStart == null || dateEnd == null)
+			if ( this.$refs.diagram == null ||  productVariable == null || coords == null || dateStart == null || dateEnd == null)
 				return;
 			
-			if (this.curProduct.id == product.id && this.previousCoordinates.coordinate[0] == coords.coordinate[0] && this.previousCoordinates.coordinate[1] == coords.coordinate[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
+			if (this.curProduct.id == productVariable.id && this.previousCoordinates.coordinate[0] == coords.coordinate[0] && this.previousCoordinates.coordinate[1] == coords.coordinate[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
 				return;
 			
 			this.isLoading = true;
 			this.previousCoordinates 	= coords;
 			this.previousDateStart 	= dateStart;
 			this.previousDateEnd 	= dateEnd;
-			this.curProduct = product;
+			this.curProduct = productVariable;
 			this.resizeChart();
 
-			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, product.id, coords).then((response) => {
+			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariable.id, productVariable.rtFlag.id, coords).then((response) => {
 				this.resizeChart();
 				let diagramData = null;
 				if (this.mode == "Raw") {
