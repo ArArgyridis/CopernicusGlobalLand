@@ -144,7 +144,7 @@ class StatsRequests(GenericRequest):
             AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
         
         if self._requestData["options"]["rt_flag"] >=0:
-            query += "AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
         
         query += """)SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date")) FROM dt"""
         return self.__getResponseFromDB(query)
@@ -322,7 +322,7 @@ class StatsRequests(GenericRequest):
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
         
         if self._requestData["options"]["rt_flag"] >=0:
-            query += "AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
             
         return self.__getResponseFromDB(query)
     
