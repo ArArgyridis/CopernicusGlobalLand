@@ -194,7 +194,7 @@ class StatsRequests(GenericRequest):
                             FROM product_file_description pfd 
                             JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
                             JOIN product p ON pfd.product_id = p.id 
-                            WHERE pfv.id = {0}""".format(self._requestData["options"]["product_id"])
+                            WHERE pfv.id = {0}""".format(self._requestData["options"]["product_variable_id"])
 
         productType = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)[0][0]
         if productType == "anomaly":
@@ -248,7 +248,7 @@ class StatsRequests(GenericRequest):
         JOIN product_file pf ON pf.product_file_description_id = pfd.id
         WHERE pfv.id = {1}
         GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
-        """.format(path, self._requestData["options"]["product_id"])
+        """.format(path, self._requestData["options"]["product_variable_id"])
 
         threads.append(Process(target=productStats, args=(self._config, mQuery, path, self._requestData, result,  "mean")))
         threads[-1].start()
@@ -268,7 +268,7 @@ class StatsRequests(GenericRequest):
         JOIN product_file pf ON pf.product_file_description_id = pfd.id
         WHERE pfv.id = {1}
         GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
-        """.format(path, self._requestData["options"]["product_id"])
+        """.format(path, self._requestData["options"]["product_variable_id"])
         
         threads.append(Process(target=productStats, args=(self._config, stdevQuery, path, self._requestData, result,  "stdev")))
         threads[-1].start()
