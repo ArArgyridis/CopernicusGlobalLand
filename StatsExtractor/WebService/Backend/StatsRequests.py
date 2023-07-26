@@ -120,8 +120,11 @@ class StatsRequests(GenericRequest):
         JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
         WHERE ps.poly_id = {1} AND pfv.id ={2} AND pf.date BETWEEN '{3}' AND '{4}'
         """.format(self._requestData["options"]["area_type"], self._requestData["options"]["poly_id"],
-                   self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
+                   self._requestData["options"]["product_variable_id"], self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"])
+        
+        if self._requestData["options"]["rt_flag"] >=0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
 
         return self.__getResponseFromDB(query)
     

@@ -41,12 +41,13 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
-	densityStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productId, area_type="noval_area_ha"){
+	densityStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productVariableID, rtFlag, area_type="noval_area_ha"){
 		let postParams={};
 		postParams["request"] = "densityStatsByPolygonAndDateRange";
 		postParams["options"]={
 			poly_id: polyId,
-			product_id: productId,
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag,
 			date_start: dateStart,
 			date_end: dateEnd,
 			area_type: area_type
