@@ -318,7 +318,7 @@ class StatsRequests(GenericRequest):
             JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
             JOIN product p ON pfd.product_id = p.id
             WHERE pfv.id = {0} AND pf."date" = '{1}' AND ps.poly_id = {2}
-        """.format(self._requestData["options"]["product_id"],
+        """.format(self._requestData["options"]["product_variable_id"],
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
         
         if self._requestData["options"]["rt_flag"] >=0:
