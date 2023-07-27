@@ -296,6 +296,7 @@ export default {
 			if  ( this.$store.getters.currentStratification == null || this.$store.getters.product == null || this.$store.getters.currentDate == null)
 				return;
 			
+			console.log(this.$store.getters.product.rtFlag.id, this.stratificationViewProps.rtFlag.id)
 			//if no change, stop
 			if (this.stratificationViewProps.stratID == this.$store.getters.currentStratification.id && this.stratificationViewProps.date == this.$store.getters.currentDate && 
 			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw && this.$store.getters.product.rtFlag.id == this.stratificationViewProps.rtFlag.id)
@@ -306,7 +307,6 @@ export default {
 			this.stratificationViewProps.variableID 		= this.$store.getters.product.currentVariable.id;
 			this.stratificationViewProps.stratifiedOrRaw 	= this.$store.getters.stratifiedOrRaw;
 			this.stratificationViewProps.rtFlag 			= this.$store.getters.product.rtFlag;
-			
 
 			if (this.$store.getters.productStatisticsViewMode == 1 && this.$store.getters.currentAnomaly != null) //seeing anomalies
 				this.stratificationViewProps.variableID = this.$store.getters.currentAnomaly.id;
@@ -316,14 +316,18 @@ export default {
 				tmpLayer.setStyle(this.stratificationViewProps.styleWMS);
 				return;
 			}
-				
+			
+
 			if (! (this.stratificationViewProps.stratID in this.stratificationColorData))
 				this.stratificationColorData[this.stratificationViewProps.stratID] = {};
 			
-			if (! (this.stratificationViewProps.variableID in this.stratificationColorData[this.stratificationViewProps.stratID]))
-				this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID] = {};
+			if (!(this.stratificationViewProps.rtFlag.id in  this.stratificationColorData[this.stratificationViewProps.stratID]))
+				this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id] = {}
+			
+			if (! (this.stratificationViewProps.variableID in this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id]))
+				this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID] = {};
 
-			if (!(this.stratificationViewProps.date in this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID])) {
+			if (!(this.stratificationViewProps.date in this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID])) {
 				this.$refs.map1.activateSpinner();
 				requests.fetchStratificationDataByProductAndDate(this.stratificationViewProps.date, this.stratificationViewProps.variableID, this.stratificationViewProps.rtFlag.id, this.stratificationViewProps.stratID).then((response)=>{
 					this.$refs.map1.activateSpinner();
@@ -355,7 +359,7 @@ export default {
 						});
 					}
 				
-					this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID][this.stratificationViewProps.date] = styles;
+					this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID][this.stratificationViewProps.date] = styles;
 					this.setStratificationStyle();
 				});
 			} 
@@ -368,7 +372,7 @@ export default {
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
 			tmpLayer.setStyle( (ft) => {
 				//console.log("hereeee");
-				return this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.variableID][this.stratificationViewProps.date][colorCol][ft.getId()];
+				return this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID][this.stratificationViewProps.date][colorCol][ft.getId()];
 			});
 			this.$refs.map1.deactivateSpinner();
 		},
