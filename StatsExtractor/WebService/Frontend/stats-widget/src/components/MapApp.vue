@@ -23,9 +23,27 @@ import OLMap from './libs/OLMap.vue';
 import requests from '../libs/js/requests.js';
 import options from "../libs/js/options.js";
 import utils from "../libs/js/utils.js";
-import {areaDensityOptions} from "../libs/js/constructors.js";
+import {areaDensityOptions, consolidationPeriods} from "../libs/js/constructors.js";
 
 import {Fill, Stroke, Style, Icon } from 'ol/style';
+
+function noRTWMS(dt, url, data) {
+	data.forEach(lyr => {
+		lyr["url"] = url;
+		dt[lyr.datetime] = lyr;
+	});
+}
+
+function rtWMS(dt, url, data) {
+	data.forEach(lyr => {
+		lyr["url"] = url;
+		//this is the product's RT
+		let rt = lyr.name.substring(lyr.name.length-1, lyr.name.length);
+		let obj = {}
+		obj[lyr.datetime] = lyr;
+		dt[parseInt(rt)] = {...dt[parseInt(rt)], ...obj}
+	});
+}
 
 export default {
 	name: 'MapApp',
@@ -35,9 +53,6 @@ export default {
 		},
 		stratification(){
 			return this.$store.getters.currentStratification;
-		},
-		variableRT(){
-			return this.$store.getters.product.currentVariable.rtFlag
 		}
 	},
 	data() {
@@ -79,7 +94,7 @@ export default {
 	methods: {
 		init() {
 			//cartographic background
-			this.bingId = this.$refs.map1.addBingLayerToMap("aerial",  true, 0);
+			this.bingId = this.$refs.map1.addBingLayerToMap("aerial", true, 0);
 			this.$refs.map1.setVisibility(this.bingId, true);
 			
 			requests.categories().then((response) => {
@@ -191,22 +206,35 @@ export default {
 			if (this.$store.getters.product == null || this.$store.getters.productWMSLayer != null) 
 				return;
 			
+			let dt = {};
+			var processWMS;// = noRTWMS;
+			if (!this.$store.getters.product.rt) {
+				dt[-1] = {}
+				processWMS = noRTWMS;
+			}
+			else {
+				let consPers = consolidationPeriods(this.$store.getters.product.rt);
+				consPers.forEach(period => {
+					dt[period.id] = {}
+					processWMS = rtWMS;
+				});
+				
+			}
+			
+			
 			this.$store.getters.product.currentVariable.wms.urls.forEach( url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.productVariableZIndex).then((data) => {
-					console.log(data);
-					let dt = {};
-					data.forEach(lyr => {
-						lyr["url"] = url;
-						dt[lyr.datetime] = lyr;
-					});
-					console.log(dt);
-					this.$store.commit("appendToCurrnetVariableWMSLayers",dt);
-					if(displayFirst)
-						this.updateWMSVisibility();
+					processWMS(dt, url, data);
+				
+				this.$store.commit("appendToCurrnetVariableWMSLayers",dt);
+				if(displayFirst)
+					this.updateWMSVisibility();
+					
 				}).catch(error => {
 					console.log(error);
 				});
 			});
+			
 			
 			if(this.$store.getters.product.currentVariable.currentAnomaly == null)
 				return;
@@ -269,16 +297,15 @@ export default {
 				return;
 			
 			//if no change, stop
-			console.log(this.stratificationViewProps.date);
 			if (this.stratificationViewProps.stratID == this.$store.getters.currentStratification.id && this.stratificationViewProps.date == this.$store.getters.currentDate && 
-			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw && this.$store.getters.variable.rtFlag.id == this.stratificationViewProps.rtFlag.id)
+			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw && this.$store.getters.product.rtFlag.id == this.stratificationViewProps.rtFlag.id)
 				return;
 			
 			this.stratificationViewProps.stratID 			= this.$store.getters.currentStratification.id;
 			this.stratificationViewProps.date 			= this.$store.getters.currentDate;
 			this.stratificationViewProps.variableID 		= this.$store.getters.product.currentVariable.id;
 			this.stratificationViewProps.stratifiedOrRaw 	= this.$store.getters.stratifiedOrRaw;
-			this.stratificationViewProps.rtFlag 			= this.$store.getters.variable.rtFlag;
+			this.stratificationViewProps.rtFlag 			= this.$store.getters.product.rtFlag;
 			
 
 			if (this.$store.getters.productStatisticsViewMode == 1 && this.$store.getters.currentAnomaly != null) //seeing anomalies

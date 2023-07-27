@@ -38,7 +38,7 @@
 		
 		<div class="row mt-1" v-if="product != null && product.currentVariable != null">
 			<div class="col-2 d-flex justify-content-end my-auto">RT:</div>
-			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="rtDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.currentVariable.rtFlag.description}}</button>
+			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="rtDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.rtFlag.description}}</button>
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(rtPeriod, key) in consolidationPeriods" v-bind:key="key" v-bind:value="key"  v-on:click="setConsolidationPeriod(rtPeriod)"><a class="dropdown-item">{{rtPeriod.description}}</a></li></ul></div>
 		</div>
