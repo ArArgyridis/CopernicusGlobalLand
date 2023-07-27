@@ -26,7 +26,7 @@
 			<div class="col-2 d-flex justify-content-end ml-2 my-auto">Product:</div>
 			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{productDescription}}</button>
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setProduct(product)"><a class="dropdown-item">{{product.description}}</a></li></ul></div>
+					<li v-for ="(prd, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="product=prd"><a class="dropdown-item">{{prd.description}}</a></li></ul></div>
 		</div>
 		
 		<div class="row mt-1" v-if="product != null">

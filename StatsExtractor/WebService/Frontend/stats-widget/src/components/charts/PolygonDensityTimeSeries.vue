@@ -72,7 +72,7 @@ export default {
 			this.productVariable = this.$store.getters.product.currentVariable;
 			this.areaDensity = this.$store.getters.areaDensity;
 			
-			requests.densityStatsByPolygonAndDateRange(this.polygonId, this.$store.getters.dateStart, this.$store.getters.dateEnd, this.productVariable.id,  this.productVariable.rtFlag.id, this.areaDensity.col).then((response) =>{
+			requests.densityStatsByPolygonAndDateRange(this.polygonId, this.$store.getters.dateStart, this.$store.getters.dateEnd, this.productVariable.id,  this.$store.getters.product.rtFlag.id, this.areaDensity.col).then((response) =>{
 				if (response.data.data != null) {
 					response.data.data.forEach((pair)=>{
 						pair[0] = (new Date(pair[0])).getTime();

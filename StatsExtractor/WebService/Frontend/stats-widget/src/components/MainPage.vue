@@ -17,15 +17,15 @@
 	<div class="row">
 		<div id="leftPanel" class="noPadding raise sidenav leftnav" v-bind:class="{shownBar: leftPanelVisibility, hiddenBar: !leftPanelVisibility}">
 			<LeftPanel 
-				v-on:dateChanged="setCurrentLayersVisibilityByViewMode()"
+				v-on:dateChanged="setCurrentLayersVisibilityByViewMode($event)"
 				v-on:resetProducts="resetProducts()"
 				v-on:stratificationViewOptionsChanged="updateStratificationLayerStyle()"
-				v-on:statisticsViewModeChanged="setCurrentLayersVisibilityByViewMode()"
+				v-on:statisticsViewModeChanged="setCurrentLayersVisibilityByViewMode($event)"
 				v-on:stratificationChanged="updateStratificationLayerVisibility()"
 				v-on:stratificationDensityChanged = "updateStratificationLayerStyle()"
-				v-on:stratifiedOrRawChanged="setCurrentLayersVisibilityByViewMode()"
+				v-on:stratifiedOrRawChanged="setCurrentLayersVisibilityByViewMode($event)"
 				v-on:updateWMSLayer="updateWMSVisibility()"
-				v-on:updateView="setCurrentLayersVisibilityByViewMode()"
+				v-on:updateView="setCurrentLayersVisibilityByViewMode($event)"
 			/>
 		</div>
 		<div class="noPadding">
@@ -180,7 +180,10 @@ export default {
 			this.$refs.dashboard.setVisibility(true);
 			this.$refs.dashboard.refreshData();
 		},
-		setCurrentLayersVisibilityByViewMode() {
+		setCurrentLayersVisibilityByViewMode(evt) {
+			if (evt)
+				evt.preventDefault();
+		
 			if (this.$store.getters.currentStratification != null)
 				this.updateStratificationLayerStyle();
 			

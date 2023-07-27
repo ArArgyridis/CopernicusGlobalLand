@@ -67,7 +67,7 @@ export default {
 			this.productVariable = this.$store.getters.product.currentVariable;
 			this.date = this.$store.getters.currentDate;
 			this.polygonId = this.$store.getters.selectedPolygon;
-			requests.fetchHistogramByPolygonAndDate(this.polygonId, this.date, this.productVariable.id, this.productVariable.rtFlag.id).then((response) =>{
+			requests.fetchHistogramByPolygonAndDate(this.polygonId, this.date, this.productVariable.id, this.$store.getters.product.rtFlag.id).then((response) =>{
 				this.resizeChart();
 				let xAxisCategories = [];
 				for (let i = 0; i < response.data.data.histogram.y.length; i++) {

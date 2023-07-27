@@ -56,7 +56,7 @@ export default{
 							state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
 					}
 				},
-				appendToCurrnetVariableWMSLayers(state, dt) {
+				appendToCurrentVariableWMSLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.wms.layers = {...state.categories.current.products.current.currentVariable.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null) {
@@ -124,12 +124,11 @@ export default{
 					}
 				},
 				setConsolidationPeriod(state, dt) {
-					let currentProduct = state.categories.current.products.current;
-					
+					let currentProduct = state.categories.current.products.current;					
 					currentProduct.previousRtFlag = currentProduct.rtFlag;
-					currentProduct.rtFlag = dt;
-					
+					currentProduct.rtFlag = dt;					
 					currentProduct.currentDate = currentProduct.dates[currentProduct.rtFlag.id][0];
+					console.log(currentProduct.currentDate);
 					setCurrentWMSByDateAndMode(state);
 				},
 				setProduct(state, dt) {	

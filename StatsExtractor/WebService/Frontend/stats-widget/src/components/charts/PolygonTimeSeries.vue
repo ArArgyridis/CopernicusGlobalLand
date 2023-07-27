@@ -64,6 +64,9 @@ export default {
 		},
 		product() {
 			return this.$store.getters.product;
+		},
+		rtFlag() {
+			return this.$store.getters.product.rtFlag;
 		}
 	},
 	data(){
@@ -95,7 +98,7 @@ export default {
 			this.previousPolyId = polyId;			
 			
 			if(polyId != null && productVariable != null) { 
-				requests.polygonStatsTimeSeries(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, productVariable.id, productVariable.rtFlag.id)
+				requests.polygonStatsTimeSeries(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, productVariable.id, this.rtFlag.id)
 				.then((response) =>{
 					if (response.data.data != null) {
 					

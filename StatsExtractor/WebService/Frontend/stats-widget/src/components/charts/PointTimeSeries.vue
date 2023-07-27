@@ -115,7 +115,7 @@ export default {
 			this.curProduct = productVariable;
 			this.resizeChart();
 
-			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariable.id, productVariable.rtFlag.id, coords).then((response) => {
+			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariable.id,  this.product.rtFlag.id, coords).then((response) => {
 				this.resizeChart();
 				let diagramData = null;
 				if (this.mode == "Raw") {

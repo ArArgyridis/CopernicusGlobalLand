@@ -30,7 +30,7 @@ import {Fill, Stroke, Style, Icon } from 'ol/style';
 function noRTWMS(dt, url, data) {
 	data.forEach(lyr => {
 		lyr["url"] = url;
-		dt[lyr.datetime] = lyr;
+		dt[-1][lyr.datetime] = lyr;
 	});
 }
 
@@ -111,7 +111,7 @@ export default {
 			this.activeWMSLayer = key;
 		},
 		clearStratifications() {
-			if (this.$store.getters.product == null || this.$store.getters.stratifications == null)
+			if (this.product == null || this.$store.getters.stratifications == null)
 				return;
 		},
 		clearPolygonSelection() {
@@ -119,7 +119,7 @@ export default {
 			this.$store.commit("selectedPolygon", null);
 		},
 		clearWMSLayers() {
-			if (this.$store.getters.product == null || this.$store.getters.allCategories == null)
+			if (this.product == null || this.$store.getters.allCategories == null)
 				return;
 
 			//remove wms layers from map
@@ -203,17 +203,17 @@ export default {
 		},
 		updateWMSLayers(displayFirst = false) {
 			//no product available or the wms layers have been already fetched
-			if (this.$store.getters.product == null || this.$store.getters.productWMSLayer != null) 
+			if (this.product == null || this.$store.getters.productWMSLayer != null) 
 				return;
 			
 			let dt = {};
 			var processWMS;// = noRTWMS;
-			if (!this.$store.getters.product.rt) {
+			if (!this.product.rt) {
 				dt[-1] = {}
 				processWMS = noRTWMS;
 			}
 			else {
-				let consPers = consolidationPeriods(this.$store.getters.product.rt);
+				let consPers = consolidationPeriods(this.product.rt);
 				consPers.forEach(period => {
 					dt[period.id] = {}
 					processWMS = rtWMS;
@@ -223,10 +223,11 @@ export default {
 			
 			
 			this.$store.getters.product.currentVariable.wms.urls.forEach( url => {
+				console.log(url)
 				this.$refs.map1.getAvailableWMSLayers(url, this.productVariableZIndex).then((data) => {
 					processWMS(dt, url, data);
 				
-				this.$store.commit("appendToCurrnetVariableWMSLayers",dt);
+				this.$store.commit("appendToCurrentVariableWMSLayers",dt);
 				if(displayFirst)
 					this.updateWMSVisibility();
 					
@@ -235,10 +236,8 @@ export default {
 				});
 			});
 			
-			
 			if(this.$store.getters.product.currentVariable.currentAnomaly == null)
 				return;
-			console.log(this.$store.getters.product.currentVariable.currentAnomaly );
 			
 			this.$store.getters.product.currentVariable.currentAnomaly.wms.urls.forEach(url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.anomaliesZIndex).then((data) => {
@@ -279,7 +278,7 @@ export default {
 		updateWMSVisibility() {
 			if (this.$store.getters.previousWMS != null) 
 				this.$refs.map1.setVisibility(this.$store.getters.previousWMS.layerId, false);
-			
+			console.log(this.$store.getters.currentWMSLayer);
 			if(this.$store.getters.currentWMSLayer == null) { //wms layers have not been initialized for current product, so do so
 				this.updateWMSLayers(true);
 			
