@@ -87,9 +87,9 @@ class StatsRequests(GenericRequest):
         		JOIN product_file_variable anompfv ON ltai.anomaly_product_variable_id  = anompfv.id
         		JOIN product_file_description pfdanom ON anompfv.product_file_description_id = pfdanom.id
         		JOIN product panom ON pfdanom.product_id = panom.id
-        		WHERE ltai.raw_product_variable_id = pfv.id
-        		ORDER BY pfv.id
-        	
+        		JOIN product_file pfanom ON pfanom.product_file_description_id = pfdanom.id
+        		WHERE ltai.raw_product_variable_id = pfv.id 
+        		ORDER BY pfv.id LIMIT 1 
         	) anomaly_info ON TRUE    	
         	WHERE p.category_id = {0} AND p."type"='raw' 
         	GROUP BY p.id,  p.name[1], p.description, pfd.id, pfv.product_file_description_id

@@ -238,6 +238,7 @@ export default {
 			
 			if(this.$store.getters.product.currentVariable.currentAnomaly == null)
 				return;
+			console.log(this.$store.getters.product.currentVariable.currentAnomaly );
 			
 			this.$store.getters.product.currentVariable.currentAnomaly.wms.urls.forEach(url => {
 				this.$refs.map1.getAvailableWMSLayers(url, this.anomaliesZIndex).then((data) => {
