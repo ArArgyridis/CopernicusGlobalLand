@@ -24,6 +24,8 @@ import requests from '../libs/js/requests.js';
 import options from "../libs/js/options.js";
 import utils from "../libs/js/utils.js";
 import {areaDensityOptions, consolidationPeriods} from "../libs/js/constructors.js";
+import VectorLayer from 'ol/layer/Vector';
+
 
 import {Fill, Stroke, Style, Icon } from 'ol/style';
 
@@ -83,7 +85,8 @@ export default {
 						color:  "rgb(54, 102, 142, 0.6)",
 						width: 1.5,
 					})
-				})
+				}),
+				defaultVectorStyle: null
 			}
 		}
 	},	
@@ -102,6 +105,8 @@ export default {
 				this.fetchProductInfo();
 				this.toggleClickOnMap();
 			});
+
+			this.defaultVectorStyle = new VectorLayer().getStyleFunction()();
 		},
 		activateLayer(key) {
 			if (this.activeWMSLayer != null)
@@ -223,7 +228,6 @@ export default {
 			
 			
 			this.$store.getters.product.currentVariable.wms.urls.forEach( url => {
-				console.log(url)
 				this.$refs.map1.getAvailableWMSLayers(url, this.productVariableZIndex).then((data) => {
 					processWMS(dt, url, data);
 				
@@ -278,7 +282,7 @@ export default {
 		updateWMSVisibility() {
 			if (this.$store.getters.previousWMS != null) 
 				this.$refs.map1.setVisibility(this.$store.getters.previousWMS.layerId, false);
-			console.log(this.$store.getters.currentWMSLayer);
+
 			if(this.$store.getters.currentWMSLayer == null) { //wms layers have not been initialized for current product, so do so
 				this.updateWMSLayers(true);
 			
@@ -296,7 +300,6 @@ export default {
 			if  ( this.$store.getters.currentStratification == null || this.$store.getters.product == null || this.$store.getters.currentDate == null)
 				return;
 			
-			console.log(this.$store.getters.product.rtFlag.id, this.stratificationViewProps.rtFlag.id)
 			//if no change, stop
 			if (this.stratificationViewProps.stratID == this.$store.getters.currentStratification.id && this.stratificationViewProps.date == this.$store.getters.currentDate && 
 			this.stratificationViewProps.variableID == this.$store.getters.product.currentVariable.id && this.$store.getters.productStatisticsViewMode == this.statisticsViewMode && this.$store.getters.stratifiedOrRaw == this.stratificationViewProps.stratifiedOrRaw && this.$store.getters.product.rtFlag.id == this.stratificationViewProps.rtFlag.id)
@@ -332,12 +335,15 @@ export default {
 				requests.fetchStratificationDataByProductAndDate(this.stratificationViewProps.date, this.stratificationViewProps.variableID, this.stratificationViewProps.rtFlag.id, this.stratificationViewProps.stratID).then((response)=>{
 					this.$refs.map1.activateSpinner();
 					let styles = {};
+					this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID][this.stratificationViewProps.date] = styles;
 
 					let areaDensityInfo = new areaDensityOptions();
 					areaDensityInfo.forEach(density => {
 						styles[density.color_col] = {};
 					});
 					styles["meanval_color"] = {}
+					if (response.data.data == null)
+						return;
 					for (let idx = 0; idx < response.data.data.length; idx++) {
 						let rec = response.data.data[idx];
 						let id = rec.id;
@@ -359,7 +365,7 @@ export default {
 						});
 					}
 				
-					this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID][this.stratificationViewProps.date] = styles;
+
 					this.setStratificationStyle();
 				});
 			} 
@@ -371,8 +377,12 @@ export default {
 			let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);
 			let colorCol = this.$store.getters.stratificationViewOptions.colorCol;
 			tmpLayer.setStyle( (ft) => {
-				//console.log("hereeee");
-				return this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID][this.stratificationViewProps.date][colorCol][ft.getId()];
+				let retStyle = this.stratificationColorData[this.stratificationViewProps.stratID][this.stratificationViewProps.rtFlag.id][this.stratificationViewProps.variableID][this.stratificationViewProps.date][colorCol][ft.getId()];
+
+				if (retStyle == null)
+					return this.defaultVectorStyle;
+
+				return retStyle;
 			});
 			this.$refs.map1.deactivateSpinner();
 		},

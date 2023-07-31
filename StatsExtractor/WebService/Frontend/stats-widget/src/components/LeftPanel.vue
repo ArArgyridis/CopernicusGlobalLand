@@ -356,7 +356,7 @@ export default {
 	data() {
 		return {
 			dateFormat: "dd MMM yyyy",
-			stratifiedOrRawViewModes: ["Statistics By Stratification", "Raw Data"],
+			stratifiedOrRawViewModes: ["Statistics By Region", "Raw Data"],
 			polygonViewMode: ["Mean values", "Density-driven"],
 			statisticsViewMode: ["Product Values", "Anomalies"],
 		}
