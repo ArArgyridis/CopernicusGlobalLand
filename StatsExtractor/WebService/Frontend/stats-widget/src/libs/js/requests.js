@@ -19,14 +19,15 @@ export default {
 		};
 		return axios.post(options.endpointURL, postParams); 
 	},
-	fetchHistogramByPolygonAndDate(polyId, date, productId) {
+	fetchHistogramByPolygonAndDate(polyId, date, productVariableID, rtFlag) {
 		let postParams  = {};
 
 		postParams["request"] = "histogrambypolygonanddate";
 		postParams["options"] = {
 			poly_id: polyId,
 			date: date,
-			product_id: productId
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag
 		}
 		return axios.post(options.endpointURL, postParams); 
 	},
@@ -40,12 +41,13 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
-	densityStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productId, area_type="noval_area_ha"){
+	densityStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productVariableID, rtFlag, area_type="noval_area_ha"){
 		let postParams={};
 		postParams["request"] = "densityStatsByPolygonAndDateRange";
 		postParams["options"]={
 			poly_id: polyId,
-			product_id: productId,
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag,
 			date_start: dateStart,
 			date_end: dateEnd,
 			area_type: area_type
@@ -58,21 +60,23 @@ export default {
 		postParams["options"] = null;
 		return axios.post(options.endpointURL, postParams);
 	},
-	fetchStratificationDataByProductAndDate(date, product, stratification) {
+	fetchStratificationDataByProductAndDate(date, variableID, rtFlag, stratification) {
 		let postParams = {};
 		postParams["request"] = "stratificationinfobyproductanddate"
 		postParams["options"] = {
 			date: date,
-			product_id: product,
+			product_variable_id: variableID,
+			rt_flag: rtFlag,
 			stratification_id: stratification
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
-	getPieDataByDateAndPolygon(productId, date, polyId) {
+	getPieDataByDateAndPolygon(productVariableID, rtFlag, date, polyId) {
 		let postParams = {};
 		postParams["request"] = "piedatabydateandpolygon";
 		postParams["options"] = {
-			product_id: productId,
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag,
 			date: date,
 			poly_id: polyId
 		}
@@ -86,25 +90,27 @@ export default {
 		};
 		return axios.post(options.endpointURL, postParams);
 	},
-	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productId, coordInfo) {
+	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariableID, rtFlag, coordInfo) {
 		let postParams = {};
 		postParams["request"] = "rawtimeseriesdataforregion";
 		postParams["options"] = {
 			date_start: dateStart,
 			date_end: dateEnd,
-			product_id: productId
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag
 		};
 		postParams["options"] = {...postParams["options"], ...coordInfo};
 		return axios.post(options.endpointURL, postParams);
 	},
-	polygonStatsTimeSeries(polyId, dateStart, dateEnd, productId) {
+	polygonStatsTimeSeries(polyId, dateStart, dateEnd, productVariableID, rtFlag) {
 		let postParams = {};
 		postParams["request"] = "polygonStatsTimeseries";
 		postParams["options"] = {
 			date_start: dateStart,
 			date_end: dateEnd,
-			product_id: productId,
-			poly_id: polyId
+			product_variable_id: productVariableID,
+			poly_id: polyId,
+			rt_flag:rtFlag
 		};
 		return axios.post(options.endpointURL, postParams);
 	},

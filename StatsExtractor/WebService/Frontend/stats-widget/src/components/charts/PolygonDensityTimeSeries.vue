@@ -49,7 +49,7 @@ export default {
 			diagramData: this.noData,
 			polygonId: null,
 			areDensity: {id: null},
-			product: {id: null}		
+			productVariable: {id: null}		
 		}
 	},
 	methods: {
@@ -65,14 +65,14 @@ export default {
 				return;
 
 			//data similarity
-			if (this.product.id == this.$store.getters.product.id && this.polygonId == this.$store.getters.selectedPolygon && this.areaDensity.id == this.$store.getters.areaDensity.id)
+			if (this.productVariable.id == this.$store.getters.product.id && this.polygonId == this.$store.getters.selectedPolygon && this.areaDensity.id == this.$store.getters.areaDensity.id)
 				return;
 			
 			this.polygonId= this.$store.getters.selectedPolygon;
-			this.product = this.$store.getters.product.currentVariable;
+			this.productVariable = this.$store.getters.product.currentVariable;
 			this.areaDensity = this.$store.getters.areaDensity;
 			
-			requests.densityStatsByPolygonAndDateRange(this.polygonId, this.$store.getters.dateStart, this.$store.getters.dateEnd, this.product.id, this.areaDensity.col).then((response) =>{
+			requests.densityStatsByPolygonAndDateRange(this.polygonId, this.$store.getters.dateStart, this.$store.getters.dateEnd, this.productVariable.id,  this.$store.getters.product.rtFlag.id, this.areaDensity.col).then((response) =>{
 				if (response.data.data != null) {
 					response.data.data.forEach((pair)=>{
 						pair[0] = (new Date(pair[0])).getTime();

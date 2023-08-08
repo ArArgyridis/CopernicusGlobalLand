@@ -19,7 +19,18 @@ let dateStart = new Date();
 dateStart.setDate(dateStart.getDate() - 200);
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
-
+function setCurrentWMSByDateAndMode(state) {
+	state.previousWMS = state.currentWMS;
+	let rtFlag = state.categories.current.products.current.rtFlag;
+	if (state.categories.current.products.current.statisticsViewMode == 0)
+		state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+	else
+		state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+	
+	state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+	if (state.categories.current.products.current.currentVariable.currentAnomaly != null)
+		state.categories.current.products.current.currentVariable.currentAnomaly.wms.current =  state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];	
+}
 export default{
 	buildStore() {
 		return createStore({
@@ -45,14 +56,16 @@ export default{
 							state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
 					}
 				},
-				appendToCurrnetVariableWMSLayers(state, dt) {
+				appendToCurrentVariableWMSLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.wms.layers = {...state.categories.current.products.current.currentVariable.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null) {
-						state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[date];
+						let rtFlag = state.categories.current.products.current.rtFlag;
+						state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][date];
 						if(state.categories.current.products.current.statisticsViewMode == 0)
-							state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[date];
-					}
+							state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][date];
+						}				
+
 				},
 				changeCategory(state, dt) {
 					if (!state.categories.current == null)
@@ -80,15 +93,7 @@ export default{
 					state.stratifications.current.clickedCoordinates = dt;
 				},
 				currentWMSByDateAndMode(state) {
-					state.previousWMS = state.currentWMS;
-					if (state.categories.current.products.current.statisticsViewMode == 0)
-						state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[state.categories.current.products.current.currentDate];
-					else
-						state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[state.categories.current.products.current.currentDate];
-					
-					state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[state.categories.current.products.current.currentDate];
-					if (state.categories.current.products.current.currentVariable.currentAnomaly != null)
-						state.categories.current.products.current.currentVariable.currentAnomaly.wms.current =  state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[state.categories.current.products.current.currentDate];
+					setCurrentWMSByDateAndMode(state);
 				},		     
 				leftPanelVisibility(state, dt) {
 					state.leftPanelVisible = dt;
@@ -117,6 +122,14 @@ export default{
 						if (state.categories.info[i].active) 
 							state.categories.current = state.categories.info[i];
 					}
+				},
+				setConsolidationPeriod(state, dt) {
+					let currentProduct = state.categories.current.products.current;					
+					currentProduct.previousRtFlag = currentProduct.rtFlag;
+					currentProduct.rtFlag = dt;					
+					currentProduct.currentDate = currentProduct.dates[currentProduct.rtFlag.id][0];
+					console.log(currentProduct.currentDate);
+					setCurrentWMSByDateAndMode(state);
 				},
 				setProduct(state, dt) {	
 					initProduct(dt);
@@ -313,7 +326,8 @@ export default{
 				},
 				productWMSLayers: (state) => {
 					try {
-						return state.categories.current.products.current.currentVariable.wms.layers;
+						let rtFlag = state.categories.current.products.current.rtFlag;
+						return state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id];
 					}
 					catch {
 						return null;
@@ -321,7 +335,7 @@ export default{
 				},
 				productDates: (state) => {
 					try {
-						return state.categories.current.products.current.dates;
+						return state.categories.current.products.current.dates[state.categories.current.products.current.rtFlag.id];
 					}
 					catch {
 						return null;

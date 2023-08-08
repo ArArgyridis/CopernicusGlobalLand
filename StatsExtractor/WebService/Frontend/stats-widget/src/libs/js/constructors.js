@@ -34,6 +34,35 @@ export function	areaDensityOptions() {
 		];
 	}
 
+export function consolidationPeriods(hasRT) {
+	if (!hasRT){
+		return[{
+				id: -1,
+				description: "No Consolidation"
+			}]
+	}
+	return  [
+	{
+		id: 0,
+		description: "Near Realtime (RT-0)"
+	},
+	{
+		id: 1,
+		description: "1 - Dekad (RT-1)"
+	},
+	{
+		id: 2,
+		description: "2 - Dekads (RT-2)"
+	},
+	{
+		id: 6,
+		description: "6 - Dekads (RT-6)"
+	}
+	]
+	
+}
+	
+	
 export function	Categories() {
 		this.info= null;
 		this.current = null;
@@ -63,9 +92,10 @@ export function	AnomaliesProps(product, variable) {
 export function VariableProperties(product) {
 	product.variables.forEach( variable => {
 		AnomaliesProps(product, variable);
-		variable.wms 				= new WMSProps(product.name, product.dates, variable.variable)
+		variable.wms 				= new WMSProps(product.name, product.dates, variable.variable, options.wmsURL, product.rt)
 		variable.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
 		variable.density 				= new areaDensityOptions()[2];
+
 		variable.density.description 	= utils.computeDensityDescription(variable.density.description, variable.valueRanges[2], variable.valueRanges[3]);
 		variable.style 				= new styleBuilder(variable.style);
 		variable.stratificationInfo 		= new stratificationViewProps("meanval_color");
@@ -98,9 +128,11 @@ export function	styleBuilder(style) {
 export function	ProductViewProperties(product) {
 	product.statisticsViewMode 			= 0;
 	product.previousStatisticsViewMode 	= null;
-	product.currentDate 					= product.dates[0];
+	product.rtFlag 						= new consolidationPeriods(product.rt)[0]
+	product.previousRtFlag				= null;
 	VariableProperties(product);
 	product.currentVariable				= product.variables[0];
+	product.currentDate 					= product.dates[product.rtFlag.id][0];
 }
 
 export function	ProductsProps() {
@@ -109,19 +141,29 @@ export function	ProductsProps() {
 		this.info = [];
 	
 }
-export function WMSProps(name, dates, variable, wmsURL=options.wmsURL) {
+export function WMSProps(name, dates, variable, wmsURL=options.wmsURL, rtFlag=false) {
 	this.current 	= null;
 	this.previous = null;
 	this.next 	= null;
 	this.urls 		= new Set();
 	this.layers 	= {};
 
-	dates.forEach(date =>{
-		let splitDate	= date.split("-");
-		let url		= wmsURL + name + "/" + splitDate[0] +"/" +splitDate[1];
-		if (variable.length > 0)
-			url += "/" + variable;
-		this.urls.add(url);
+	if(!rtFlag)
+		this.layers[-1] = {}
+	else {
+		let rts = consolidationPeriods(rtFlag);
+		rts.forEach(rt => {
+			this.layers[rt.id] = {}
+		});
+	}	
+	Object.keys(dates).forEach(rt => {
+		dates[rt].forEach(date=> {
+			let splitDate	= date.split("-");
+			let url		= wmsURL + name + "/" + splitDate[0] +"/" +splitDate[1];
+			if (variable.length > 0)
+				url += "/" + variable;
+			this.urls.add(url);
+		});
 	});
 }
 

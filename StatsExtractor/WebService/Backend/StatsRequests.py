@@ -61,7 +61,7 @@ class StatsRequests(GenericRequest):
 		JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
 		JOIN product_file pf ON ps.product_file_id =pf.id 
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
-		WHERE pfv.id = {1} AND ps.poly_id={0}
+		WHERE  ps.poly_id={0} AND pfv.id = {1}
 	)
 	SELECT json_build_object(
 	'type', 'Feature',
@@ -76,7 +76,7 @@ class StatsRequests(GenericRequest):
     def __fetchProductInfo(self):
         query = """
              WITH dt AS( 
-        	SELECT pfd.id,  p.name[1], p.description, product_file_description_id, 
+        	SELECT pfd.id,  p.name[1], p.description, product_file_description_id, CASE WHEN pfd.rt_flag_pattern IS NOT NULL THEN TRUE ELSE FALSE END has_rt,
         	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.description)) variables
 	        FROM product p 
         	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
@@ -87,20 +87,25 @@ class StatsRequests(GenericRequest):
         		JOIN product_file_variable anompfv ON ltai.anomaly_product_variable_id  = anompfv.id
         		JOIN product_file_description pfdanom ON anompfv.product_file_description_id = pfdanom.id
         		JOIN product panom ON pfdanom.product_id = panom.id
-        		WHERE ltai.raw_product_variable_id = pfv.id
-        		ORDER BY pfv.id
-        	
+        		JOIN product_file pfanom ON pfanom.product_file_description_id = pfdanom.id
+        		WHERE ltai.raw_product_variable_id = pfv.id 
+        		ORDER BY pfv.id LIMIT 1 
         	) anomaly_info ON TRUE    	
         	WHERE p.category_id = {0} AND p."type"='raw' 
         	GROUP BY p.id,  p.name[1], p.description, pfd.id, pfv.product_file_description_id
         ),dates AS(
-        	SELECT dt.id, ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates
-        	FROM dt 
-        	JOIN product_file pf ON dt.product_file_description_id = pf.product_file_description_id
-        	WHERE pf."date" BETWEEN '{1}' AND '{2}'        	
-        	GROUP BY dt.id
+        	SELECT id, json_object_agg(rt_flag, dates)dates FROM (
+        		SELECT id, rt_flag, ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates FROM(
+        			SELECT dt.id, pf.date, CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END rt_flag --ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates
+        			FROM dt 
+        			JOIN product_file pf ON dt.product_file_description_id = pf.product_file_description_id
+        			WHERE pf."date" BETWEEN '{1}' AND '{2}'        	
+        		)a
+        		GROUP BY a.id, a.rt_flag
+        	)b
+                GROUP BY b.id
         )
-        SELECT ARRAY_TO_JSON(ARRAY_AGG(json_build_object('id', dt.id, 'name', name, 'description', dt.description, 'dates', dates.dates, 'variables', dt.variables) ORDER BY dt.description))
+        SELECT ARRAY_TO_JSON(ARRAY_AGG(json_build_object('id', dt.id, 'name', name, 'description', dt.description, 'rt', dt.has_rt, 'dates', dates.dates, 'variables', dt.variables) ORDER BY dt.description))
         FROM dt        
         JOIN dates ON dt.id = dates.id
        """.format(self._requestData["options"]["category_id"], self._requestData["options"]["dateStart"], self._requestData["options"]["dateEnd"])
@@ -115,8 +120,11 @@ class StatsRequests(GenericRequest):
         JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
         WHERE ps.poly_id = {1} AND pfv.id ={2} AND pf.date BETWEEN '{3}' AND '{4}'
         """.format(self._requestData["options"]["area_type"], self._requestData["options"]["poly_id"],
-                   self._requestData["options"]["product_id"], self._requestData["options"]["date_start"],
+                   self._requestData["options"]["product_variable_id"], self._requestData["options"]["date_start"],
                    self._requestData["options"]["date_end"])
+        
+        if self._requestData["options"]["rt_flag"] >=0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
 
         return self.__getResponseFromDB(query)
     
@@ -135,9 +143,13 @@ class StatsRequests(GenericRequest):
                 and EXTRACT('doy' FROM pfltaimean."date") between EXTRACT('doy' FROM pf."date") - 2	and EXTRACT('doy' FROM pf."date") +2
                 LEFT JOIN poly_stats psltai ON psltai.product_file_id = pfltaimean.id AND psltai.product_file_variable_id = pfvltaimean.id 
                 AND psltai.poly_id = ps.poly_id
-            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7)
-            SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date"))
-            FROM dt""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
+            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0 
+            AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
+        
+        if self._requestData["options"]["rt_flag"] >=0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+        
+        query += """)SELECT ARRAY_TO_JSON(ARRAY_AGG(JSON_BUILD_ARRAY(dt."date", dt.mean, dt.sd, dt.meanlts, dt.sdlts) ORDER BY dt."date")) FROM dt"""
         return self.__getResponseFromDB(query)
         
     def __fetchStratificationDataByProductAndDate(self):
@@ -158,8 +170,14 @@ class StatsRequests(GenericRequest):
         JOIN  product p ON pfd.product_id = p.id
         JOIN  stratification_geom sg ON sg.id = ps.poly_id
         JOIN  stratification s ON s.id = sg.stratification_id
-        WHERE pf.date = '{0}' and s.id = {1} and pfv.id = {2} and ps.valid_pixels > 0 and ps.valid_pixels*1.0/ps.total_pixels > 0.7)a; """.format(self._requestData["options"]["date"],
-                      self._requestData["options"]["stratification_id"], self._requestData["options"]["product_id"])
+        WHERE pf.date = '{0}' AND s.id = {1} AND pfv.id = {2} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels > 0.7 """.format(self._requestData["options"]["date"],
+                      self._requestData["options"]["stratification_id"], self._requestData["options"]["product_variable_id"])
+        
+        if  self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+        
+        query += ")a"; 
+        
         return self.__getResponseFromDB(query)
     
     def __fetchStratificationInfo(self):
@@ -176,7 +194,7 @@ class StatsRequests(GenericRequest):
                             FROM product_file_description pfd 
                             JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
                             JOIN product p ON pfd.product_id = p.id 
-                            WHERE pfv.id = {0}""".format(self._requestData["options"]["product_id"])
+                            WHERE pfv.id = {0}""".format(self._requestData["options"]["product_variable_id"])
 
         productType = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)[0][0]
         if productType == "anomaly":
@@ -197,9 +215,13 @@ class StatsRequests(GenericRequest):
             JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
             JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
             JOIN product p on pfd.product_id =p.id
-            WHERE date between  '{1}' and '{2}' and pfv.id  = {3}
-            GROUP BY pfv.variable, pfd.pattern,pfd.types,pfd.create_date""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_id"])
-       
+            WHERE date between  '{1}' and '{2}' and pfv.id  = {3}""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
+            
+        if  self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+            
+        query += """ GROUP BY pfv.variable, pfd.pattern,pfd.types,pfd.create_date"""
+              
         threads = []
         
         threads.append(Process(target=productStats, args=(self._config, query, path, self._requestData, result, "product")))
@@ -226,7 +248,7 @@ class StatsRequests(GenericRequest):
         JOIN product_file pf ON pf.product_file_description_id = pfd.id
         WHERE pfv.id = {1}
         GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
-        """.format(path, self._requestData["options"]["product_id"])
+        """.format(path, self._requestData["options"]["product_variable_id"])
 
         threads.append(Process(target=productStats, args=(self._config, mQuery, path, self._requestData, result,  "mean")))
         threads[-1].start()
@@ -246,7 +268,7 @@ class StatsRequests(GenericRequest):
         JOIN product_file pf ON pf.product_file_description_id = pfd.id
         WHERE pfv.id = {1}
         GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
-        """.format(path, self._requestData["options"]["product_id"])
+        """.format(path, self._requestData["options"]["product_variable_id"])
         
         threads.append(Process(target=productStats, args=(self._config, stdevQuery, path, self._requestData, result,  "stdev")))
         threads[-1].start()
@@ -303,8 +325,12 @@ class StatsRequests(GenericRequest):
             JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
             JOIN product p ON pfd.product_id = p.id
             WHERE pfv.id = {0} AND pf."date" = '{1}' AND ps.poly_id = {2}
-        """.format(self._requestData["options"]["product_id"],
+        """.format(self._requestData["options"]["product_variable_id"],
                    self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        
+        if self._requestData["options"]["rt_flag"] >=0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+            
         return self.__getResponseFromDB(query)
     
     def __rankStrataByDensity(self):
@@ -328,8 +354,13 @@ class StatsRequests(GenericRequest):
             JOIN product_file pf ON ps.product_file_id = pf.id  
             JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
             JOIN product p ON pfd.product_id = p.id
-            WHERE pfv.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2}) a
-        """.format(self._requestData["options"]["product_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+            WHERE pfv.id = {0} AND pf."date" ='{1}' AND ps.poly_id = {2}
+        """.format(self._requestData["options"]["product_variable_id"],self._requestData["options"]["date"], self._requestData["options"]["poly_id"])
+        
+        if  self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
+        query += ") a"
+        
         return self.__getResponseFromDB(query)
     
     def polygonDescription(self):

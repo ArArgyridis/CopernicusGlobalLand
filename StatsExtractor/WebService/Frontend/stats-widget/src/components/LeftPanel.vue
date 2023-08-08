@@ -18,23 +18,29 @@
 			<div class="mt-2"><h5>Copernicus Global Land Monitoring Service Product Categories</h5></div>
 			<!--<div class="text-end raise" ><div class="btn" v-on:click="closeLeftPanel"><a>x</a></div></div>-->
 		</div>
-	
 		<div class="row nav nav-tabs mt-3 mb-3">
 			<button v-for="nav in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActiveCategory(nav)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
 		</div>
 		
 		<div class="row mt-1">
-			<div class="col d-flex justify-content-end my-auto">Current Product: </div>
+			<div class="col-2 d-flex justify-content-end ml-2 my-auto">Product:</div>
 			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{productDescription}}</button>
 				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(product, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="setProduct(product)"><a class="dropdown-item">{{product.description}}</a></li></ul></div>
+					<li v-for ="(prd, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="product=prd"><a class="dropdown-item">{{prd.description}}</a></li></ul></div>
 		</div>
 		
 		<div class="row mt-1" v-if="product != null">
-			<div class="col d-flex justify-content-end my-auto">Current Variable: </div>
-			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.currentVariable.description}}</button>
-				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+			<div class="col-2 d-flex justify-content-end my-auto">Variable:</div>
+			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="variableDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.currentVariable.description}}</button>
+				<ul id="variableDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
 					<li v-for ="(variable, key) in product.variables" v-bind:key="key" v-bind:value="key"  v-on:click="setVariable(variable)"><a class="dropdown-item">{{variable.description}}</a></li></ul></div>
+		</div>
+		
+		<div class="row mt-1" v-if="product != null && product.currentVariable != null">
+			<div class="col-2 d-flex justify-content-end my-auto">RT:</div>
+			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="rtDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.rtFlag.description}}</button>
+				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
+					<li v-for ="(rtPeriod, key) in consolidationPeriods" v-bind:key="key" v-bind:value="key"  v-on:click="setConsolidationPeriod(rtPeriod)"><a class="dropdown-item">{{rtPeriod.description}}</a></li></ul></div>
 		</div>
 		
 		<div class = "container mt-3 ml-3 mr-3" v-if="product != null">
@@ -46,7 +52,7 @@
 			
 			<div  class="mt-3"><!--STRATIFICATION -->
 				<div class="row">
-					<div class="col d-flex justify-content-end my-auto">Stratification:</div>
+					<div class="col-3 d-flex justify-content-end my-auto">Stratification:</div>
 					<div class="col d-flex justify-content-start">
 						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
 						<ul id="stratificationDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
@@ -57,7 +63,7 @@
 			</div>
 			
 			<div class="row mt-2" v-if="currentStratificationName != 'Select stratification'">
-				<div class="col d-flex justify-content-end my-auto">Date:</div>
+				<div class="col-3 d-flex justify-content-end my-auto">Date:</div>
 				<div class="col d-flex justify-content-start">
 					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{currentDate.substring(0,10)}} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
@@ -67,7 +73,7 @@
 			</div>
 				
 			<div class="row mt-2" v-if="product != null">
-				<div class="col d-flex justify-content-end my-auto">Statistics Mode:</div>
+				<div class="col-3 d-flex justify-content-end my-auto">Statistics Mode:</div>
 				<div class="col d-flex justify-content-start">
 					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ currentStatisticsViewMode}} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
@@ -133,7 +139,7 @@ import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 //import requests from '../libs/js/requests.js';
 import Legend from "./libs/Legend.vue";
-
+import {consolidationPeriods} from "../libs/js/constructors.js";
 export default {
 	name: 'Left Panel',
 	components: {
@@ -149,6 +155,9 @@ export default {
 		},
 		categories() {
 			return this.$store.getters.categories;
+		},
+		consolidationPeriods() {
+			return new consolidationPeriods(this.product.rt);
 		},
 		currentStatisticsViewMode() {
 			if (this.statisticsViewSelectedMode == null)
@@ -347,7 +356,7 @@ export default {
 	data() {
 		return {
 			dateFormat: "dd MMM yyyy",
-			stratifiedOrRawViewModes: ["Statistics By Stratification", "Raw Data"],
+			stratifiedOrRawViewModes: ["Statistics By Region", "Raw Data"],
 			polygonViewMode: ["Mean values", "Density-driven"],
 			statisticsViewMode: ["Product Values", "Anomalies"],
 		}
@@ -368,6 +377,10 @@ export default {
 		},
 		setProductAnomaly(key) {
 			this.productAnomaly = key;
+			this.$emit("updateView");
+		},
+		setConsolidationPeriod(rtPeriod) {
+			this.$store.commit("setConsolidationPeriod", rtPeriod);
 			this.$emit("updateView");
 		},
 		setCurrentStratification(key) {
