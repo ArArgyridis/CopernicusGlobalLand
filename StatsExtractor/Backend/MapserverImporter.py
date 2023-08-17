@@ -107,7 +107,7 @@ class SingleImageProcessor:
                                           variable,
                                           os.path.split(self._relImagePath)[-1].split(".")[0] + ".tif"])
 
-            if not self._params["config"].filesystem.mapserver.useCOG:
+            if not self._params["config"].mapserver.useCOG:
                 self._dstOverviews = self._dstImg + ".ovr"
 
             #check if there is a valid file
@@ -166,7 +166,7 @@ class SingleImageProcessor:
 
         elif self._params["productInfo"].productType == "anomaly": #for now just copy file
             self._dstImg = os.path.join(self._params["config"].filesystem.mapserverPath, *["anomaly", self._relImagePath])
-            if not self._params["config"].filesystem.mapserver.useCOG:
+            if not self._params["config"].mapserver.useCOG:
                 self._dstOverviews = self._dstImg + ".ovr"
 
             dstImgDt = gdal.Open(self._dstImg)
@@ -186,7 +186,7 @@ class SingleImageProcessor:
         if self._dstOverviews is not None and not os.path.isfile(self._dstOverviews):
             buildOverviews = True
 
-        if not self._params["config"].filesystem.mapserver.useCOG:
+        if not self._params["config"].mapserver.useCOG:
             if buildOverviews:
                 tmpDt = gdal.Open(self._tmpImg)
                 print("Building overviews for: " + os.path.split(self._tmpImg)[1])
@@ -233,10 +233,10 @@ class SingleImageProcessor:
             layerName += "_RT{0}".format(self._rtFlag)
 
         layerImg = self._dstImg
-        if self._params["config"].filesystem.mapserver.virtualPrefix is not None:
-            layerImg = self._params["config"].filesystem.mapserver.virtualPrefix + layerImg
+        if self._params["config"].mapserver.virtualPrefix is not None:
+            layerImg = self._params["config"].mapserver.virtualPrefix + layerImg
 
-        relPath = os.path.relpath(self._dstImg, self._params["config"].filesystem.mapserver.mapserverPath)
+        relPath = os.path.relpath(self._dstImg, self._params["config"].filesystem.mapserverPath)
         #appenging info to DB
         query = """INSERT INTO wms_file(product_file_id, product_variable_id, rel_file_path) VALUES({0},{1},'{2}')""".format(
             self._productFileId, variableParams.id, relPath)
