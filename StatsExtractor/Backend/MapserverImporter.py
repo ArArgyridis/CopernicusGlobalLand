@@ -94,7 +94,7 @@ class SingleImageProcessor:
                         AND product_file_variable_id  = {1})""".format(self._productFileId, variableParams.id)
 
         # check if an image is already registered in the DB
-        entryCheck = self._params["config"].pgConnections[self._params["config"].statsInfo.connectionId].fetchQueryResult(query)
+        entryCheck = self._params["config"].pgConnections[self._params["config"].statsInfo.connectionId].fetchQueryResult(query)[0][0]
 
         if self._params["productInfo"].productType == "raw":
             if variable != "": #netcdf-like subdataset
