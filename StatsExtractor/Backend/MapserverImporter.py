@@ -205,7 +205,8 @@ class SingleImageProcessor:
             checkAndDeleteFile(cogImg)
             kwargs = {'format': 'COG',
                       'creationOptions': ['COMPRESS=LZW'],
-                      "rgbExpand": "rgb"}
+                      "rgbExpand": "rgb",
+                      "noData": 255}
             gdal.Translate(cogImg, self._tmpImg, **kwargs)
             checkAndDeleteFile(self._tmpImg)
             self._tmpImg = cogImg
