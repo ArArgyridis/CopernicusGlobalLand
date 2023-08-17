@@ -46,11 +46,6 @@ def applyColorTable(dstImg, style):
     outDt = gdal.Open(dstImg, gdal.GA_Update)
     outDt.GetRasterBand(1).SetRasterColorTable(colors)
     outDt = None
-    
-
-
-
-
 
 class SingleImageProcessor:
     def __init__(self, params, info):
@@ -59,6 +54,7 @@ class SingleImageProcessor:
         self._relImagePath = info[0]
         self._date = info[1]
         self._rtFlag = info[2]
+        self._productFileId  = info[3]
         self._dstImg = None
         self._dstOverviews = None
         self._tmpImg = None
@@ -92,29 +88,40 @@ class SingleImageProcessor:
         variableParams = self._params["productInfo"].variables[self._params["variable"]]
         buildOverviews = False
 
+        query = """
+                    SELECT EXISTS (
+                        SELECT id FROM wms_file wf WHERE product_file_id  = {0} 
+                        AND product_file_variable_id  = {1})""".format(self._productFileId, variableParams.id)
+
+        # check if an image is already registered in the DB
+        entryCheck = self._params["config"].pgConnections[self._params["config"].statsInfo.connectionId].fetchQueryResult(query)
+
         if self._params["productInfo"].productType == "raw":
             if variable != "": #netcdf-like subdataset
                 image = netCDFSubDataset(image, variable)
 
-            self._dstImg = os.path.join(self._params["mapserverPath"],
+            self._dstImg = os.path.join(self._params["config"].filesystem.mapserverPath,
                                         *["raw", self._params["productInfo"].productNames[0],
                                           self._date.strftime("%Y"),
                                           self._date.strftime("%m"),
                                           variable,
                                           os.path.split(self._relImagePath)[-1].split(".")[0] + ".tif"])
 
-            if not self._params["useCOG"]:
+            if not self._params["config"].mapserver.useCOG:
                 self._dstOverviews = self._dstImg + ".ovr"
 
+            #check if there is a valid file
+
             dstImgDt = gdal.Open(self._dstImg)
-            if dstImgDt is None:
+
+            if not entryCheck or dstImgDt is None:
                 print("processing: ", image)
                 buildOverviews = True
                 inDt = gdal.Open(image)
 
                 tmpDrv = gdal.GetDriverByName("GTiff")
 
-                self._tmpImg = os.path.join(self._params["tmpPath"],
+                self._tmpImg = os.path.join(self._params["config"].filesystem.tmpPath,
                                             *["raw", self._params["productInfo"].productNames[0],
                                               self._date.strftime("%Y"),
                                               self._date.strftime("%m"),
@@ -158,8 +165,8 @@ class SingleImageProcessor:
             dstImgDt = None
 
         elif self._params["productInfo"].productType == "anomaly": #for now just copy file
-            self._dstImg = os.path.join(self._params["mapserverPath"], *["anomaly", self._relImagePath])
-            if not self._params["useCOG"]:
+            self._dstImg = os.path.join(self._params["config"].filesystem.mapserverPath, *["anomaly", self._relImagePath])
+            if not self._params["config"].mapserver.useCOG:
                 self._dstOverviews = self._dstImg + ".ovr"
 
             dstImgDt = gdal.Open(self._dstImg)
@@ -179,7 +186,7 @@ class SingleImageProcessor:
         if self._dstOverviews is not None and not os.path.isfile(self._dstOverviews):
             buildOverviews = True
 
-        if not self._params["useCOG"]:
+        if not self._params["config"].mapserver.useCOG:
             if buildOverviews:
                 tmpDt = gdal.Open(self._tmpImg)
                 print("Building overviews for: " + os.path.split(self._tmpImg)[1])
@@ -196,8 +203,10 @@ class SingleImageProcessor:
             splitTmpImg[1] = "cog_" + splitTmpImg[1]
             cogImg = os.path.join(*splitTmpImg)
             checkAndDeleteFile(cogImg)
-            kwargs = {'format': 'COG'}
-            gdal.Warp(cogImg, self._tmpImg, **kwargs)
+            kwargs = {'format': 'COG',
+                      'creationOptions': ['COMPRESS=LZW'],
+                      "rgbExpand": "rgb"}
+            gdal.Translate(cogImg, self._tmpImg, **kwargs)
             checkAndDeleteFile(self._tmpImg)
             self._tmpImg = cogImg
 
@@ -223,13 +232,13 @@ class SingleImageProcessor:
             layerName += "_RT{0}".format(self._rtFlag)
 
         layerImg = self._dstImg
-        if self._params["virtualPrefixPath"] is not None:
-            layerImg = self._params["virtualPrefixPath"] + layerImg
+        if self._params["config"].mapserver.virtualPrefix is not None:
+            layerImg = self._params["config"].mapserver.virtualPrefix + layerImg
 
         #cleaning up handler
         self._signal.signal(self._signal.SIGTERM, self._originalSIGTERMHandler)
-        return LayerInfo(layerImg, layerName, "EPSG:4326", None, None, getImageExtent(self._dstImg), date,
-                             self._params["productInfo"].id)
+        return LayerInfo(layerImg, layerName, "EPSG:4326", None, None,
+                         getImageExtent(self._dstImg), date,self._params["productInfo"].id)
 
 def runSingleImage(params, relImagePath):
     obj = SingleImageProcessor(params, relImagePath)
@@ -261,6 +270,7 @@ class MapserverImporter(object):
                 "useCOG": self._config.mapserver.useCOG,
                 "productInfo":Constants.PRODUCT_INFO[productId],
                 "variable": variable,
+                "config": self._config
                 }]*productFiles.rowcount, productFiles)
 
             for result in threads:
@@ -271,7 +281,8 @@ class MapserverImporter(object):
 
     def process(self, productId):
         productGroups = dict()
-        query = """SELECT rel_file_path, date, rt_flag FROM product_file 
+        query = """SELECT rel_file_path, date, rt_flag, id 
+        FROM product_file 
         WHERE product_file_description_id = {0} 
         ORDER BY rel_file_path""".format(productId)
 

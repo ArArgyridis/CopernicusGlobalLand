@@ -87,10 +87,11 @@ class PGOptions(object):
             cursor.execute(query)
             res = cursor.fetchall()
             return res
-        except:
+        except Exception as e:
             session.rollback()
             print(query)
             print("Unable to fetch query reqult. Exiting")
+            print("Error", e)
             return 1
 
     def getIteratableResult(self, query, session=None):
