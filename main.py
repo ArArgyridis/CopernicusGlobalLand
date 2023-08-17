@@ -50,7 +50,7 @@ def main():
 					os.makedirs(tmpDir, exist_ok=True)
 
 				obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
-				#obj.importProductFromLocalStorage(inDir)
+				obj.importProductFromLocalStorage(inDir)
 				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 				#compute anomalies
 				del obj
