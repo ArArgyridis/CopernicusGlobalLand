@@ -235,6 +235,16 @@ class SingleImageProcessor:
         if self._params["config"].mapserver.virtualPrefix is not None:
             layerImg = self._params["config"].mapserver.virtualPrefix + layerImg
 
+        relPath = os.path.relpath(self._dstImg, self._params["config"].mapserver.mapserverPath)
+        #appenging info to DB
+        query = """INSERT INTO wms_file(product_file_id, product_variable_id, rel_file_path) VALUES({0},{1},'{2}')""".format(
+            self._productFileId, variableParams.id, relPath)
+
+        if entryCheck: #just update the relative path
+            query = """UPDATE wms_file SET rel_file_path = '{0}' 
+            WHERE product_file_id = {1} AND product_variable_id = {2}""".format(relPath, self._productFileId,
+                                                                                variableParams.id)
+        self._params["config"].pgConnections[self._params["config"].statsInfo.connectionId].executeQuery(query)
         #cleaning up handler
         self._signal.signal(self._signal.SIGTERM, self._originalSIGTERMHandler)
         return LayerInfo(layerImg, layerName, "EPSG:4326", None, None,
