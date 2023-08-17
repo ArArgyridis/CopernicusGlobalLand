@@ -241,7 +241,7 @@ class SingleImageProcessor:
         query = """INSERT INTO wms_file(product_file_id, product_file_variable_id, rel_file_path) VALUES({0},{1},'{2}')""".format(
             self._productFileId, variableParams.id, relPath)
 
-        if entryCheck: #just update the relative path
+        if not entryCheck: #just update the relative path
             query = """UPDATE wms_file SET rel_file_path = '{0}' 
             WHERE product_file_id = {1} AND product_file_variable_id = {2}""".format(relPath, self._productFileId,
                                                                                 variableParams.id)
