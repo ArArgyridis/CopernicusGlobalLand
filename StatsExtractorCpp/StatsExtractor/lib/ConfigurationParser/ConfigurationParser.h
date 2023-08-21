@@ -30,7 +30,7 @@ struct SFTPProxy {
 };
 
 struct FileSystem {
-    boost::filesystem::path imageryPath, anomalyProductsPath, tmpPath, mapserverPath;
+    boost::filesystem::path imageryPath, anomalyProductsPath, tmpPath, mapserverPath, mapFilePath;
 };
 
 

@@ -12,6 +12,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <boost/algorithm/string/join.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <iostream>
 #include <libxml/xpathInternals.h>
 #include <sstream>
@@ -19,9 +21,15 @@
 #include "Utils.hxx"
 
 
+void createDirectoryForFile(boost::filesystem::path dstFile) {
+    auto splitDir = split(dstFile.string(), "/");
+    splitDir.pop_back();
+    std::string outPath = boost::algorithm::join(splitDir,"/");
+    boost::filesystem::create_directories(outPath);
+}
+
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
     GDALDatasetUniquePtr tmpDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( dataPath.c_str(), GA_ReadOnly)));
-    std::cout << dataPath <<"\n";
     char **meta = tmpDataset->GetMetadata();
 
     MetadataDictPtr bandMetadata = std::make_unique<MetadataDict>();
@@ -110,6 +118,21 @@ float scalerFunc(float x, float& scale, float& offset) {
     return x*scale+offset;
 }
 
+std::vector<std::string> split(std::string s, std::string delimiter) {
+    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    std::string token;
+    std::vector<std::string> res;
+
+    while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos) {
+        token = s.substr (pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+        res.push_back (token);
+    }
+
+    res.push_back (s.substr (pos_start));
+    return res;
+}
+
 std::string stringstreamToString(std::stringstream &stream) {
         stream.seekp(-1, stream.cur);
         stream << ' ';
@@ -137,6 +160,8 @@ std::vector<RGBVal> styleColorParser(std::string &style) {
                 xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
                 std::string color(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))));
                 sscanf(color.c_str(), "#%2hx%2hx%2hx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
+                //                sscanf(color.c_str(), "#%02hhx%02hhx%02hhx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
+
             }
         }
     }

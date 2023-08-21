@@ -127,10 +127,4 @@ private:
 };
 
 }
-
-
-
-
-
-
 #endif // PROCESSINGCHAINFILTER_H

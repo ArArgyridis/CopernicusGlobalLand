@@ -71,6 +71,8 @@ using PathSharedPtr             = std::shared_ptr<boost::filesystem::path>;
 
 /** Image statistics Info */
 
+void createDirectoryForFile(boost::filesystem::path dstFile);
+
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath);
 OGRPolygon envelopeToGeometry(OGREnvelope& envelope);
 long double pixelsToAreaM2Degrees(long double& pixelCount, long double pixelSize);
@@ -84,7 +86,7 @@ size_t reverseNoScalerFunc(float x, float &scale, float &offset);
 size_t reverseScalerFunc(float x, float& scale, float& offset);
 
 float scalerFunc(float x, float& scale, float& offset);
-
+std::vector<std::string> split(std::string s, std::string delimiter);
 
 //template functions
 
@@ -113,7 +115,7 @@ std::string jsonToString(JSONType& json, size_t decimalPlaces=2) {
     rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
     writer.SetMaxDecimalPlaces(decimalPlaces);
     json.Accept(writer);
-    return  buf.GetString();
+    return buf.GetString();
 }
 
 std::string stringstreamToString(std::stringstream &stream);

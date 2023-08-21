@@ -72,10 +72,10 @@ class PGOptions(object):
                 cursor.execute(query)
             session.commit()
             return 0
-        except:
+        except Exception as e:
             session.rollback()
             print(query)
-            print("Unable to exequte queries. Exiting")
+            print(e)
             return 1
 
     def fetchQueryResult(self, query, session=None):
@@ -144,7 +144,6 @@ class MapServer(object):
     def __init__(self, cfg):
         self.rawDataWMS     = cfg["raw_data_wms"]
         self.anomaliesWMS   = cfg["anomalies_wms"]
-        self.useCOG         = cfg["use_cog"]
         self.virtualPrefix  = cfg["virtual_prefix_path"]
         if self.virtualPrefix[-1] == "/":
             self.virtualPrefix = self.virtualPrefix[0:-1]

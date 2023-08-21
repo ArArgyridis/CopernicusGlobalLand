@@ -113,7 +113,7 @@ class DataCrawler:
             fl = fl.decode("ascii")
             pattern = re.compile(self._prodInfo.pattern)
             chk = os.path.split(fl)[1]
-            if pattern.fullmatch(chk):
+            if pattern.fullmatch(chk) or pattern.fullmatch(chk[6::]):
                 #check if product exists in DB
                 checkQuery = """SELECT EXISTS (
                         SELECT *

@@ -107,9 +107,6 @@ class SingleImageProcessor:
                                           variable,
                                           os.path.split(self._relImagePath)[-1].split(".")[0] + ".tif"])
 
-            if not self._params["config"].mapserver.useCOG:
-                self._dstOverviews = self._dstImg + ".ovr"
-
             #check if there is a valid file
 
             dstImgDt = gdal.Open(self._dstImg)
@@ -166,8 +163,6 @@ class SingleImageProcessor:
 
         elif self._params["productInfo"].productType == "anomaly": #for now just copy file
             self._dstImg = os.path.join(self._params["config"].filesystem.mapserverPath, *["anomaly", self._relImagePath])
-            if not self._params["config"].mapserver.useCOG:
-                self._dstOverviews = self._dstImg + ".ovr"
 
             dstImgDt = gdal.Open(self._dstImg)
             if dstImgDt is None:
@@ -186,18 +181,7 @@ class SingleImageProcessor:
         if self._dstOverviews is not None and not os.path.isfile(self._dstOverviews):
             buildOverviews = True
 
-        if not self._params["config"].mapserver.useCOG:
-            if buildOverviews:
-                tmpDt = gdal.Open(self._tmpImg)
-                print("Building overviews for: " + os.path.split(self._tmpImg)[1])
-
-                checkAndDeleteFile(self._dstOverviews)
-                self._tmpOverviews = self._tmpImg + ".ovr"
-                checkAndDeleteFile(self._tmpOverviews)
-
-                tmpDt.BuildOverviews(resampling="AVERAGE", overviewlist=[2, 4, 8, 16, 32, 64])
-                tmpDt = None
-        elif self._tmpImg is not None:
+        if self._tmpImg is not None:
             #convert tmp image to cog
             splitTmpImg = list(os.path.split(self._tmpImg))
             splitTmpImg[1] = "cog_" + splitTmpImg[1]
@@ -278,7 +262,6 @@ class MapserverImporter(object):
                 "mapserverPath": self._config.filesystem.mapserverPath,
                 "virtualPrefixPath": self._config.mapserver.virtualPrefix,
                 "tmpPath": self._config.filesystem.tmpPath,
-                "useCOG": self._config.mapserver.useCOG,
                 "productInfo":Constants.PRODUCT_INFO[productId],
                 "variable": variable,
                 "config": self._config

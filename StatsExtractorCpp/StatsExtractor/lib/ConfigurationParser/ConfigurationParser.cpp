@@ -68,6 +68,7 @@ unsigned short Configuration::parse() {
     filesystem.anomalyProductsPath  = cfg["filesystem"]["anomaly_products_path"].GetString();
     filesystem.tmpPath              = cfg["filesystem"]["tmp_path"].GetString();
     filesystem.mapserverPath        = cfg["filesystem"]["mapserver_data_path"].GetString();
+    filesystem.mapFilePath          = cfg["filesystem"]["mapserver_mapfile_path"].GetString();
 
     //enabled products -- if null all products should be used
     if(!cfg["enabled_product_ids"].IsNull() && cfg["enabled_product_ids"].IsArray()){

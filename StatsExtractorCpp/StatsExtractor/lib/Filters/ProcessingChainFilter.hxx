@@ -15,12 +15,13 @@
 #ifndef PROCESSINGCHAINFILTER_HXX
 #define PROCESSINGCHAINFILTER_HXX
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 #include <otbImageFileWriter.h>
 #include <otbImage.h>
 
-#include "fmt/format.h"
+
 #include "ProcessingChainFilter.h"
-#include "../Constants/Constants.h"
 
 namespace otb {
 

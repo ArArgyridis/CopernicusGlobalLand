@@ -12,6 +12,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+#include <gdal.h>
 #include <iostream>
 #include <memory>
 #include <otbImage.h>
@@ -21,12 +24,12 @@
 #include <otbVectorDataToLabelImageFilter.h>
 #include <otbVectorImage.h>
 #include <rapidjson/document.h>
-#include <gdal.h>
 
 #include "StatsExtractor.h"
 #include "../Constants/Constants.h"
 #include "../Filters/StreamedProcessingChainFilter.h"
 #include "../Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h"
+
 
 
 using labelType         = unsigned long;
