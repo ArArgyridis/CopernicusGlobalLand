@@ -35,7 +35,6 @@
 	"mapserver": {
 		"raw_data_wms": "url_here/{0}/{1}/{2}",
 		"anomalies_wms": "url_here/{0}/{1}",
-		"use_cog":true,
 		"virtual_prefix_path": "/vsis3/",
 		"config":{
 			"AWS_S3_ENDPOINT":"s3.waw3-1.cloudferro.com",
