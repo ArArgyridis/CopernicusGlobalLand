@@ -128,7 +128,17 @@ export function	styleBuilder(style) {
 export function	ProductViewProperties(product) {
 	product.statisticsViewMode 			= 0;
 	product.previousStatisticsViewMode 	= null;
-	product.rtFlag 						= new consolidationPeriods(product.rt)[0]
+	let tmpPeriods = new consolidationPeriods(product.rt);
+	product.rtFlag = tmpPeriods[0];
+	if(product.rt) {
+		let stop = false;
+		for (let i = 0; i < tmpPeriods.length && !stop; i++) {
+			if(tmpPeriods[i].id in product.dates) {
+				product.rtFlag = tmpPeriods[i];
+				stop = true;
+			}
+		}
+	}
 	product.previousRtFlag				= null;
 	VariableProperties(product);
 	product.currentVariable				= product.variables[0];

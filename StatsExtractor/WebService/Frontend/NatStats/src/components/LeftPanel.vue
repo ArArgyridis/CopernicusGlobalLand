@@ -157,7 +157,14 @@ export default {
 			return this.$store.getters.categories;
 		},
 		consolidationPeriods() {
-			return new consolidationPeriods(this.product.rt);
+			let tmpPeriods = new consolidationPeriods(this.product.rt);
+			let retPeriods = new Array();
+			tmpPeriods.forEach(period => {
+				if (period.id in this.product.dates)
+					retPeriods.push(period);
+			});
+		
+			return retPeriods;
 		},
 		currentStatisticsViewMode() {
 			if (this.statisticsViewSelectedMode == null)

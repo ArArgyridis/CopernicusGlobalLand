@@ -128,7 +128,6 @@ export default{
 					currentProduct.previousRtFlag = currentProduct.rtFlag;
 					currentProduct.rtFlag = dt;					
 					currentProduct.currentDate = currentProduct.dates[currentProduct.rtFlag.id][0];
-					console.log(currentProduct.currentDate);
 					setCurrentWMSByDateAndMode(state);
 				},
 				setProduct(state, dt) {	
