@@ -67,12 +67,16 @@ int main(int argc, char *argv[]) {
                 boost::filesystem::path filePath = res[rowId][1].as<std::string>();
                 boost::filesystem::path inFile      = variable.second->productAbsPath(filePath).string();
 
+
                 //tmp output file
-                boost::filesystem::path tmpFile     = config->filesystem.tmpPath/filePath;
+                std::vector<std::string> splitPath = split(inFile.string(), "/");
+                splitPath.insert(splitPath.end()-1, variable.second->variable);
+                boost::filesystem::path tmpFile = boost::algorithm::join(splitPath,"/");
+
                 tmpFile.replace_extension("tif");
                 if(boost::filesystem::exists(tmpFile))
                     boost::filesystem::remove(tmpFile);
-                createDirectoryForFile(tmpFile);
+                createDirectoryForFile(tmpFile, variable.second->variable);
 
                 //tmp cog file
                 boost::filesystem::path tmpCog(tmpFile);
@@ -86,7 +90,7 @@ int main(int argc, char *argv[]) {
                 //check if a file exists
                 if(boost::filesystem::exists(outCog))
                     boost::filesystem::remove(outCog);
-                createDirectoryForFile(outCog);
+                createDirectoryForFile(outCog, variable.second->variable);
 
                 std::cout << "Building COG File for: " << inFile << "\n";
 

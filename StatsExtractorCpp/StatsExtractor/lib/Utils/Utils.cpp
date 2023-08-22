@@ -21,10 +21,15 @@
 #include "Utils.hxx"
 
 
-void createDirectoryForFile(boost::filesystem::path dstFile) {
+void createDirectoryForFile(boost::filesystem::path dstFile, std::string &variableName) {
     auto splitDir = split(dstFile.string(), "/");
-    splitDir.pop_back();
+    if (variableName.length() == 0)
+        splitDir.pop_back();
+    else
+        splitDir[splitDir.size()-1] = variableName;
+
     std::string outPath = boost::algorithm::join(splitDir,"/");
+    std::cout << "@@@@: " << outPath << "\n";
     boost::filesystem::create_directories(outPath);
 }
 

@@ -71,7 +71,7 @@ using PathSharedPtr             = std::shared_ptr<boost::filesystem::path>;
 
 /** Image statistics Info */
 
-void createDirectoryForFile(boost::filesystem::path dstFile);
+void createDirectoryForFile(boost::filesystem::path dstFile, std::string& variableName);
 
 MetadataDictPtr getMetadata(boost::filesystem::path &dataPath);
 OGRPolygon envelopeToGeometry(OGREnvelope& envelope);
