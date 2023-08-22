@@ -19,13 +19,13 @@ let dateStart = new Date();
 dateStart.setDate(dateStart.getDate() - 1200);
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
-function setCurrentWMSByDateAndMode(state) {
-	state.previousWMS = state.currentWMS;
+function setCurrentCogByDateAndMode(state) {
+	state.previousCog = state.currentCog;
 	let rtFlag = state.categories.current.products.current.rtFlag;
 	if (state.categories.current.products.current.statisticsViewMode == 0)
-		state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+		state.currentCog = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	else
-		state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+		state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	
 	state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	if (state.categories.current.products.current.currentVariable.currentAnomaly != null)
@@ -43,27 +43,27 @@ export default{
 				stratifications: new StratificationProps(),
 				leftPanelVisible: true,
 				rightPanelVisible: false,
-				currentWMS: null,
-				previousWMS: null
+				currentCog: null,
+				previousCog: null
 			},
 			mutations: {
-				appendToProductsAnomaliesWMSLayers(state, dt) {
+				appendToProductsAnomaliesCogLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers = {...state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null && state.categories.current.products.current.currentVariable.currentAnomaly != null) {
 						state.categories.current.products.current.currentVariable.currentAnomaly.wms.current = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
 						if(state.categories.current.products.current.statisticsViewMode == 1)
-							state.currentWMS = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
+							state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
 					}
 				},
-				appendToCurrentVariableWMSLayers(state, dt) {
+				appendToCurrentVariableCogLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.wms.layers = {...state.categories.current.products.current.currentVariable.wms.layers, ...dt};
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null) {
 						let rtFlag = state.categories.current.products.current.rtFlag;
 						state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][date];
 						if(state.categories.current.products.current.statisticsViewMode == 0)
-							state.currentWMS = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][date];
+							state.currentCog = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][date];
 						}				
 
 				},
@@ -81,19 +81,19 @@ export default{
 						category.products = null;
 					});
 				},
-				clearProductsWMSLayers(state) {
+				clearProductsCogLayers(state) {
 					if(state.categories.products[state.categories.current].info != null && state.categories.products[state.categories.current].current in state.categories.products[state.categories.current].info)
 						state.categories.products[state.categories.current].info[state.categories.products[state.categories.current].current].raw.wms = new ProductViewProperties.raw.wms;
 				},
-				clearProductsAnomalyWMSLayers(state) {
+				clearProductsAnomalyCogLayers(state) {
 					if(state.categories.products[state.categories.current].info != null && state.categories.products[state.categories.current].current in state.categories.products[state.categories.current].info)
 						state.categories.products[state.categories.current].info[state.categories.products[state.categories.current].current].anomalies = new ProductViewProperties.anomalies;
 				},
 				clickedCoordinates(state, dt) {
 					state.stratifications.current.clickedCoordinates = dt;
 				},
-				currentWMSByDateAndMode(state) {
-					setCurrentWMSByDateAndMode(state);
+				currentCogByDateAndMode(state) {
+					setCurrentCogByDateAndMode(state);
 				},		     
 				leftPanelVisibility(state, dt) {
 					state.leftPanelVisible = dt;
@@ -128,7 +128,7 @@ export default{
 					currentProduct.previousRtFlag = currentProduct.rtFlag;
 					currentProduct.rtFlag = dt;					
 					currentProduct.currentDate = currentProduct.dates[currentProduct.rtFlag.id][0];
-					setCurrentWMSByDateAndMode(state);
+					setCurrentCogByDateAndMode(state);
 				},
 				setProduct(state, dt) {	
 					initProduct(dt);
@@ -260,8 +260,8 @@ export default{
 						return null;
 					}
 				},
-				currentWMSLayer: (state) => {
-					return state.currentWMS;
+				currentCogLayer: (state) => {
+					return state.currentCog;
 				},
 				dateEnd:(state)=>{
 					return state.dateEnd;
@@ -288,8 +288,8 @@ export default{
 						return null;
 					}
 				},
-				previousWMS: (state) => {
-					return state.previousWMS;
+				previousCog: (state) => {
+					return state.previousCog;
 				},
 				product: (state) =>{
 					try{
@@ -299,7 +299,7 @@ export default{
 						return null;
 					}
 				},
-				productAnomalyWMSLayers: (state) => {
+				productAnomalyCogLayers: (state) => {
 					try {
 						return state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers;
 					}
@@ -323,7 +323,7 @@ export default{
 						return null;
 					}
 				},
-				productWMSLayers: (state) => {
+				productCogLayers: (state) => {
 					try {
 						let rtFlag = state.categories.current.products.current.rtFlag;
 						return state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id];

@@ -41,6 +41,18 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
+	productCog(productId, productVariableID, rtFlag, dateStart, dateEnd) {
+		let postParams = {};
+		postParams["request"] = "productcog";
+		postParams["options"] = {
+			product_id:productId,
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag,
+			date_start: dateStart,
+			date_end: dateEnd
+		}
+		return axios.post(options.endpointURL, postParams);
+	},
 	densityStatsByPolygonAndDateRange(polyId, dateStart, dateEnd, productVariableID, rtFlag, area_type="noval_area_ha"){
 		let postParams={};
 		postParams["request"] = "densityStatsByPolygonAndDateRange";

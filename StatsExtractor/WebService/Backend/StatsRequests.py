@@ -373,9 +373,9 @@ class StatsRequests(GenericRequest):
     def __productCog(self):
         query = """
         SELECT JSON_OBJECT_AGG(pf.date, wf.rel_file_path)
-        FROM product_file pf 
+        FROM product_file pf
         JOIN wms_file wf ON pf.id = wf.product_file_id AND pf.product_file_description_id = {0} AND wf.product_file_variable_id  ={1}
-        WHERE pf.date BETWEEN '{2}' AND '{3}'""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"])
+        WHERE pf.date BETWEEN '{2}' AND '{3}' AND {4}= CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END """.format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["rt_flag"])
         return self.__getResponseFromDB(query)
 
     def _processRequest(self):

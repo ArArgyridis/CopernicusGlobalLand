@@ -211,8 +211,22 @@ export default {
 			if (this.product == null || this.$store.getters.productWMSLayer != null) 
 				return;
 			
+			requests.productCog(this.product.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
+				console.log(data);
+			});
+			
+			
+			
+			
+			
+			/*
+			
+			
+			
+			
+			
 			let dt = {};
-			var processWMS;// = noRTWMS;
+			let processWMS;
 			if (!this.product.rt) {
 				dt[-1] = {}
 				processWMS = noRTWMS;
@@ -255,6 +269,7 @@ export default {
 					console.log(error);
 				});
 			});
+			*/
 		},
 		toggleClickOnMap() {
 			this.$refs.map1.toggleGetMapCoordinates();
