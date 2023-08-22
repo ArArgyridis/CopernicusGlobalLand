@@ -369,6 +369,14 @@ class StatsRequests(GenericRequest):
                             JOIN stratification s ON sg.stratification_id = s.id WHERE sg.id={0}
                         """.format(self._requestData["options"]["poly_id"])
         return self.__getResponseFromDB(query)
+    
+    def __productCog(self):
+        query = """
+        SELECT JSON_OBJECT_AGG(pf.date, wf.rel_file_path)
+        FROM product_file pf 
+        JOIN wms_file wf ON pf.id = wf.product_file_id AND pf.product_file_description_id = {0} AND wf.product_file_variable_id  ={1}
+        WHERE pf.date BETWEEN '{0}' AND '{1}'""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"])
+        return self.__getResponseFromDB(query)
 
     def _processRequest(self):
         ret = None
@@ -388,6 +396,8 @@ class StatsRequests(GenericRequest):
             ret = self.polygonStatsTimeseries()
         elif self._requestData["request"] == "productinfo":
             ret = self.__fetchProductInfo()
+        elif self._requestData["request"] == "productcog":
+            ret = self.__productCog()
         elif self._requestData["request"] == "rankstratabydensity":
             ret = self.__rankStrataByDensity()
         elif self._requestData["request"] == "stratificationinfo":
