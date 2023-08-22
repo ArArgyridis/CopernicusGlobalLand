@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
                 if(boost::filesystem::exists(outCog))
                     boost::filesystem::remove(outCog);
                 createDirectoryForFile(outCog);
-                std::cout << tmpFile << "\n" << tmpCog <<"\n" << outCog <<"\n\n";
+                //std::cout << tmpFile << "\n" << tmpCog <<"\n" << outCog <<"\n\n";
 
                 std::cout << "Building COG File for: " << inFile << "\n";
 
