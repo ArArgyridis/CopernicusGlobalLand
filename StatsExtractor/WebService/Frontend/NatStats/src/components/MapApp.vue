@@ -212,7 +212,8 @@ export default {
 				return;
 			
 			requests.productCog(this.product.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
-				console.log(data);
+				
+				console.log(dt);
 			});
 			
 			

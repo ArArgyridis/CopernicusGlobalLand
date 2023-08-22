@@ -41,13 +41,12 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
-	productCog(productId, productVariableID, rtFlag, dateStart, dateEnd) {
+	productCog(productId, productVariableID, dateStart, dateEnd) {
 		let postParams = {};
 		postParams["request"] = "productcog";
 		postParams["options"] = {
 			product_id:productId,
 			product_variable_id: productVariableID,
-			rt_flag: rtFlag,
 			date_start: dateStart,
 			date_end: dateEnd
 		}
