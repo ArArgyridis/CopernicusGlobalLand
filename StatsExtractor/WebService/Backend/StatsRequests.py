@@ -375,7 +375,7 @@ class StatsRequests(GenericRequest):
         SELECT JSON_OBJECT_AGG(pf.date, wf.rel_file_path)
         FROM product_file pf 
         JOIN wms_file wf ON pf.id = wf.product_file_id AND pf.product_file_description_id = {0} AND wf.product_file_variable_id  ={1}
-        WHERE pf.date BETWEEN '{0}' AND '{1}'""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"])
+        WHERE pf.date BETWEEN '{2}' AND '{3}'""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"])
         return self.__getResponseFromDB(query)
 
     def _processRequest(self):
