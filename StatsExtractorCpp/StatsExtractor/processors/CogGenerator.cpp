@@ -25,14 +25,18 @@
 #include "../lib/Filters/Visualization/WMSCogFilter.hxx"
 
 int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        std::cout <<"Usage: CogGenerator json_config_file";
+        return 1;
+    }
+
+
     GDALAllRegister();
     using UCharImage                = otb::Image<unsigned char, 2>;
     using UCharVectorImage          = otb::VectorImage<unsigned short, 2>;
     using UCharImageReader          = otb::ImageFileReader<UCharImage>;
     using UCharVectorImageWriter    = otb::ImageFileWriter<UCharVectorImage>;
     using WMSCogFilter              = otb::WMSCogFilter<UCharImage, UCharVectorImage>;
-
-    UCharVectorImage::PixelType pxl;
 
 
     std::string cfgFile(argv[1]);
@@ -104,7 +108,12 @@ int main(int argc, char *argv[]) {
                 inData  = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(tmpFile.c_str(), GA_ReadOnly)));
                 GDALDriver *poDriver;
                 poDriver = GetGDALDriverManager()->GetDriverByName("COG");
-                tmpCogData = GDALDatasetUniquePtr(poDriver->CreateCopy(tmpCog.c_str(), inData.get(), FALSE, nullptr, nullptr, nullptr));
+
+                //enable BIGTIFF
+                std::unique_ptr<char*, void(*)(char**)> papszOptions(nullptr, CSLDestroy);
+                papszOptions.reset(CSLAddNameValue(papszOptions.get(), "BIGTIFF", "YES"));
+
+                tmpCogData = GDALDatasetUniquePtr(poDriver->CreateCopy(tmpCog.c_str(), inData.get(), FALSE, papszOptions.get(), nullptr, nullptr));
                 tmpCogData = nullptr;
                 boost::filesystem::remove(tmpFile);
 

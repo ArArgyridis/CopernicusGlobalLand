@@ -158,10 +158,7 @@ std::vector<RGBVal> styleColorParser(std::string &style) {
         for (size_t i = 0; i < res->nodesetval->nodeNr; i++) {
             if(res->nodesetval->nodeTab[i]->type == XML_ELEMENT_NODE) {
                 xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
-                std::string color(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))));
-                sscanf(color.c_str(), "#%2hx%2hx%2hx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
-                //                sscanf(color.c_str(), "#%02hhx%02hhx%02hhx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
-
+                sscanf(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))), "#%2hx%2hx%2hx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
             }
         }
     }
