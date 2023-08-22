@@ -9,8 +9,6 @@ export default {
 
 export default {
 	endpointURL: "https://natstat.cgls.dev/endpoint",
-	wmsURL: "https://natstat.cgls.dev/wms/",
-	anomaliesWMSURL: "https://natstat.cgls.dev/anomalieswms/",
-	s3WMSURL:	"https://s3.waw3-1.cloudferro.com/swift/v1/CGLSWMS/projects/natstats/mapserver/",
+	s3CogURL:	"https://s3.waw3-1.cloudferro.com/swift/v1/CGLSWMS/projects/natstats/mapserver/",
 	bingKey: "Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl"
 }

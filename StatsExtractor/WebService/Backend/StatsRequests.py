@@ -381,7 +381,7 @@ class StatsRequests(GenericRequest):
             SELECT tmp.rt_flag, JSON_OBJECT_AGG(tmp.date, tmp.rel_file_path) AS info
             FROM tmp 
             GROUP BY tmp.rt_flag
-        ) SELECT JSON_OBJECT_AGG(rt_flag, info) FROM tmp2""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], 
+        )SELECT JSON_OBJECT_AGG(rt_flag, info) FROM tmp2""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], 
                     self._requestData["options"]["date_start"], self._requestData["options"]["date_end"])
         return self.__getResponseFromDB(query)
 

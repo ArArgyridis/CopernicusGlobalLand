@@ -212,8 +212,19 @@ export default {
 				return;
 			
 			requests.productCog(this.product.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
-				
-				console.log(dt);
+				console.log(data.data.data);
+				if (data.data.data == null)
+					return;
+				let dt = {}
+				Object.keys(data.data.data).forEach(rt =>{
+					dt[rt] = {};
+					Object.keys(data.data.data[rt]).forEach(date => {
+						dt[rt][date] = this.$refs.map1.createGeoTIFFLayer( options.s3CogURL + data.data.data[rt][date], this.productVariableZIndex);
+					});
+				});
+				this.$store.commit("setCurrentVariableCogLayers", dt);
+				if(displayFirst)
+					this.updateWMSVisibility();
 			});
 			
 			
@@ -296,15 +307,15 @@ export default {
 			this.$refs.map1.setVisibility( this.$store.getters.currentAnomalyWMSLayer.layerId, true);
 		},
 		updateWMSVisibility() {
-			if (this.$store.getters.previousWMS != null) 
-				this.$refs.map1.setVisibility(this.$store.getters.previousWMS.layerId, false);
+			if (this.$store.getters.previousCog != null) 
+				this.$refs.map1.setVisibility(this.$store.getters.previousCog, false);
 
-			if(this.$store.getters.currentWMSLayer == null) { //wms layers have not been initialized for current product, so do so
+			if(this.$store.getters.currentCogLayer == null) { //wms layers have not been initialized for current product, so do so
 				this.updateWMSLayers(true);
 			
 			}
 				else
-					this.$refs.map1.setVisibility(this.$store.getters.currentWMSLayer.layerId, this.$store.getters.stratifiedOrRaw == 1);
+					this.$refs.map1.setVisibility(this.$store.getters.currentCogLayer, this.$store.getters.stratifiedOrRaw == 1);
 		},		
 		updateSelectedPolygon(evt) {
 			let id = null;

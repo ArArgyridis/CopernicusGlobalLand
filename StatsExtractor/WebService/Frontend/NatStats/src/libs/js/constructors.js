@@ -84,7 +84,7 @@ export function	AnomaliesProps(product, variable) {
 		variable.currentAnomaly = variable.anomaly_info[0];
 		variable.anomaly_info.forEach( anomaly => {
 			anomaly.valueRanges 	= [anomaly.min_value, anomaly.low_value, anomaly.mid_value, anomaly.high_value, anomaly.max_value];
-			anomaly.wms 			= new WMSProps(anomaly.name, product.dates, anomaly.variable, options.anomaliesWMSURL);
+			anomaly.cog 			= new CogProps(anomaly.name, product.dates, anomaly.variable, options.anomaliesWMSURL);
 			anomaly.stratificationInfo 	= new stratificationViewProps("meanval_color");
 			anomaly.style 			= new styleBuilder(anomaly.style);
 		});
@@ -92,7 +92,7 @@ export function	AnomaliesProps(product, variable) {
 export function VariableProperties(product) {
 	product.variables.forEach( variable => {
 		AnomaliesProps(product, variable);
-		variable.wms 				= new WMSProps(product.name, product.dates, variable.variable, options.wmsURL, product.rt)
+		variable.cog					= new CogProps(product.name, product.dates, variable.variable, options.wmsURL, product.rt)
 		variable.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
 		variable.density 				= new areaDensityOptions()[2];
 
@@ -151,30 +151,11 @@ export function	ProductsProps() {
 		this.info = [];
 	
 }
-export function WMSProps(name, dates, variable, wmsURL=options.wmsURL, rtFlag=false) {
+export function CogProps(name, dates, variable, wmsURL=options.wmsURL, rtFlag=false) {
 	this.current 	= null;
 	this.previous = null;
 	this.next 	= null;
-	this.urls 		= new Set();
 	this.layers 	= {};
-
-	if(!rtFlag)
-		this.layers[-1] = {}
-	else {
-		let rts = consolidationPeriods(rtFlag);
-		rts.forEach(rt => {
-			this.layers[rt.id] = {}
-		});
-	}	
-	Object.keys(dates).forEach(rt => {
-		dates[rt].forEach(date=> {
-			let splitDate	= date.split("-");
-			let url		= wmsURL + name + "/" + splitDate[0] +"/" +splitDate[1];
-			if (variable.length > 0)
-				url += "/" + variable;
-			this.urls.add(url);
-		});
-	});
 }
 
 export function	StratificationProps() {

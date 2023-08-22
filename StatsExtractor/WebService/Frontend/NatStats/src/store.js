@@ -16,20 +16,20 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-dateStart.setDate(dateStart.getDate() - 1200);
+dateStart.setDate(dateStart.getDate() - 200);
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
 function setCurrentCogByDateAndMode(state) {
 	state.previousCog = state.currentCog;
 	let rtFlag = state.categories.current.products.current.rtFlag;
 	if (state.categories.current.products.current.statisticsViewMode == 0)
-		state.currentCog = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+		state.currentCog = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	else
-		state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+		state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	
-	state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+	state.categories.current.products.current.currentVariable.cog.current = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	if (state.categories.current.products.current.currentVariable.currentAnomaly != null)
-		state.categories.current.products.current.currentVariable.currentAnomaly.wms.current =  state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[rtFlag.id][state.categories.current.products.current.currentDate];	
+		state.categories.current.products.current.currentVariable.currentAnomaly.cog.current =  state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];	
 }
 export default{
 	buildStore() {
@@ -48,24 +48,24 @@ export default{
 			},
 			mutations: {
 				appendToProductsAnomaliesCogLayers(state, dt) {
-					state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers = {...state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers, ...dt};
+					state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers = dt;
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null && state.categories.current.products.current.currentVariable.currentAnomaly != null) {
-						state.categories.current.products.current.currentVariable.currentAnomaly.wms.current = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
+						state.categories.current.products.current.currentVariable.currentAnomaly.cog.current = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[date];
 						if(state.categories.current.products.current.statisticsViewMode == 1)
-							state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers[date];
+							state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[date];
 					}
 				},
-				appendToCurrentVariableCogLayers(state, dt) {
-					state.categories.current.products.current.currentVariable.wms.layers = {...state.categories.current.products.current.currentVariable.wms.layers, ...dt};
+				setCurrentVariableCogLayers(state, dt) {
+					state.categories.current.products.current.currentVariable.cog.layers = dt;
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null) {
 						let rtFlag = state.categories.current.products.current.rtFlag;
-						state.categories.current.products.current.currentVariable.wms.current = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][date];
+						state.categories.current.products.current.currentVariable.cog.current = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][date];
 						if(state.categories.current.products.current.statisticsViewMode == 0)
-							state.currentCog = state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id][date];
-						}				
-
+							state.currentCog = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][date];
+						}
+					console.log(state.currentCog);
 				},
 				changeCategory(state, dt) {
 					if (!state.categories.current == null)
@@ -170,7 +170,7 @@ export default{
 				},	
 				setCurrentDate(state, dt) {
 					state.categories.current.products.current.currentDate = dt;
-					state.categories.current.products.current.currentVariable.wms.previous = state.categories.current.products.current.currentVariable.wms.current;
+					state.categories.current.products.current.currentVariable.cog.previous = state.categories.current.products.current.currentVariable.cog.current;
 				},
 				setStratifications(state, dt) {
 					Object.keys(dt).forEach( key => {
@@ -301,7 +301,7 @@ export default{
 				},
 				productAnomalyCogLayers: (state) => {
 					try {
-						return state.categories.current.products.current.currentVariable.currentAnomaly.wms.layers;
+						return state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers;
 					}
 					catch {
 						return null;
@@ -326,7 +326,7 @@ export default{
 				productCogLayers: (state) => {
 					try {
 						let rtFlag = state.categories.current.products.current.rtFlag;
-						return state.categories.current.products.current.currentVariable.wms.layers[rtFlag.id];
+						return state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id];
 					}
 					catch {
 						return null;

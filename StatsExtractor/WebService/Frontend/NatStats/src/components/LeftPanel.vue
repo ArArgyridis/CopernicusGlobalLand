@@ -205,7 +205,7 @@ export default {
 			},
 			set(val){
 				this.$store.commit("setProduct", val);
-				this.$store.commit("currentWMSByDateAndMode");
+				//this.$store.commit("currentCogByDateAndMode");
 				this.$emit("updateView");
 			}
 		},
@@ -215,7 +215,7 @@ export default {
 			},
 			set(val) {
 				this.$store.commit("setVariable", val);
-				this.$store.commit("currentWMSByDateAndMode");
+				//this.$store.commit("currentCogByDateAndMode");
 				this.$emit("updateView");
 			}
 		},
@@ -277,7 +277,7 @@ export default {
 			}
 			,set(val) {
 				this.$store.commit("setCurrentDate", val);
-				this.$store.commit("currentWMSByDateAndMode");
+				this.$store.commit("currentCogByDateAndMode");
 				this.$emit("dateChanged");
 			}
 		},
@@ -336,7 +336,7 @@ export default {
 			}
 			,set(val) {
 				this.$store.commit("setProductStatisticsViewMode", val);
-				this.$store.commit("currentWMSByDateAndMode");
+				this.$store.commit("currentCogByDateAndMode");
 				this.$emit("statisticsViewModeChanged");
 				
 			}

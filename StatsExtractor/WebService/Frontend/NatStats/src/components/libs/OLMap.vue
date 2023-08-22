@@ -33,8 +33,8 @@ import OSM from 'ol/source/OSM';
 import Overlay from 'ol/Overlay';
 import {register} from 'ol/proj/proj4';
 import {LineString, Point, Polygon, MultiPolygon} from 'ol/geom';
-import TileLayer from 'ol/layer/Tile';
-//import TileLayer from 'ol/layer/WebGLTile.js';
+//import TileLayer from 'ol/layer/Tile';
+import TileLayer from 'ol/layer/WebGLTile.js';
 import TileWMS from 'ol/source/TileWMS';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -47,6 +47,7 @@ import {defaults as defaultControls} from 'ol/control';
 import {Fill, Circle, Stroke, Style, Text} from 'ol/style';
 import DoubleClickZoom from "ol/interaction/DoubleClickZoom";
 import {transformExtent} from "ol/proj";
+import MultiGeoTIFF from 'ol/source/GeoTIFF.js';
 
 export default {
 	name: 'OLMap',
@@ -135,7 +136,7 @@ export default {
 				imagerySet: style
 			});
 			if (setMaxZoom) bingSource.maxZoom = 19;
-				return this.createWMSLayer(bingSource, zIndex);
+				return this.createTileLayer(bingSource, zIndex);
 		}
 		,addCustomWMSLayerToMap(params) {
 			if (!params.url) {console.error("Specify WMS url"); return;}
@@ -157,7 +158,7 @@ export default {
 					key: Math.random()
 				});
 				wmsSource.updateParams({seq: (new Date()).getTime()});
-				return this.createWMSLayer(wmsSource, params.extent, params.zIndex);
+				return this.createTileLayer(wmsSource, params.extent, params.zIndex);
 		},
 		addDrawInteraction(params) {
 			if(!params.type) {console.error("Specify geometry type"); return;}
@@ -260,7 +261,7 @@ export default {
 		},
 		addOSMLayerToMap (zIndex = null) {
 			let osmSource = new OSM();
-			return this.createWMSLayer(osmSource, zIndex);
+			return this.createTileLayer(osmSource, zIndex);
 		},
 		addPointToLayer(layerId, featureId, x, y, color) {
 			let ft = new Feature({
@@ -310,6 +311,28 @@ export default {
 			});
 			return this.__addVectorLayerToMap(geojsonSource, zIndex);
 		},
+		createGeoTIFFLayer(url, zIndex = null, extent = null, overviews = null, min = 0, max = 255, noData = 65535, interpolate = false) {
+			let geotiffSource = {
+				url: url,
+				min: min,
+				max:max,
+				noData: noData,
+				interpolate: interpolate
+			}
+			const source = new MultiGeoTIFF({
+				sources: [
+					{
+					url: url,
+					overviews: overviews,
+					interpolate: interpolate,
+					min: min,
+					max: max,
+					nodata: noData
+					},
+				],
+			});
+			return this.createTileLayer(source, extent, zIndex);
+		},
 		createPointLabel(layerId, featureId, color, showLabel) {
 			let tmpFeature = this.layers[layerId].getSource().getFeatureById(featureId);
 		
@@ -319,7 +342,7 @@ export default {
 				tmpFeature.setStyle(this.__newMarkerStyle(color) );
 
 		},
-		createWMSLayer (source, extent = null, zIndex = null) {
+		createTileLayer (source, extent = null, zIndex = null) {
 			let tmpLayer = new TileLayer({source: source, preload: Infinity});
 			if (extent != null)
 				tmpLayer.setExtent(extent);

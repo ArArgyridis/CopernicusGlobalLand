@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
                 wmsFltr->setProduct(product.second, variable.second);
 
                 UCharVectorImageWriter::Pointer writer = UCharVectorImageWriter::New();
-                writer->SetFileName(tmpFile.string());
+                writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=YES");
                 writer->SetInput(wmsFltr->GetOutput());
                 writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
                 writer->Update();
