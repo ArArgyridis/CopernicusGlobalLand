@@ -30,7 +30,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
     GDALAllRegister();
     using UCharImage                = otb::Image<unsigned char, 2>;
     using UCharVectorImage          = otb::VectorImage<unsigned short, 2>;
@@ -69,14 +68,18 @@ int main(int argc, char *argv[]) {
 
 
                 //tmp output file
-                std::vector<std::string> splitPath = split(inFile.string(), "/");
-                splitPath.insert(splitPath.end()-1, variable.second->variable);
-                boost::filesystem::path tmpFile = boost::algorithm::join(splitPath,"/");
+                boost::filesystem::path tmpFile = config->filesystem.tmpPath/filePath;
+                if (variable.second->variable.length() > 0) {
+                    std::vector<std::string> splitPath = split(tmpFile.string(), "/");
+                    splitPath.insert(splitPath.end()-1, variable.second->variable);
+                    tmpFile = boost::algorithm::join(splitPath,"/");
+                    filePath = boost::filesystem::relative(tmpFile, config->filesystem.tmpPath);
+                }
 
                 tmpFile.replace_extension("tif");
                 if(boost::filesystem::exists(tmpFile))
                     boost::filesystem::remove(tmpFile);
-                createDirectoryForFile(tmpFile, variable.second->variable);
+                createDirectoryForFile(tmpFile);
 
                 //tmp cog file
                 boost::filesystem::path tmpCog(tmpFile);
@@ -90,7 +93,8 @@ int main(int argc, char *argv[]) {
                 //check if a file exists
                 if(boost::filesystem::exists(outCog))
                     boost::filesystem::remove(outCog);
-                createDirectoryForFile(outCog, variable.second->variable);
+                createDirectoryForFile(outCog);
+                std::cout << tmpFile << "\n" << tmpCog <<"\n" << outCog <<"\n\n";
 
                 std::cout << "Building COG File for: " << inFile << "\n";
 
