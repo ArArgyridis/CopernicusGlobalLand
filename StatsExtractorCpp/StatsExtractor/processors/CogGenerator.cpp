@@ -106,10 +106,12 @@ int main(int argc, char *argv[]) {
                 wmsFltr->setProduct(product.second, variable.second);
 
                 UCharVectorImageWriter::Pointer writer = UCharVectorImageWriter::New();
-                writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=YES");
+                writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=YES&gdal:co:COMPRESS=LZW");
                 writer->SetInput(wmsFltr->GetOutput());
                 writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
                 writer->Update();
+
+                std::cout << "Transforming to tmp cog\n";
 
                 //transform output file to cog
                 GDALDatasetUniquePtr inData, tmpCogData;
@@ -125,6 +127,7 @@ int main(int argc, char *argv[]) {
                 tmpCogData = nullptr;
                 boost::filesystem::remove(tmpFile);
 
+                std::cout << "Copy to destination\n";
                 //copy file to destination directory
                 boost::filesystem::copy(tmpCog, outCog);
                 //delete tmp file

@@ -327,7 +327,8 @@ export default {
 					interpolate: interpolate,
 					min: min,
 					max: max,
-					nodata: noData
+					nodata: noData,
+					blockSize:65536
 					},
 				],
 			});

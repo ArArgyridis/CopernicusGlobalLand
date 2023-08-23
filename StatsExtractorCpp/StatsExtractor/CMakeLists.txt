@@ -17,7 +17,7 @@ SET (POSTGRES_DIR .)
 
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
-
+find_package(OpenMP)
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -95,7 +95,7 @@ foreach(sourceFile IN LISTS PROCESSORS)
     message("creating: ${fileName}")
     add_executable(${fileName} ${sourceFile})
     target_link_libraries(${fileName} ${PROJECT_NAME} ${PQXX_LIBRARIES} ${OTB_LIBRARIES}
-            ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only)
+            ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only OpenMP::OpenMP_CXX)
 endforeach()
 
 

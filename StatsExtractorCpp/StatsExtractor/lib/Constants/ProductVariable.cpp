@@ -44,7 +44,7 @@ boost::filesystem::path ProductVariable::productAbsPath(boost::filesystem::path 
     boost::filesystem::path retPath;
 
     if(relPath.extension() == ".nc")
-        retPath = std::string("NETCDF:") + (*rootPath/relPath).string() + ":" + variable;
+        retPath = std::string("HDF5:") + (*rootPath/relPath).string() + "://" + variable;
     else
         retPath = *rootPath/relPath;
     return retPath;
