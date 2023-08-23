@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
     using UCharImageReader          = otb::ImageFileReader<UCharImage>;
     using UCharVectorImageWriter    = otb::ImageFileWriter<UCharVectorImage>;
     using WMSCogFilter              = otb::WMSCogFilter<UCharImage, UCharVectorImage>;
+    size_t noData                   = 65535;
 
 
     std::string cfgFile(argv[1]);
@@ -46,6 +47,10 @@ int main(int argc, char *argv[]) {
 
     if (Constants::load(config) != 0)
         return 1;
+
+    //clean up tmp directory before starting
+    if(boost::filesystem::exists(config->filesystem.tmpPath))
+        boost::filesystem::remove_all(config->filesystem.tmpPath);
 
     boost::filesystem::create_directories(config->filesystem.tmpPath);
 
@@ -106,7 +111,7 @@ int main(int argc, char *argv[]) {
                 wmsFltr->setProduct(product.second, variable.second);
 
                 UCharVectorImageWriter::Pointer writer = UCharVectorImageWriter::New();
-                writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=YES&gdal:co:COMPRESS=LZW");
+                writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=YES&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512");
                 writer->SetInput(wmsFltr->GetOutput());
                 writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
                 writer->Update();
