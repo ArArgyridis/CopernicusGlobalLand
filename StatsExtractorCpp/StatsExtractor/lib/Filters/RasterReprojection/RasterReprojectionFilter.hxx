@@ -144,7 +144,7 @@ void RasterReprojectionFilter<TInputImage>::GenerateOutputInformation(){
     //output origin
     PointType2f dstOrigin;
     dstOrigin[0] = dstEnvelope.MinX;
-    dstOrigin[1] = dstEnvelope.MaxX;
+    dstOrigin[1] = dstEnvelope.MaxY;
 
     //computing output size
     typename InputRegionType::SizeType dstSize;
@@ -190,9 +190,9 @@ void RasterReprojectionFilter<TInputImage>::ThreadedGenerateData(const typename 
         tmpPnt[1] = dstPnt.getY();
 
         input->TransformPhysicalPointToIndex(tmpPnt, idx);
-
         inIt.SetIndex(idx);
         outIt.Set(inIt.Get());
+
     }
 }
 

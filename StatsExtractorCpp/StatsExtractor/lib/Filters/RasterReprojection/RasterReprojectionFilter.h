@@ -24,7 +24,7 @@ public:
     using TInputImagePointer        = typename TInputImage::Pointer;
     using InputRegionType           = typename TInputImage::RegionType;
     using OGRTransform              = std::unique_ptr<OGRCoordinateTransformation, void(*)(OGRCoordinateTransformation*)>;
-    using PointType2f               = itk::Point<float, 2>;
+    using PointType2f               = itk::Point<double, 2>;
 
     /** Type macro */
     itkNewMacro(Self);

@@ -47,7 +47,7 @@ import {defaults as defaultControls} from 'ol/control';
 import {Fill, Circle, Stroke, Style, Text} from 'ol/style';
 import DoubleClickZoom from "ol/interaction/DoubleClickZoom";
 import {transformExtent} from "ol/proj";
-import MultiGeoTIFF from 'ol/source/GeoTIFF.js';
+import GeoTIFF from 'ol/source/GeoTIFF.js';
 
 export default {
 	name: 'OLMap',
@@ -311,7 +311,7 @@ export default {
 			return this.__addVectorLayerToMap(geojsonSource, zIndex);
 		},
 		createGeoTIFFLayer(url, zIndex = null, extent = null, overviews = null, min = 0, max = 255, noData = 65535, interpolate = false) {
-			const source = new MultiGeoTIFF({
+			const source = new GeoTIFF({
 				sources: [
 					{
 					url: url,
