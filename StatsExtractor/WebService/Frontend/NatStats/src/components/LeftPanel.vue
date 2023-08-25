@@ -205,7 +205,7 @@ export default {
 			},
 			set(val){
 				this.$store.commit("setProduct", val);
-				//this.$store.commit("currentCogByDateAndMode");
+				this.$store.commit("currentCogByDateAndMode");
 				this.$emit("updateView");
 			}
 		},
@@ -215,7 +215,7 @@ export default {
 			},
 			set(val) {
 				this.$store.commit("setVariable", val);
-				//this.$store.commit("currentCogByDateAndMode");
+				this.$store.commit("currentCogByDateAndMode");
 				this.$emit("updateView");
 			}
 		},

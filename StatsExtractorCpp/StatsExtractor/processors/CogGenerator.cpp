@@ -23,6 +23,7 @@
 
 #include "../lib/Constants/Constants.h"
 #include "../lib/Filters/Visualization/WMSCogFilter.hxx"
+#include "../lib/Filters/RasterReprojection/RasterReprojectionFilter.hxx"
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -32,12 +33,12 @@ int main(int argc, char *argv[]) {
 
     GDALAllRegister();
     using UCharImage                = otb::Image<unsigned char, 2>;
-    using UCharVectorImage          = otb::VectorImage<unsigned short, 2>;
+    using UShortVectorImage         = otb::VectorImage<unsigned short, 2>;
     using UCharImageReader          = otb::ImageFileReader<UCharImage>;
-    using UCharVectorImageWriter    = otb::ImageFileWriter<UCharVectorImage>;
-    using WMSCogFilter              = otb::WMSCogFilter<UCharImage, UCharVectorImage>;
+    using UShortVectorImageWriter   = otb::ImageFileWriter<UShortVectorImage>;
+    using WMSCogFilter              = otb::WMSCogFilter<UCharImage, UShortVectorImage>;
+    using ReprojectionFilter        = otb::RasterReprojectionFilter<UShortVectorImage>;
     size_t noData                   = 65535;
-
 
     std::string cfgFile(argv[1]);
 
@@ -109,10 +110,17 @@ int main(int argc, char *argv[]) {
                 WMSCogFilter::Pointer wmsFltr = WMSCogFilter::New();
                 wmsFltr->SetInput(reader->GetOutput());
                 wmsFltr->setProduct(product.second, variable.second);
+                wmsFltr->UpdateOutputInformation();
 
-                UCharVectorImageWriter::Pointer writer = UCharVectorImageWriter::New();
+                ReprojectionFilter::Pointer reproject = ReprojectionFilter::New();
+                reproject->SetInput(wmsFltr->GetOutput());
+                reproject->SetInputProjection(4326);
+                reproject->SetOutputProjection(3857);
+                reproject->UpdateOutputInformation();
+
+                UShortVectorImageWriter::Pointer writer = UShortVectorImageWriter::New();
                 writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=YES&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512");
-                writer->SetInput(wmsFltr->GetOutput());
+                writer->SetInput(reproject->GetOutput());
                 writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
                 writer->Update();
 

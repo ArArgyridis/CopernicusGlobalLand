@@ -16,17 +16,22 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-dateStart.setDate(dateStart.getDate() - 200);
+dateStart.setDate(dateStart.getDate() - 1200);
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
 function setCurrentCogByDateAndMode(state) {
 	state.previousCog = state.currentCog;
 	let rtFlag = state.categories.current.products.current.rtFlag;
-	if (state.categories.current.products.current.statisticsViewMode == 0)
+	if (state.categories.current.products.current.statisticsViewMode == 0) {
+		if( Object.keys(state.categories.current.products.current.currentVariable.cog.layers).length == 0)
+			return;
 		state.currentCog = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
-	else
+	}
+	else { 
+		if (Object.keys(state.categories.current.products.current.currentVariable. currentAnomalycog.layers).length == 0)
+			return;
 		state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
-	
+	}
 	state.categories.current.products.current.currentVariable.cog.current = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	if (state.categories.current.products.current.currentVariable.currentAnomaly != null)
 		state.categories.current.products.current.currentVariable.currentAnomaly.cog.current =  state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];	
@@ -325,8 +330,7 @@ export default{
 				},
 				productCogLayers: (state) => {
 					try {
-						let rtFlag = state.categories.current.products.current.rtFlag;
-						return state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id];
+						return state.categories.current.products.current.currentVariable.cog.layers;
 					}
 					catch {
 						return null;

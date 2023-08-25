@@ -29,24 +29,6 @@ import VectorLayer from 'ol/layer/Vector';
 
 import {Fill, Stroke, Style, Icon } from 'ol/style';
 
-function noRTWMS(dt, url, data) {
-	data.forEach(lyr => {
-		lyr["url"] = url;
-		dt[-1][lyr.datetime] = lyr;
-	});
-}
-
-function rtWMS(dt, url, data) {
-	data.forEach(lyr => {
-		lyr["url"] = url;
-		//this is the product's RT
-		let rt = lyr.name.substring(lyr.name.length-1, lyr.name.length);
-		let obj = {}
-		obj[lyr.datetime] = lyr;
-		dt[parseInt(rt)] = {...dt[parseInt(rt)], ...obj}
-	});
-}
-
 export default {
 	name: 'MapApp',
 	computed: {
@@ -210,9 +192,8 @@ export default {
 			//no product available or the wms layers have been already fetched
 			if (this.product == null || this.$store.getters.productWMSLayer != null) 
 				return;
-			
+		
 			requests.productCog(this.product.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
-				console.log(data.data.data);
 				if (data.data.data == null)
 					return;
 				let dt = {}
@@ -226,6 +207,8 @@ export default {
 				if(displayFirst)
 					this.updateWMSVisibility();
 			});
+			//need to do the same with the anomalies!!!!
+			
 			
 			
 			
@@ -309,12 +292,13 @@ export default {
 		updateWMSVisibility() {
 			if (this.$store.getters.previousCog != null) 
 				this.$refs.map1.setVisibility(this.$store.getters.previousCog, false);
-
-			if(this.$store.getters.currentCogLayer == null) { //wms layers have not been initialized for current product, so do so
+			
+			console.log(this.$store.getters.productCogLayers);
+			if(this.$store.getters.productCogLayers == null || Object.keys(this.$store.getters.productCogLayers).length == 0) { //wms layers have not been initialized for current product, so do so
 				this.updateWMSLayers(true);
 			
 			}
-				else
+				else if (this.$store.getters.currentCogLayer != null)
 					this.$refs.map1.setVisibility(this.$store.getters.currentCogLayer, this.$store.getters.stratifiedOrRaw == 1);
 		},		
 		updateSelectedPolygon(evt) {

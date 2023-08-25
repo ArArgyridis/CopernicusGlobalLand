@@ -47,6 +47,7 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
     std::fill(noDataValues.begin(), noDataValues.end(), 65535);
 
     otb::WriteNoDataFlags(noDataFlags, noDataValues, this->GetOutput()->GetImageMetadata());
+    this->GetOutput()->SetProjectionRef(this->GetInput()->GetProjectionRef());
 }
 
 template <class TInputImage, class TOutputImage>

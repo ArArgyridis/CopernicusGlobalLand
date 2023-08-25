@@ -33,8 +33,8 @@ import OSM from 'ol/source/OSM';
 import Overlay from 'ol/Overlay';
 import {register} from 'ol/proj/proj4';
 import {LineString, Point, Polygon, MultiPolygon} from 'ol/geom';
-//import TileLayer from 'ol/layer/Tile';
-import TileLayer from 'ol/layer/WebGLTile.js';
+import TileLayer from 'ol/layer/Tile';
+import WebGLTileLayer from 'ol/layer/WebGLTile'; 
 import TileWMS from 'ol/source/TileWMS';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
@@ -105,7 +105,6 @@ export default {
 			let ctrls = this.map.getControls();
 			for (let i = 0; i < ctrls.getLength(); i++)
 				this.map.removeControl(ctrls.getArray()[i]);	
-				
 				
 			let dblClickInteraction;
 			// find DoubleClickZoom interaction
@@ -312,27 +311,18 @@ export default {
 			return this.__addVectorLayerToMap(geojsonSource, zIndex);
 		},
 		createGeoTIFFLayer(url, zIndex = null, extent = null, overviews = null, min = 0, max = 255, noData = 65535, interpolate = false) {
-			let geotiffSource = {
-				url: url,
-				min: min,
-				max:max,
-				noData: noData,
-				interpolate: interpolate
-			}
 			const source = new MultiGeoTIFF({
 				sources: [
 					{
 					url: url,
-					overviews: overviews,
 					interpolate: interpolate,
 					min: min,
 					max: max,
-					nodata: noData,
-					blockSize:65536
+					nodata: noData
 					},
 				],
 			});
-			return this.createTileLayer(source, extent, zIndex);
+			return this.createTileLayer(source, extent, zIndex, WebGLTileLayer);
 		},
 		createPointLabel(layerId, featureId, color, showLabel) {
 			let tmpFeature = this.layers[layerId].getSource().getFeatureById(featureId);
@@ -343,8 +333,9 @@ export default {
 				tmpFeature.setStyle(this.__newMarkerStyle(color) );
 
 		},
-		createTileLayer (source, extent = null, zIndex = null) {
-			let tmpLayer = new TileLayer({source: source, preload: Infinity});
+		createTileLayer (source, extent = null, zIndex = null, tileLayerConstructor=TileLayer) {
+			console.log(tileLayerConstructor);
+			let tmpLayer = new tileLayerConstructor({source: source});
 			if (extent != null)
 				tmpLayer.setExtent(extent);
 			return this.__addGenericLayer(tmpLayer, zIndex);
@@ -597,7 +588,7 @@ export default {
 			let tmpLayer = new VectorTileLayer({
 				source: source,
 				renderMode: "hybrid",
-				declutter: true
+				declutter: false
 			});
 			return this.__addGenericLayer(tmpLayer, zIndex);
 			
