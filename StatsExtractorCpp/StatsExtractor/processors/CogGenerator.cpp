@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
 
                 UCharImageReader::Pointer reader = UCharImageReader::New();
                 reader->SetFileName(inFile.string());
+                reader->UpdateOutputInformation();
 
                 WMSCogFilter::Pointer wmsFltr = WMSCogFilter::New();
                 wmsFltr->SetInput(reader->GetOutput());
