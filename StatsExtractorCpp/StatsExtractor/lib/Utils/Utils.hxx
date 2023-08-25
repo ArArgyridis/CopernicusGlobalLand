@@ -23,12 +23,14 @@
 #include <memory>
 #include <ogr_core.h>
 #include <ogr_feature.h>
-#include<ogr_geometry.h>
+#include <ogr_geometry.h>
+#include <otbGdalDataTypeBridge.h>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <set>
 
 #include "ColorInterpolation.h"
+#include "itkVariableLengthVector.h"
 
 
 using MetadataDict      = std::map<std::string, std::string>;
@@ -120,5 +122,54 @@ std::string jsonToString(JSONType& json, size_t decimalPlaces=2) {
 
 std::string stringstreamToString(std::stringstream &stream);
 std::vector<RGBVal> styleColorParser(std::string& style);
+
+template <class TImage>
+GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image) {
+    std::stringstream stream;
+    size_t nBands = image->GetNumberOfComponentsPerPixel();
+    typename TImage::RegionType bufferedRegion = image->GetBufferedRegion();
+    typename TImage::PointType origin = image->GetOrigin();
+    typename TImage::SpacingType spacing = image->GetSignedSpacing();
+    typename TImage::RegionType::IndexType originIdx = bufferedRegion.GetIndex();
+
+    stream << "MEM:::"
+           << "DATAPOINTER=" << (uintptr_t)(image->GetBufferPointer()) << ","
+           << "PIXELS=" << bufferedRegion.GetSize()[0] << ","
+           << "LINES=" << bufferedRegion.GetSize()[1] << ","
+           << "BANDS=" << nBands << ","
+           << "DATATYPE=" << GDALGetDataTypeName(otb::GdalDataTypeBridge::GetGDALDataType<typename TImage::InternalPixelType>()) << ","
+           << "PIXELOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands << ","
+           << "LINEOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands * bufferedRegion.GetSize()[0] << ","
+           << "BANDOFFSET=" << sizeof(typename TImage::InternalPixelType);
+
+    GDALDatasetUniquePtr memRasterDataset;
+    memRasterDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(stream.str().c_str(), GA_Update )));
+
+    //projection
+    memRasterDataset->SetProjection(image->GetProjectionRef().c_str());
+
+    //geoTransform
+    itk::VariableLengthVector<double> geoTransform(6);
+    geoTransform.Fill(0); //rotation parameters ignored
+    geoTransform[0] = origin[0] + originIdx[0]*spacing[0];
+    geoTransform[3] = origin[1] + originIdx[1]*spacing[1];
+    geoTransform[1] = spacing[0];
+    geoTransform[5] = spacing[1];
+
+    memRasterDataset->SetGeoTransform(const_cast<double*>(geoTransform.GetDataPointer()));
+
+    return std::move(memRasterDataset);
+}
+
+
+
+
+
+
+
+
+
+
+
 
 #endif // UTILS_HXX

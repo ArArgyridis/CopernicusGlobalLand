@@ -1,6 +1,7 @@
 #ifndef RASTERREPROJECTFILTER_H
 #define RASTERREPROJECTFILTER_H
 
+#include <gdalwarper.h>
 #include <itkImageToImageFilter.h>
 #include <itkImageRegionConstIterator.h>
 #include <itkImageRegionIterator.h>
@@ -24,6 +25,7 @@ public:
     using TInputImagePointer        = typename TInputImage::Pointer;
     using InputRegionType           = typename TInputImage::RegionType;
     using OGRTransform              = std::unique_ptr<OGRCoordinateTransformation, void(*)(OGRCoordinateTransformation*)>;
+    using GDALWarpOptionsPtr        = std::unique_ptr<GDALWarpOptions, void(*)(GDALWarpOptions*)>;
     using PointType2f               = itk::Point<double, 2>;
 
     /** Type macro */
@@ -45,7 +47,7 @@ protected:
     void GenerateInputRequestedRegion() override;
     void GenerateOutputInformation() override;
 
-    virtual void ThreadedGenerateData(const typename Superclass::OutputImageRegionType& outputRegionForThread, itk::ThreadIdType threadId) override;
+    virtual void ThreadedGenerateData(const typename Superclass::OutputImageRegionType& outputRegionForThread, itk::ThreadIdType threadId) override{};
 
     /** overiding to avoid bound checking **/
     virtual void VerifyInputInformation() override{}

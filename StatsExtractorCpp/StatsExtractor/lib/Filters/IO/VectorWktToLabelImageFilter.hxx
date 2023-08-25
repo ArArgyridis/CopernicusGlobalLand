@@ -82,12 +82,7 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
 
 
     GDALDatasetUniquePtr memRasterDataset;
-    memRasterDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( stream.str().c_str(), GA_Update )));;
-    //memRasterDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(stream.str().c_str(), GA_Update)));
-    /*
-    if (memRasterDataset->get() == nullptr)
-        return;
-*/
+    memRasterDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( stream.str().c_str(), GA_Update )));
 
     //projection
     memRasterDataset->SetProjection(m_OutputProjectionRef.c_str());

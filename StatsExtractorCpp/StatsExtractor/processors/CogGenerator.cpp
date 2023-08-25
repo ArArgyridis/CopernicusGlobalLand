@@ -153,6 +153,7 @@ int main(int argc, char *argv[]) {
                 VALUES({0},{1},'{2}') ON CONFLICT(product_file_id,product_file_variable_id) DO UPDATE SET rel_file_path=EXCLUDED.rel_file_path;
                 )""", res[rowId][0].as<size_t>(), variable.second->id, (boost::filesystem::relative(outCog, config->filesystem.mapserverPath)).string());
                 cn->executeQuery(updateQuery);
+
             }
         }
     return 0;
