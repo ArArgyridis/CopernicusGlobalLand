@@ -16,7 +16,7 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-dateStart.setDate(dateStart.getDate() - 1200);
+dateStart.setDate(dateStart.getDate() - 200);
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
 function setCurrentCogByDateAndMode(state) {
