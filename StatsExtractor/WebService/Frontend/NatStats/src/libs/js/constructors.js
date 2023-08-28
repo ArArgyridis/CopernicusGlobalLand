@@ -1,5 +1,6 @@
 import options from "./options.js";
 import utils from "./utils.js";
+import requests from "./requests.js";
 
 export function	areaDensityOptions() {
 		return [
@@ -72,7 +73,7 @@ export function	stratificationViewProps(colorCol) {
 		this.viewMode = 0;
 		this.colorCol = colorCol;
 	}
-export function	AnomaliesProps(product, variable) {
+export function	AnomaliesProps(product, variable, dateStart, dateEnd) {
 		variable.previousAnomaly = null;
 		variable.nextAnomaly = null;
 		
@@ -84,15 +85,15 @@ export function	AnomaliesProps(product, variable) {
 		variable.currentAnomaly = variable.anomaly_info[0];
 		variable.anomaly_info.forEach( anomaly => {
 			anomaly.valueRanges 	= [anomaly.min_value, anomaly.low_value, anomaly.mid_value, anomaly.high_value, anomaly.max_value];
-			anomaly.cog 			= new CogProps(anomaly.name, product.dates, anomaly.variable, options.anomaliesWMSURL);
+			anomaly.cog 			= new CogProps(anomaly, variable, dateStart, dateEnd);
 			anomaly.stratificationInfo 	= new stratificationViewProps("meanval_color");
 			anomaly.style 			= new styleBuilder(anomaly.style);
 		});
 	}
-export function VariableProperties(product) {
+export function VariableProperties(product, dateStart, dateEnd) {
 	product.variables.forEach( variable => {
-		AnomaliesProps(product, variable);
-		variable.cog					= new CogProps(product.name, product.dates, variable.variable, options.wmsURL, product.rt)
+		AnomaliesProps(product, variable, dateStart, dateEnd);
+		variable.cog					= new CogProps(product, variable, dateStart, dateEnd)
 		variable.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
 		variable.density 				= new areaDensityOptions()[2];
 
@@ -125,7 +126,7 @@ export function	styleBuilder(style) {
 		}
 		return colorsArr; 
 	}
-export function	ProductViewProperties(product) {
+export function	ProductViewProperties(product, dateStart, dateEnd) {
 	product.statisticsViewMode 			= 0;
 	product.previousStatisticsViewMode 	= null;
 	let tmpPeriods = new consolidationPeriods(product.rt);
@@ -140,7 +141,7 @@ export function	ProductViewProperties(product) {
 		}
 	}
 	product.previousRtFlag				= null;
-	VariableProperties(product);
+	VariableProperties(product, dateStart, dateEnd);
 	product.currentVariable				= product.variables[0];
 	product.currentDate 					= product.dates[product.rtFlag.id][0];
 }
@@ -151,12 +152,18 @@ export function	ProductsProps() {
 		this.info = [];
 	
 }
-export function CogProps(name, dates, variable, wmsURL=options.wmsURL, rtFlag=false) {
+export function CogProps(product, variable, dateStart, dateEnd) {
 	this.current 	= null;
 	this.previous = null;
 	this.next 	= null;
 	this.layers 	= {};
+	console.log("heree");
+	//requests.productCog(product.id, variable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd)
 }
+
+
+
+
 
 export function	StratificationProps() {
 	this.current = null;
@@ -166,8 +173,8 @@ export function	StratificationProps() {
 	this.clickedCoordinates = null;
 }
 
-export function initProduct(product) {
+export function initProduct(product, dateStart, dateEnd) {
 	if (product.currentVariable == null) 
-		ProductViewProperties(product);
+		ProductViewProperties(product, dateStart, dateEnd);
 }
 

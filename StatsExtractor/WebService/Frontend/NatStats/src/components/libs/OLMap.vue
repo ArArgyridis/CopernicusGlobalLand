@@ -334,7 +334,6 @@ export default {
 
 		},
 		createTileLayer (source, extent = null, zIndex = null, tileLayerConstructor=TileLayer) {
-			console.log(tileLayerConstructor);
 			let tmpLayer = new tileLayerConstructor({source: source});
 			if (extent != null)
 				tmpLayer.setExtent(extent);

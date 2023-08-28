@@ -24,5 +24,8 @@ export default {
 	valueToHex(c) {
 		let hex = c.toString(16);
 		return hex.length == 1 ? "0" + hex : hex;
+	},
+	subtractYears(date, years) {
+		date.setFullYear(date.getFullYear() - years);
 	}
 } 

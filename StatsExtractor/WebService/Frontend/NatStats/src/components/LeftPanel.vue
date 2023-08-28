@@ -163,7 +163,6 @@ export default {
 				if (period.id in this.product.dates)
 					retPeriods.push(period);
 			});
-		
 			return retPeriods;
 		},
 		currentStatisticsViewMode() {

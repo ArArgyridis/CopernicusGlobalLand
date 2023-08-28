@@ -16,7 +16,8 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-dateStart.setDate(dateStart.getDate() - 200);
+utils.subtractYears(dateStart, 2);
+
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
 function setCurrentCogByDateAndMode(state) {
@@ -70,7 +71,6 @@ export default{
 						if(state.categories.current.products.current.statisticsViewMode == 0)
 							state.currentCog = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][date];
 						}
-					console.log(state.currentCog);
 				},
 				changeCategory(state, dt) {
 					if (!state.categories.current == null)
@@ -112,7 +112,7 @@ export default{
 						return;
 				
 					dt.forEach(prod => {
-						initProduct(prod);
+						initProduct(prod, state.dateStart, state.dateEnd);
 					});
 			
 					state.categories.current.products.info = dt;
