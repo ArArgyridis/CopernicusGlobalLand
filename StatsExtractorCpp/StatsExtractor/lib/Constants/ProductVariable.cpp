@@ -12,7 +12,6 @@ firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), 
     description     = params["description"].GetString();
     histogramBins   = params["histogram_bins"].GetInt64();
 
-
     valueRange.low  = params["low_value"].GetDouble();
     valueRange.mid  = params["mid_value"].GetDouble();
     valueRange.high = params["high_value"].GetDouble();

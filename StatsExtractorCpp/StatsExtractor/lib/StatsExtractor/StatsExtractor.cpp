@@ -71,9 +71,9 @@ void StatsExtractor::process() {
                     JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
                     JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 63 --AND pf.id = 867 --AND pf.id = 1 --AND p.id = 1 AND sg.id = 45
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
-                    WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.id IS NULL
+                    WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
                 ),extent AS(
-                    SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids
+                    SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids, min(a.geomid)  mingmid, max(a.geomid) maxgmid
                     FROM (SELECT distinct geomid FROM info) a
                     JOIN stratification_geom sg ON a.geomid = sg.id
                 ),images AS( -- partition images into groups each having 5 images
@@ -85,19 +85,26 @@ void StatsExtractor::process() {
                             FROM(
                                 SELECT DISTINCT image --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
                                 FROM info
-                                --LIMIT 1
+                                LIMIT 1
                             )a
                         )b
                         GROUP BY grpid
                     )c
                 )
-                SELECT images, geomids, st_xmin(extg), st_ymin(extg), st_xmax(extg), st_ymax(extg), Find_SRID('public', 'stratification_geom', 'geom')
+                SELECT images, geomids, st_xmin(extg), st_ymin(extg), st_xmax(extg), st_ymax(extg), Find_SRID('public', 'stratification_geom', 'geom'),
+                mingmid, maxgmid+1
                 FROM extent
                 JOIN images ON TRUE)"""", stratification, std::to_string(variable.second->id));
             //std::cout << query <<"\n";
 
             PGPool::PGConn::Pointer cn          = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
             PGPool::PGConn::PGRes processInfo   = cn->fetchQueryResult(query, "product info");
+
+            //Creating stats partition table if not exist
+            query = fmt::format(R"""(CREATE TABLE IF NOT EXISTS poly_stats_{0}_{1}_{2} PARTITION OF poly_stats FOR VALUES FROM ({0},{1}) TO ({0},{2});)""",
+                                variable.second->id, processInfo[0][7].as<size_t>(), processInfo[0][8].as<size_t>());
+            std::cout << query  << "\n";
+            cn->executeQuery(query);
 
             if (processInfo.empty() || processInfo[0][0].is_null() || processInfo[0][1].is_null()) //no data at all, or no polygons, or no images
                 continue;

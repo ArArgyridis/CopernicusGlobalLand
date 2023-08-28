@@ -62,11 +62,11 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     cn->executeQuery(query);
 
-    query = R""""(SELECT id, poly_id, product_file_id, product_file_variable_id,
+    query = R""""(SELECT poly_id, product_file_id, product_file_variable_id,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,
-            CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,
+             CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,
              mean
              FROM poly_stats ps WHERE noval_color IS NULL;)"""";
 
@@ -74,18 +74,18 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     std::stringstream data;
 
     for (auto row: res) {
-        data <<"(" << row[0] <<",";
+        data <<"(" << row[0] <<"," << row[1] <<"," << row[2] <<",";
         for (size_t i = 0; i< variable->colorInterpolation.size(); i++) {
-            RGBVal color = variable->colorInterpolation[i].interpolateColor(row[i+4].as<long double>());
+            RGBVal color = variable->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
             data << "'" << rgbToArrayString(color) << "',";
         }
 
-        if (row[8].is_null()) {
+        if (row.back().is_null()) {
             data <<"null),";
             continue;
         }
 
-        float dt =row[8].as<float>();
+        float dt =row.back().as<float>();
         RGBVal meanColor = variable->styleColors[variable->reverseValue(dt)];
         //std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
         data <<"'" << rgbToArrayString(meanColor) <<"'),";
@@ -98,11 +98,11 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
 
     std::cout <<"Updating colors....\n";
 
-    query = "WITH tmp (id, noval_color, sparseval_color, midval_color, highval_color, meanval_color) AS (VALUES " + stringstreamToString(data)+ ")"
+    query = "WITH tmp (poly_id, product_file_id, product_file_variable_id, noval_color, sparseval_color, midval_color, highval_color, meanval_color) AS (VALUES " + stringstreamToString(data)+ ")"
     "UPDATE poly_stats SET noval_color = tmp.noval_color, sparseval_color=tmp.sparseval_color, midval_color=tmp.midval_color, highval_color=tmp.highval_color"
     ", meanval_color = tmp.meanval_color "
     "FROM tmp "
-    "WHERE poly_stats.id = tmp.id";
+    "WHERE poly_stats.poly_id = tmp.poly_id AND poly_stats.product_file_id = tmp.product_file_id AND poly_stats.product_file_variable_id = tmp.product_file_variable_id";
 
     cn->executeQuery(query);
 }
