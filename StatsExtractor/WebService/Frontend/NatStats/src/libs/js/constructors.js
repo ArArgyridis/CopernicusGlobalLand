@@ -87,7 +87,7 @@ export function	AnomaliesProps(product, variable, dateStart, dateEnd) {
 			anomaly.valueRanges 	= [anomaly.min_value, anomaly.low_value, anomaly.mid_value, anomaly.high_value, anomaly.max_value];
 			anomaly.cog 			= new CogProps(anomaly, variable, dateStart, dateEnd);
 			anomaly.stratificationInfo 	= new stratificationViewProps("meanval_color");
-			anomaly.style 			= new styleBuilder(anomaly.style);
+			anomaly.style 			= new styleBuilder(anomaly.style, anomaly.max_prod_value);
 		});
 	}
 export function VariableProperties(product, dateStart, dateEnd) {
@@ -98,30 +98,30 @@ export function VariableProperties(product, dateStart, dateEnd) {
 		variable.density 				= new areaDensityOptions()[2];
 
 		variable.density.description 	= utils.computeDensityDescription(variable.density.description, variable.valueRanges[2], variable.valueRanges[3]);
-		variable.style 				= new styleBuilder(variable.style);
+		variable.style 				= new styleBuilder(variable.style, variable.max_prod_value);
 		variable.stratificationInfo 		= new stratificationViewProps("meanval_color");
 	});
 }
 
-export function	styleBuilder(style) {
+export function	styleBuilder(style, maxValue) {
 		let parser = new DOMParser();
 		let xmlDoc = parser.parseFromString(style, "text/xml");
 		let colors = xmlDoc.getElementsByTagName("sld:ColorMapEntry");
 		let colorsArr = [];
-		if (colors.length < 10) {
-			for (let i = 0; i < colors.length; i++) {
+		if (maxValue < 10) {
+			for (let i = 0; i <= maxValue; i++) {
 				let tmp = colors[i];
 				colorsArr.push(tmp.getAttribute("color"));
 			}
 		}
 		else {
-			let step = Math.floor((colors.length-3)/4);
+			let step = Math.floor((maxValue-3)/4);
 			colorsArr = [
 				colors[0].getAttribute("color"),
 				colors[step].getAttribute("color"),
 				colors[2*step].getAttribute("color"),
 				colors[3*step].getAttribute("color"),
-				colors[colors.length-1].getAttribute("color")
+				colors[maxValue-1].getAttribute("color")
 			];
 		}
 		return colorsArr; 
@@ -157,10 +157,7 @@ export function CogProps(product, variable, dateStart, dateEnd) {
 	this.previous = null;
 	this.next 	= null;
 	this.layers 	= {};
-	console.log("heree");
-	//requests.productCog(product.id, variable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd)
 }
-
 
 
 
