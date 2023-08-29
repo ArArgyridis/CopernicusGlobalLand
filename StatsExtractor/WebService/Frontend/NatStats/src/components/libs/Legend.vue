@@ -1,6 +1,6 @@
 
  <template>
- <div class="container" v-if="settings != null">
+ <div class="container legendBackground" v-if="settings != null">
 	<div class="row">
 		<div class="col-1 empty"></div>
 		<div class="col d-inline-flex justify-content-center"><span>{{settings.title}}</span></div>
@@ -73,7 +73,7 @@
 			let anomaly = this.$store.getters.currentAnomaly;
 			if (anomaly == null)
 				return;
-			settings.title = "Value Range for Anomaly Algorithm: " + anomaly.description;
+			settings.title = anomaly.description;
 			let ret = this.__computeLegendValuesAndStyle(anomaly.valueRanges, anomaly.style);
 			settings.values = ret.values;
 			settings.values[0] += " (-)";
@@ -97,7 +97,7 @@
 		},
 		__computeRawLegend() {
 			let settings = new __legendSettings();
-			settings.title = "Value Range for Product: " + this.product.description;
+			settings.title =  this.product.description;
 			if (this.product.variables.length > 1)
 				settings.title += " (Variable: " + this.product.currentVariable.variable + ")";
 			let tmp = this.__computeLegendValuesAndStyle(this.product.currentVariable.valueRanges, this.product.currentVariable.style);
@@ -131,6 +131,11 @@
  
  <style scoped>
 
+ .legendBackground {
+	background-color: #EEEEEE;
+	border-radius:10px; 
+	box-shadow: 0px 1px 12px rgba(0, 0, 0, 0.5);
+ }
 
 .legendColor {}
 .scaleBarLetters {

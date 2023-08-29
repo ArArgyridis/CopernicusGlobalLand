@@ -13,10 +13,11 @@
 --->
 <template>
 <div class="base">
-	<div>
-		<div class="row mb-2">
-			<div class="mt-2"><h5>Copernicus Global Land Monitoring Service Product Categories</h5></div>
-			<!--<div class="text-end raise" ><div class="btn" v-on:click="closeLeftPanel"><a>x</a></div></div>-->
+	<div class="container vh-100">
+		<div class="row mb-2 panelHeader align-items-center">
+			<div class="col mt-2"><span class="align-middle"><h5>NatStats</h5></span>
+				<span>An Anomalies and Statistics Analysis Tool for Copernicus GLMS</span>
+			</div>		
 		</div>
 		<div class="row nav nav-tabs mt-3 mb-3">
 			<button v-for="nav in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActiveCategory(nav)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
@@ -108,21 +109,22 @@
 					</div>
 				</div>
 			</div>
-			<Legend class="mt-3" ref="legend" v-bind:mode="legendMode"/>
-			
+
 			<div>
 				<div class="m-3 border border-2 rounded">
 					<div class="container mt-3">
-						<h5>Analysis Date Range</h5>
-						<div class="row">
-							<div class ="col text-end my-auto">Starting Date:</div>
-							<div class ="col text-start"><Datepicker v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
+						<h5>Time Range</h5>
+						<div class=row>
+							<div class="col">
+								From
+							</div>
+							<div class="col">
+								To
+							</div>
 						</div>
-					</div>
-					<div class="container mb-3">
-						<div class="row">
-							<div class ="col text-end my-auto">Ending Date:</div>
-							<div class ="col text-start"><Datepicker class="form-text" v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
+						<div class="row mb-3">
+							<div class ="col text-justify"><Datepicker v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
+							<div class ="col text-justify"><Datepicker class="form-text" v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
 						</div>
 					</div>
 				</div>
@@ -456,6 +458,10 @@ h3 {
 	visibility:hidden;
 }
 
+.panelHeader{
+	height: 10vh;
+	background-color: rgba(172, 184, 38, 0.6);
+}
 
 
 </style>

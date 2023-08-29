@@ -3,7 +3,7 @@ import utils from "./utils.js";
 import requests from "./requests.js";
 
 export function	areaDensityOptions() {
-		return [
+	return [
 		{
 			id: 0,
 			col: "noval_area_ha",
@@ -32,8 +32,8 @@ export function	areaDensityOptions() {
 			color_col: "highval_color",
 			palette_col:"highval_colors"
 		}
-		];
-	}
+	];
+}
 
 export function consolidationPeriods(hasRT) {
 	if (!hasRT){
@@ -63,16 +63,17 @@ export function consolidationPeriods(hasRT) {
 	
 }
 	
-	
 export function	Categories() {
 		this.info= null;
 		this.current = null;
 		this.previous = null;
-	}
+}
+
 export function	stratificationViewProps(colorCol) {
 		this.viewMode = 0;
 		this.colorCol = colorCol;
-	}
+}
+
 export function	AnomaliesProps(product, variable, dateStart, dateEnd) {
 		variable.previousAnomaly = null;
 		variable.nextAnomaly = null;
@@ -89,7 +90,8 @@ export function	AnomaliesProps(product, variable, dateStart, dateEnd) {
 			anomaly.stratificationInfo 	= new stratificationViewProps("meanval_color");
 			anomaly.style 			= new styleBuilder(anomaly.style, anomaly.max_prod_value);
 		});
-	}
+}
+
 export function VariableProperties(product, dateStart, dateEnd) {
 	product.variables.forEach( variable => {
 		AnomaliesProps(product, variable, dateStart, dateEnd);
@@ -125,7 +127,8 @@ export function	styleBuilder(style, maxValue) {
 			];
 		}
 		return colorsArr; 
-	}
+}
+
 export function	ProductViewProperties(product, dateStart, dateEnd) {
 	product.statisticsViewMode 			= 0;
 	product.previousStatisticsViewMode 	= null;
@@ -158,9 +161,6 @@ export function CogProps(product, variable, dateStart, dateEnd) {
 	this.next 	= null;
 	this.layers 	= {};
 }
-
-
-
 
 export function	StratificationProps() {
 	this.current = null;

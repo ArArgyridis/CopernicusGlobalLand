@@ -30,10 +30,13 @@
 		</div>
 		<div class="noPadding">
 			<div id="mapView">
+				
 				<MapApp ref="mapApp"
 					v-on:featureClicked="refreshStratificationInfo()"
 					v-on:mapCoordinate="updateRawDataChart($event)"
 				/>
+				<Legend class="d-fleg relative legend" ref="legend" v-bind:mode="legendMode"/>
+
 				<div class="d-flex logo relative"><img alt="Copernicus LMS" src="/assets/copernicus_land_monitoring.png"></div>
 			</div>
 			<div class="d-flex">
@@ -65,6 +68,7 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { faUserSecret, faEye, faBars } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import requests from "../libs/js/requests.js";
+import Legend from "./libs/Legend.vue";
 
 library.add(faUserSecret)
 library.add(faEye);
@@ -77,7 +81,8 @@ export default {
 		LeftPanel,
 		FontAwesomeIcon,
 		RightPanel,
-		Dashboard
+		Dashboard,
+		Legend
 	},
 	computed: {
 		clickedCoordinates: {
@@ -112,7 +117,27 @@ export default {
 				this.$store.commit("leftPanelVisibility", dt);
 			}
 			
-		}
+		},
+		legendMode() {
+			let mode = null;
+			if (this.$store.getters.productStatisticsViewMode == 0) {
+				if (this.$store.getters.stratifiedOrRaw == 0) {
+					if (this.$store.getters.stratificationViewOptions.viewMode == 0) 
+						mode = "Raw"
+					
+					else if (this.$store.getters.stratificationViewOptions.viewMode == 1) 
+						mode = "Density";
+				}
+				else if (this.$store.getters.stratifiedOrRaw == 1) {
+					mode = "Raw"
+				}
+			}
+			else if (this.$store.getters.productStatisticsViewMode == 1) {
+				mode = "Anomalies";
+			}
+			return mode;
+			
+			}
 	},
 	data() {
 		return {
@@ -299,5 +324,21 @@ export default {
 	transition:0.5s;
 }
 
+.legend{
+	width: 500px;
+	height: 100px;
+	position: fixed;
+	justify-content:end;
+	top:2%;
+	right:1vh;
+
+}
+.legendColor {
+	background-image: linear-gradient(to right, #F7FCF5 0%, #C9EAC2 25%, #7BC77C 50%, #2A924B 75%, #00441B 100%);
+}
+.legendColor:empty::after{
+	content: ".";
+	visibility:hidden;
+}
 
 </style>
