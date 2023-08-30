@@ -204,7 +204,6 @@ export default {
 							layerId: null, 
 							url: options.s3CogURL + data.data.data[rt][date]
 						}
-						//this.$refs.map1.createGeoTIFFLayer( options.s3CogURL + data.data.data[rt][date], this.productVariableZIndex);
 					});
 				});
 				this.$store.commit("setCurrentVariableCogLayers", dt);
@@ -213,63 +212,6 @@ export default {
 			});
 
 			//need to do the same with the anomalies!!!!
-			
-			
-			
-			
-			
-			
-			/*
-			
-			
-			
-			
-			
-			let dt = {};
-			let processWMS;
-			if (!this.product.rt) {
-				dt[-1] = {}
-				processWMS = noRTWMS;
-			}
-			else {
-				let consPers = consolidationPeriods(this.product.rt);
-				consPers.forEach(period => {
-					dt[period.id] = {}
-					processWMS = rtWMS;
-				});
-				
-			}
-			
-			
-			this.$store.getters.product.currentVariable.wms.urls.forEach( url => {
-				this.$refs.map1.getAvailableWMSLayers(url, this.productVariableZIndex).then((data) => {
-					processWMS(dt, url, data);
-				
-				this.$store.commit("appendToCurrentVariableWMSLayers",dt);
-				if(displayFirst)
-					this.updateWMSVisibility();
-					
-				}).catch(error => {
-					console.log(error);
-				});
-			});
-			
-			if(this.$store.getters.product.currentVariable.currentAnomaly == null)
-				return;
-			
-			this.$store.getters.product.currentVariable.currentAnomaly.wms.urls.forEach(url => {
-				this.$refs.map1.getAvailableWMSLayers(url, this.anomaliesZIndex).then((data) => {
-					let dt = {};
-					data.forEach(lyr => {
-						lyr["url"] = url;
-						dt[lyr.datetime] = lyr;
-					});
-					this.$store.commit("appendToProductsAnomaliesWMSLayers", dt);
-				}).catch(error => {
-					console.log(error);
-				});
-			});
-			*/
 		},
 		toggleClickOnMap() {
 			this.$refs.map1.toggleGetMapCoordinates();
@@ -367,8 +309,7 @@ export default {
 						let rec = response.data.data[idx];
 						let id = rec.id;
 						Object.keys(styles).forEach(colorCol => {
-							let color = rec[colorCol];
-							styles[colorCol][id] = new Style();
+							let color = rec[colorCol];							
 							if (color != null) {
 								let joinedColor = color.join();
 								styles[colorCol][id] = new Style({
@@ -381,10 +322,10 @@ export default {
 									})
 								});
 							}
+							else
+								styles[colorCol][id] = new Style();
 						});
 					}
-				
-
 					this.setStratificationStyle();
 				});
 			} 

@@ -9,8 +9,10 @@
 	<div class="row">
 		<div class="col-1 empty"></div>
 		<div class="col d-inline-flex  justify-content-start scaleBarLetters">{{settings.values[0]}}</div>
-		<div class="col scaleBarLetters">{{settings.values[1]}}</div>
-		<div class="col d-inline-flex justify-content-end scaleBarLetters">{{settings.values[2]}}</div>
+		<div class="col d-inline-flex  justify-content-start scaleBarLetters">{{settings.values[1]}}</div>
+		<div class="col scaleBarLetters">{{settings.values[2]}}</div>
+		<div class="col d-inline-flex  justify-content-end scaleBarLetters">{{settings.values[3]}}</div>
+		<div class="col d-inline-flex justify-content-end scaleBarLetters">{{settings.values[4]}}</div>
 		<div class="col-1 empty"></div>
 	</div>
 	<div class=" row">
@@ -26,7 +28,7 @@
  let styleStr = "linear-gradient(to right, ";
  function __legendSettings() {
 	this.title = "Undefined";
-	this.values =["0%", "50%", "100%"];
+	this.values =["0%", "25%", "50%", "75%", "100%"];
 	this.style = styleStr;
 }
 
@@ -112,7 +114,9 @@
 			};
 			ret.values = [
 				valueRange[0],
+				Math.round((valueRange[0]+valueRange[valueRange.length-1])/4*100)/100,
 				Math.round((valueRange[0]+valueRange[valueRange.length-1])/2*100)/100,
+				Math.round((valueRange[0]+valueRange[valueRange.length-1])/4*300)/100,
 				valueRange[valueRange.length-1]
 			];
 			

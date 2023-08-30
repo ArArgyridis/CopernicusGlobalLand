@@ -53,7 +53,7 @@
 			
 			<div  class="mt-3"><!--STRATIFICATION -->
 				<div class="row">
-					<div class="col-3 d-flex justify-content-end my-auto">Stratification:</div>
+					<div class="col-3 d-flex justify-content-end my-auto">Thematic Layer:</div>
 					<div class="col d-flex justify-content-start">
 						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
 						<ul id="stratificationDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
