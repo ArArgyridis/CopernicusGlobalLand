@@ -105,7 +105,7 @@
 		
 			<div class="accordion-item" id="acc4">
 				<h2 class="accordion-header" id="headingTwenty2">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptions2" aria-expanded="true" aria-controls="collapseViewOptions2"> <b>Data Values:&nbsp;</b>{{viewModeTitle}} </button>
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptions2" aria-expanded="true" aria-controls="collapseViewOptions2"> <b>Data Values Selection:&nbsp;</b>{{viewModeTitle}} </button>
 				</h2>
 				
 				<div id="collapseViewOptions2" class="accordion-collapse collapse overflow-auto" aria-labelledby="headingTwenty2" data-bs-parent="#viewOptions">
@@ -136,7 +136,7 @@
 			</div>
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="headingTwentyOne">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptionsOne" aria-expanded="false" aria-controls="collapseViewOptionsOne"> <b>Selected Statistics: &nbsp;</b> {{statisticsViewMode[statisticsViewSelectedMode]}} </button>
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptionsOne" aria-expanded="false" aria-controls="collapseViewOptionsOne"> <b>Analysis Mode: &nbsp;</b> {{statisticsViewMode[statisticsViewSelectedMode]}} </button>
 				</h2>
 				<div id="collapseViewOptionsOne" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
 					<div class="accordion-body">
