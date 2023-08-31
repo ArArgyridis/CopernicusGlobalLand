@@ -28,19 +28,19 @@
 				<h5>Time Range for Timeseries Analysis</h5>
 				<div class=row>
 					<div class="col">From Date</div>
-					<div class="col">Currently displayed</div>
 					<div class="col">To Date</div>
+					<div class="col">Currently Displayed</div>
 				</div>
 					
 				<div class="row mb-3">
 					<div class ="col d-flex text-justify"><Datepicker class="dp__theme_dark" v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false" v-bind:clearable="false" dark/></div>
+					<div class ="col d-flex text-justify"><Datepicker v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false" class="dp__theme_dark"  dark v-bind:clearable="false"/></div>
 					<div class="col d-flex justify-content-center">
 					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ new Date(currentDate).toDateString().substring(3,15) }} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
 						<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{new Date(date).toDateString().substring(3,15)}}</a></li>
 					</ul>
 				</div>
-					<div class ="col d-flex text-justify"><Datepicker v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false" class="dp__theme_dark"  dark v-bind:clearable="false"/></div>
 				</div>
 			</div>
 		</div>
