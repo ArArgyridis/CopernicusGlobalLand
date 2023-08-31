@@ -385,6 +385,8 @@ export default{
 					return state.stratifiedOrRaw;
 				},
 				variable: (state) => {
+					if (state.categories.current == null)
+						return null;
 					return state.categories.current.products.current.currentVariable;
 				}
 			}

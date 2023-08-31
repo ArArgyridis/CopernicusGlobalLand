@@ -39,7 +39,7 @@ export function consolidationPeriods(hasRT) {
 	if (!hasRT){
 		return[{
 				id: -1,
-				description: "No Consolidation"
+				description: "Not Available"
 			}]
 	}
 	return  [

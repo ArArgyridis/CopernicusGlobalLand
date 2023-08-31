@@ -23,85 +23,110 @@
 			<button v-for="nav in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActiveCategory(nav)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
 		</div>
 		
-		<div class="row mt-1">
-			<div class="col-2 d-flex justify-content-end ml-2 my-auto">Product:</div>
-			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="productDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{productDescription}}</button>
-				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(prd, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="product=prd"><a class="dropdown-item">{{prd.description}}</a></li></ul></div>
+		<div class="m-3 border border-2 rounded">
+			<div class="container mt-3">
+				<h5>Time Range</h5>
+				<div class=row>
+					<div class="col">From</div>
+					<div class="col">Current</div>
+					<div class="col">To</div>
+				</div>
+					
+				<div class="row mb-3">
+					<div class ="col d-flex text-justify"><Datepicker class="dp__theme_dark" v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false" dark/></div>
+					<div class="col d-flex justify-content-center">
+					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ new Date(currentDate).toDateString().substring(3,15) }} </button>
+					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
+						<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{new Date(date).toDateString().substring(3,15)}}</a></li>
+					</ul>
+				</div>
+					<div class ="col d-flex text-justify"><Datepicker v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false" class="dp__theme_dark"  dark/></div>
+				</div>
+			</div>
 		</div>
 		
-		<div class="row mt-1" v-if="product != null">
-			<div class="col-2 d-flex justify-content-end my-auto">Variable:</div>
-			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="variableDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.currentVariable.description}}</button>
-				<ul id="variableDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(variable, key) in product.variables" v-bind:key="key" v-bind:value="key"  v-on:click="setVariable(variable)"><a class="dropdown-item">{{variable.description}}</a></li></ul></div>
-		</div>
 		
-		<div class="row mt-1" v-if="product != null && product.currentVariable != null">
-			<div class="col-2 d-flex justify-content-end my-auto">RT:</div>
-			<div class="col d-flex justify-content-start"><button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="rtDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{product.rtFlag.description}}</button>
-				<ul id="productDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-					<li v-for ="(rtPeriod, key) in consolidationPeriods" v-bind:key="key" v-bind:value="key"  v-on:click="setConsolidationPeriod(rtPeriod)"><a class="dropdown-item">{{rtPeriod.description}}</a></li></ul></div>
-		</div>
-		
-		<div class = "container mt-3 ml-3 mr-3" v-if="product != null">
-			<h5>View Options</h5>
-			
-			<div class="row nav nav-tabs">
-				<button v-for="nav, idx in stratifiedOrRawViewModes" v-bind:key="idx" class="col-sm nav-link text-muted text-center" v-bind:class="{active: stratifiedOrRaw == idx}" v-on:click="stratifiedOrRaw=idx" v-bind:id="'stratifiedOrRawViewModes_'+idx">{{nav}}</button>
-			</div>	
-			
-			<div  class="mt-3"><!--STRATIFICATION -->
-				<div class="row">
-					<div class="col-3 d-flex justify-content-end my-auto">Thematic Layer:</div>
-					<div class="col d-flex justify-content-start">
-						<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="stratificationDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentStratificationName}}</button>
-						<ul id="stratificationDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-							<li v-for ="(stratification, key) in stratifications.info" v-bind:key="key" v-bind:value="key"  v-on:click=" currentStratification = stratification"><a class="dropdown-item">{{stratification.description}}</a></li>
-						</ul>
+		<h5>Product Options</h5>
+		<div class="accordion accordion-flush overflow-auto mb-2" id="productOptions" v-if="product != null">
+			<div class="accordion-item" id="acc1">
+				<h2 class="accordion-header" id="headingTwenty">
+					<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProductOptions" aria-expanded="true" aria-controls="collapseProductOptions"> <b>Product:&nbsp;</b>{{productDescription}} </button>
+				</h2>
+				
+				<div id="collapseProductOptions" class="accordion-collapse collapse show overflow-auto" aria-labelledby="headingTwenty" data-bs-parent="#productOptions">
+					<div class="accordion-body">
+						<select class="form-select" size="4" aria-label="size 3 select example">
+							<option v-for ="(prd, key) in products" v-bind:key="key" v-bind:value="key"  v-on:click="product=prd" v-bind:selected="product.id == prd.id">{{prd.description}}</option>
+						</select>
 					</div>
 				</div>
 			</div>
-			
-			<div class="row mt-2" v-if="currentStratificationName != 'Select stratification'">
-				<div class="col-3 d-flex justify-content-end my-auto">Date:</div>
-				<div class="col d-flex justify-content-start">
-					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{currentDate.substring(0,10)}} </button>
-					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
-						<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{date.substring(0,10)}}</a></li>
-					</ul>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="headingTwentyOne">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProductOptionsOne" aria-expanded="false" aria-controls="collapseProductOptionsOne"> <b>Variable: &nbsp;</b> {{variable.description}} </button>
+				</h2>
+				<div id="collapseProductOptionsOne" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#productOptions">
+					<div class="accordion-body">
+						<select class="form-select" size="4" aria-label="size 3 select example">
+							<option v-for ="(vrd, key) in product.variables" v-bind:key="key" v-bind:value="key"  v-on:click="setVariable(vrd)" v-bind:selected="variable.id==vrd.id">{{vrd.description}}</option>
+						</select>
+					</div>
+				</div>
+			</div>                
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="headingTwentyTwo">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProductOptionsTwo" 
+                        aria-expanded="false" aria-controls="collapseProductOptionsOne"> <b> Consolidation Period:</b>&nbsp;{{product.rtFlag.description}} </button>
+				</h2>
+				<div id="collapseProductOptionsTwo" class="accordion-collapse collapse" aria-labelledby="headingTwentyTwo" data-bs-parent="#productOptions">
+					<div class="accordion-body">
+						<select class="form-select" size="4" aria-label="size 3 select example">
+							<option v-for ="(rtPeriod, key) in consolidationPeriods" v-bind:key="key" v-bind:value="key"  v-on:click="setConsolidationPeriod(rtPeriod)" v-bind:selected="product.rtFlag.id == rtPeriod.id"><a class="dropdown-item">{{rtPeriod.description}}</a></option>
+						</select>
+					</div>
 				</div>
 			</div>
+		</div>
+
+		<h5>Visualization Options</h5>
+		<div class="accordion accordion-collapse collapse show overflow-auto" id="viewOptions" v-if="product != null">
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="headingTwentyOne">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptionsThree" aria-expanded="false" aria-controls="collapseViewOptionsThree"> <b>Region Layer: &nbsp;</b> {{currentStratificationName}} </button>
+				</h2>
+				<div id="collapseViewOptionsThree" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
+					<div class="accordion-body">
+						<select class="form-select" size="4" aria-label="size 3 select example">
+							<option v-for ="(stratification, key) in stratifications.info" v-bind:key="key" v-bind:value="key"  v-on:click=" currentStratification = stratification"><a class="dropdown-item">{{stratification.description}}</a></option>
+						</select>
+					</div>
+				</div>
+			</div>
+		
+			<div class="accordion-item" id="acc4">
+				<h2 class="accordion-header" id="headingTwenty2">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptions2" aria-expanded="true" aria-controls="collapseViewOptions2"> <b>View Mode:&nbsp;</b>{{viewModeTitle}} </button>
+				</h2>
 				
-			<div class="row mt-2" v-if="product != null">
-				<div class="col-3 d-flex justify-content-end my-auto">Statistics Mode:</div>
-				<div class="col d-flex justify-content-start">
-					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ currentStatisticsViewMode}} </button>
-					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
-					<li v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx"><a class="dropdown-item">{{md}}</a></li>
-						</ul>
-				</div>
-			</div>
-			<div class= "row mt-2" v-if="statisticsViewSelectedMode==1" >
-				<div class="col d-inline-flex justify-content-end my-auto">Anomaly Algorithm:</div>
-				<div class="col d-flex justify-content-start">
-					<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="anomalyWMSLayersDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentAnomaly.description}}</button>
-					<ul id="wmsDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1">
-						<li v-for ="(anomaly, key) in currentAnomalies" v-bind:key="key" v-bind:value="key"  v-on:click="setProductAnomaly(anomaly)"><a class="dropdown-item">{{anomaly.description}}</a></li>
-					</ul>
-				</div>
-			</div>
-	
-			<div v-bind:hidden="(statisticsViewSelectedMode == 1 ||  stratifiedOrRaw == 1)">
-				<div class="row nav nav-tabs mt-2" >
-					<button v-for="nav, idx in polygonViewMode" v-bind:key="idx" class="col-sm nav-link text-muted text-center" v-bind:class="{active: stratificationViewOptions.viewMode == idx}" v-on:click="stratificationViewOptions = idx" v-bind:id="'polygonviewmode_'+idx">{{nav}}</button>
-				</div>
-				
-				<div v-if="productDates != 'Select date' && stratifiedOrRaw == 0 && stratificationViewOptions.viewMode == 1">
+				<div id="collapseViewOptions2" class="accordion-collapse collapse overflow-auto" aria-labelledby="headingTwenty2" data-bs-parent="#viewOptions">
+					<div class="accordion-body">
+					<select class="form-select" size="2" aria-label="size 3 select example">
+						<option v-for="nav, idx in stratifiedOrRawViewModes" v-bind:key="idx" v-on:click="stratifiedOrRaw=idx" v-bind:id="'stratifiedOrRawViewModes_'+idx">{{nav}}</option>
+					</select>
+					</div>
 					<div class="row mt-2">
-						<div class="col d-flex justify-content-end my-auto">Region Coverage Percentage for Density:</div>
+						<div class="col d-flex justify-content-end my-auto">Visualized Mean Values:</div>
 						<div class="col d-flex justify-content-start">
-							<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">{{currentAreaDensity}}</button>
+								<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false"  v-bind:disabled="(statisticsViewSelectedMode == 1 ||  stratifiedOrRaw == 1)">{{polygonViewMode[stratificationViewOptions.viewMode]}}</button>
+								<ul id="currentAreaDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+								<li v-for ="(nav, idx) in polygonViewMode" v-bind:key="key" v-bind:value="key"  v-on:click="stratificationViewOptions=idx"><a class="dropdown-item">{{nav}}</a></li>
+								</ul>
+							</div>
+					</div>
+					<div class="row mt-2">
+						<div class="col d-flex justify-content-end my-auto">Value Range:</div>
+						<div class="col d-flex justify-content-start">
+							<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" v-bind:disabled="(stratifiedOrRaw == 0 && this.stratificationViewOptions.viewMode == 0) || stratifiedOrRaw == 1">{{currentAreaDensity}}</button>
 							<ul id="currentAreaDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
 								<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(densityType)"><a class="dropdown-item">{{densityType.description}}</a></li>
 							</ul>
@@ -109,23 +134,15 @@
 					</div>
 				</div>
 			</div>
-
-			<div>
-				<div class="m-3 border border-2 rounded">
-					<div class="container mt-3">
-						<h5>Time Range</h5>
-						<div class=row>
-							<div class="col">
-								From
-							</div>
-							<div class="col">
-								To
-							</div>
-						</div>
-						<div class="row mb-3">
-							<div class ="col text-justify"><Datepicker v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
-							<div class ="col text-justify"><Datepicker class="form-text" v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false"/></div>
-						</div>
+			<div class="accordion-item">
+				<h2 class="accordion-header" id="headingTwentyOne">
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptionsOne" aria-expanded="false" aria-controls="collapseViewOptionsOne"> <b>Selected Statistics: &nbsp;</b> {{statisticsViewMode[statisticsViewSelectedMode]}} </button>
+				</h2>
+				<div id="collapseViewOptionsOne" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
+					<div class="accordion-body">
+						<select class="form-select" size="2" aria-label="size 3 select example">
+							<option v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx"><a class="dropdown-item">{{md}}</a></option>
+						</select>
 					</div>
 				</div>
 			</div>
@@ -139,14 +156,19 @@
 <script>
 import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
-//import requests from '../libs/js/requests.js';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import Legend from "./libs/Legend.vue";
 import {consolidationPeriods} from "../libs/js/constructors.js";
+
+library.add(faArrowLeft);
 export default {
 	name: 'Left Panel',
 	components: {
 		Datepicker,
-		Legend
+		Legend,
+		FontAwesomeIcon
 	},
 	props: {},
 	computed: {
@@ -274,7 +296,7 @@ export default {
 			get() {
 				if (this.$store.getters.currentDate == null)
 					return "Select Date";
-				return this.$store.getters.currentDate;
+				return  this.$store.getters.currentDate;
 			}
 			,set(val) {
 				this.$store.commit("setCurrentDate", val);
@@ -351,6 +373,13 @@ export default {
 				this.$emit("stratifiedOrRawChanged");
 			}
 		},
+		viewModeTitle(){
+			let ret = this.stratifiedOrRawViewModes[this.stratifiedOrRaw];
+			if (this.stratifiedOrRaw == 0) {
+				ret += " (" +this.polygonViewMode[this.stratificationViewOptions.viewMode] +")";
+			}
+			return ret;
+		},
 		wmsLayers:{
 			get() {
 				let wms = this.$store.getters.productWMSLayers;
@@ -363,14 +392,15 @@ export default {
 	},
 	data() {
 		return {
-			dateFormat: "dd MMM yyyy",
-			stratifiedOrRawViewModes: ["Statistics By Region", "Raw Data"],
-			polygonViewMode: ["Mean values", "Density-driven"],
+			dateFormat: "MMM dd yyyy",
+			stratifiedOrRawViewModes: ["Mean Values per Region's Polygon", "Pixel View"],
+			polygonViewMode: ["Raw data Mean Values", "Area Percentage with Values in Range"],
 			statisticsViewMode: ["Product Values", "Anomalies"],
 		}
 	},
 	methods: {
-		init() {},
+		init() {
+		},
 		getProduct(key) {
 			return this.products[key];
 		},
@@ -414,19 +444,46 @@ export default {
 }
 </script>
 
-<style scoped>
+<style >
+.accordion-button {
+	background-color: rgba(240, 240, 240, 0.3);
+}
+.accordion-button:not(.collapsed) {
+	background-color:rgba(172, 184, 38, 0.3);
+}
+
+.accordion-body {
+	background-color: rgb(240, 240, 240, 0.7);
+}
+
+.accordion-header {
+	background-color:rgb(240, 240, 240, 0.7);
+}
+
 .base {
-	background-color: rgb(234, 234, 218, 0.7);
+	background-color: rgba(234, 234, 218, 0.7);
 	height: 100vh;
 	color: black;
 }
+
+
+.dp__theme_dark {
+	--dp-border-color: #6C757D;
+	--dp-menu-border-color: #6C757D;
+	--dp-background-color: #6C757D;
+	--dp-icon-color: white;
+}
+
+.form-select {
+	background-color:  rgb(240, 240, 240, 0.1);
+}
+
 h3 {
 	display:inline-block;
 }
 .h2border {
 	position: absolute;
 }
-
 
 .halfWidth {
 	width:50%;
@@ -435,6 +492,7 @@ h3 {
 .raise{
 	z-index:1;
 }
+
 .roundBorder {
 	border-radius: 5px;
 }
@@ -450,9 +508,11 @@ h3 {
 	position: relative;
 
 }
+
 .legendColor {
 	background-image: linear-gradient(to right, #F7FCF5 0%, #C9EAC2 25%, #7BC77C 50%, #2A924B 75%, #00441B 100%);
 }
+
 .legendColor:empty::after{
 	content: ".";
 	visibility:hidden;

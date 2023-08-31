@@ -88,7 +88,7 @@
 		__computeDensityLegend() {
 			let id = this.density.id;
 			let settings = new __legendSettings();
-			settings.title = "Density Legend (Total Area (%) having values in range [" + this.product.currentVariable.valueRanges[id].toFixed(2).toString() + "," + this.product.currentVariable.valueRanges[id+1].toFixed(2).toString()  + "))";
+			settings.title = "Total Area (%) with Values in Range [" + this.product.currentVariable.valueRanges[id].toFixed(2).toString() + "," + this.product.currentVariable.valueRanges[id+1].toFixed(2).toString()  + ")";
 			Object.keys(this.product.currentVariable[this.paletteCol]).forEach( (key) => {
 				let rgb = this.product.currentVariable[this.paletteCol][key];
 				let hexColor = "#"+ utils.rgbToHex(rgb[0], rgb[1], rgb[2]);
