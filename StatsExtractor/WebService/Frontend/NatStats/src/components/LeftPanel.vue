@@ -13,7 +13,7 @@
 --->
 <template>
 <div class="base">
-	<div class="container vh-100">
+	<div class="container">
 		<div class="row mb-2 panelHeader align-items-center">
 			<div class="col mt-2"><span class="align-middle"><h5>NatStats</h5></span>
 				<span>An Anomalies and Statistics Analysis Tool for Copernicus GLMS</span>
@@ -33,14 +33,14 @@
 				</div>
 					
 				<div class="row mb-3">
-					<div class ="col d-flex text-justify"><Datepicker class="dp__theme_dark" v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false" dark/></div>
+					<div class ="col d-flex text-justify"><Datepicker class="dp__theme_dark" v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false" v-bind:clearable="false" dark/></div>
 					<div class="col d-flex justify-content-center">
 					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ new Date(currentDate).toDateString().substring(3,15) }} </button>
 					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
 						<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{new Date(date).toDateString().substring(3,15)}}</a></li>
 					</ul>
 				</div>
-					<div class ="col d-flex text-justify"><Datepicker v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false" class="dp__theme_dark"  dark/></div>
+					<div class ="col d-flex text-justify"><Datepicker v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false" class="dp__theme_dark"  dark v-bind:clearable="false"/></div>
 				</div>
 			</div>
 		</div>
