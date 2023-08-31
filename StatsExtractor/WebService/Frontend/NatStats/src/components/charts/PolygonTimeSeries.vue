@@ -64,9 +64,6 @@ export default {
 		},
 		product() {
 			return this.$store.getters.product;
-		},
-		rtFlag() {
-			return this.$store.getters.product.rtFlag;
 		}
 	},
 	data(){
@@ -74,7 +71,8 @@ export default {
 			diagramData: this.noData,
 			isLoading: true,
 			previousPolyId: null,
-			curProductVariable: {id:null}
+			curProductVariable: {id:null},
+			rtFlag:{id:-1}
 		}
 	},
 	methods:{
@@ -89,13 +87,14 @@ export default {
 			let polyId = this.$store.getters.selectedPolygon;
 			if (productVariable == null || polyId == null)
 				return;
-			
-			if(this.curProductVariable.id == productVariable.id && this.previousPolyId ==polyId)
+			console.log(this.$store.getters.product.rtFlag.id);
+			if(this.curProductVariable.id == productVariable.id && this.previousPolyId ==polyId && this.$store.getters.product.rtFlag.id == this.rtFlag.id)
 				return;
 			
 			this.isLoading = true;
 			this.curProductVariable = productVariable;			
-			this.previousPolyId = polyId;			
+			this.previousPolyId = polyId;		
+			this.rtFlag = this.$store.getters.product.rtFlag;
 			
 			if(polyId != null && productVariable != null) { 
 				requests.polygonStatsTimeSeries(polyId, this.$store.getters.dateStart, this.$store.getters.dateEnd, productVariable.id, this.rtFlag.id)
