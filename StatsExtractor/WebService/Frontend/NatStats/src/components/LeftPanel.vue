@@ -88,11 +88,11 @@
 			</div>
 		</div>
 
-		<h5>Visualization Options</h5>
+		<h5>Display Options</h5>
 		<div class="accordion accordion-collapse collapse show overflow-auto" id="viewOptions" v-if="product != null">
 			<div class="accordion-item">
 				<h2 class="accordion-header" id="headingTwentyOne">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptionsThree" aria-expanded="false" aria-controls="collapseViewOptionsThree"> <b>Region Layer: &nbsp;</b> {{currentStratificationName}} </button>
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptionsThree" aria-expanded="false" aria-controls="collapseViewOptionsThree"> <b>Boundary Selection: &nbsp;</b> {{currentStratificationName}} </button>
 				</h2>
 				<div id="collapseViewOptionsThree" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
 					<div class="accordion-body">
@@ -105,7 +105,7 @@
 		
 			<div class="accordion-item" id="acc4">
 				<h2 class="accordion-header" id="headingTwenty2">
-					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptions2" aria-expanded="true" aria-controls="collapseViewOptions2"> <b>View Mode:&nbsp;</b>{{viewModeTitle}} </button>
+					<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseViewOptions2" aria-expanded="true" aria-controls="collapseViewOptions2"> <b>Data Values:&nbsp;</b>{{viewModeTitle}} </button>
 				</h2>
 				
 				<div id="collapseViewOptions2" class="accordion-collapse collapse overflow-auto" aria-labelledby="headingTwenty2" data-bs-parent="#viewOptions">
