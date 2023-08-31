@@ -25,11 +25,11 @@
 		
 		<div class="m-3 border border-2 rounded">
 			<div class="container mt-3">
-				<h5>Time Range</h5>
+				<h5>Time Range for Timeseries Analysis</h5>
 				<div class=row>
-					<div class="col">From</div>
-					<div class="col">Current</div>
-					<div class="col">To</div>
+					<div class="col">From Date</div>
+					<div class="col">Currently displayed</div>
+					<div class="col">To Date</div>
 				</div>
 					
 				<div class="row mb-3">
