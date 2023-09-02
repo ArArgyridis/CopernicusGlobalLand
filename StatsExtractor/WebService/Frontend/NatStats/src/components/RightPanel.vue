@@ -270,9 +270,9 @@ export default {
 			this.tmpArray[nav.ref] = setInterval( () =>{
 				if (this.$refs[nav.ref] !== undefined && this.$store.getters.product !== null) {
 					nav.title = this.$refs[nav.ref].diagramTitle;
-					clearInterval(this.tmpArray[nav.ref]);
+					//clearInterval(this.tmpArray[nav.ref]);
 				}
-			}, 100);
+			}, 1000);
 		} );
 		
 		
