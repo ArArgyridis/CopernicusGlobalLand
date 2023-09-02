@@ -12,40 +12,102 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --->
 <template>
-<div class="base">
 
+
+<div class="base">
+	<!--
 	<div class="container-fluid">
 		<div class="row">
 			<div class="col text-end raise"><div class="btn" v-on:click="closePanel"><a>x</a></div></div>
 		</div>
-		<nav class="navbar navbar-dark bg-secondary" >
-			<div class="container-fluid">
-				<a class="navbar-brand" href="#">{{ diagramTitle(navBarOptions[curActiveDiagramId].ref) }}</a>
-				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				
-				<div class="collapse navbar-collapse" id="navbarNav">
-					<ul class="navbar-nav">
-						<li class="nav-item"  v-bind:class="{active: key == curActiveDiagramId}"   v-for="(nav, key) in navBarOptions"  v-bind:key="key" v-bind:id="'navbar_'+navBarOptions[key].ref">
-							<a class="nav-link" aria-current="page" href="#" v-on:click="switchActive(key)" v-bind:class="nav.class">{{diagramTitle(nav.ref)}}</a>
-						</li>
-					</ul>
+	</div>
+	-->
+	<div class="accordion" id="locationCharts" v-if="variable != null">
+		
+		<!-- location time series raw -->
+		<div class="accordion-item" v-bind:id="'id'+navBarOptions[0].ref">
+			<h2 class="accordion-header" v-bind:id="'header'+navBarOptions[0].ref">
+				<button v-bind:id="'btn'+navBarOptions[0].ref" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse'+navBarOptions[0].ref" aria-expanded="false" aria-controls="locationTimeSeries" v-on:click="switchActive(0)">{{ navBarOptions[0].title }}</button>
+			</h2>
+			<div v-bind:id="'collapse'+navBarOptions[0].ref" class="accordion-collapse collapse" v-bind:aria-labelledby="'header'+navBarOptions[0].ref" data-bs-parent="#locationCharts">
+				<div class="accordion-body">
+					<PointTimeSeries v-bind:ref="navBarOptions[0].ref" mode="Raw" />
 				</div>
 			</div>
-		</nav>
-	</div>
-	<div class="row mt-3">
-		<div class="col">
-			<PointTimeSeries v-show="curActiveDiagramId == 0 && navBarOptions[0].condition() " v-bind:ref="navBarOptions[0].ref" mode="Raw"/>
-			<PointTimeSeries v-show="curActiveDiagramId == 1 && navBarOptions[1].condition() " v-bind:ref="navBarOptions[1].ref" mode="Anomalies"/>
-			<PolygonTimeSeries v-show="curActiveDiagramId == 2 && navBarOptions[2].condition() " v-bind:ref="navBarOptions[2].ref" mode="Raw"/>
-			<PolygonTimeSeries v-show="curActiveDiagramId == 3 && navBarOptions[3].condition() " v-bind:ref="navBarOptions[3].ref" mode="Anomalies"/>
-			<PolygonAreaDensityPieChart  v-show="curActiveDiagramId == 4 && navBarOptions[4].condition()" v-bind:ref="navBarOptions[4].ref"/>
-			<PolygonHistogramData v-show="curActiveDiagramId == 5 && navBarOptions[5].condition()" v-bind:ref="navBarOptions[5].ref"/>
-			<PolygonDensityTimeSeries v-show="curActiveDiagramId == 6 && navBarOptions[6].condition()" v-bind:ref="navBarOptions[6].ref"/>
 		</div>
-	</div>
+		
+		<!-- location time series anomalies -->
+
+		<div class="accordion-item" v-bind:id="'id'+navBarOptions[1].ref" >
+			<h2 class="accordion-header" v-bind:id="'header'+navBarOptions[1].ref">
+				<button v-bind:id="'btn'+navBarOptions[1].ref" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse'+navBarOptions[1].ref" aria-expanded="false" aria-controls="locationTimeSeries" v-on:click="switchActive(1)">{{ navBarOptions[1].title }}</button>
+			</h2>
+			<div v-bind:id="'collapse'+navBarOptions[1].ref" class="accordion-collapse collapse" v-bind:aria-labelledby="'header'+navBarOptions[1].ref" data-bs-parent="#locationCharts">
+				<div class="accordion-body">
+					<PointTimeSeries v-bind:ref="navBarOptions[1].ref" mode="Anomalies"/>
+				</div>
+			</div>
+		</div>
+		<!--polygon time series raw -->
+		<div class="accordion-item" v-bind:id="'id'+navBarOptions[2].ref">
+			<h2 class="accordion-header" v-bind:id="'header'+navBarOptions[2].ref">
+				<button v-bind:id="'btn'+navBarOptions[2].ref" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse'+navBarOptions[2].ref" aria-expanded="false" aria-controls="locationTimeSeries" v-on:click="switchActive(2)">{{ navBarOptions[2].title }}</button>
+			</h2>
+			<div v-bind:id="'collapse'+navBarOptions[2].ref" class="accordion-collapse collapse" v-bind:aria-labelledby="'header'+navBarOptions[2].ref" data-bs-parent="#locationCharts">
+				<div class="accordion-body">
+					<PolygonTimeSeries v-bind:ref="navBarOptions[2].ref" mode="Raw"/>
+				</div>
+			</div>
+		</div>
+		<!--polygon time series anomalies -->
+		<div class="accordion-item" v-bind:id="'id'+navBarOptions[3].ref">
+			<h2 class="accordion-header" v-bind:id="'header'+navBarOptions[3].ref">
+				<button v-bind:id="'btn'+navBarOptions[3].ref" class="accordion-button collapsed disabled" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse'+navBarOptions[3].ref" aria-expanded="false" aria-controls="locationTimeSeries" v-on:click="switchActive(3)">{{ navBarOptions[3].title }}</button>
+			</h2>
+			<div v-bind:id="'collapse'+navBarOptions[3].ref" class="accordion-collapse collapse" v-bind:aria-labelledby="'header'+navBarOptions[3].ref" data-bs-parent="#locationCharts">
+				<div class="accordion-body">
+					<PolygonTimeSeries v-bind:ref="navBarOptions[3].ref" mode="Anomalies"/>
+				</div>
+			</div>
+		</div>
+		
+		<!--Polygon density in range -->
+		<div class="accordion-item" v-bind:id="'id'+navBarOptions[4].ref">
+			<h2 class="accordion-header" v-bind:id="'header'+navBarOptions[4].ref">
+				<button v-bind:id="'btn'+navBarOptions[4].ref" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse'+navBarOptions[4].ref" aria-expanded="false" aria-controls="locationTimeSeries" v-on:click="switchActive(4)">{{ navBarOptions[4].title }}</button>
+			</h2>
+			<div v-bind:id="'collapse'+navBarOptions[4].ref" class="accordion-collapse collapse" v-bind:aria-labelledby="'header'+navBarOptions[4].ref" data-bs-parent="#locationCharts">
+				<div class="accordion-body">
+					<PolygonAreaDensityPieChart  v-bind:ref="navBarOptions[4].ref"/>
+				</div>
+			</div>
+		</div>
+		<!--polygon Histogram Data -->
+		<div class="accordion-item" v-bind:id="'id'+navBarOptions[5].ref">
+			<h2 class="accordion-header" v-bind:id="'header'+navBarOptions[5].ref">
+				<button v-bind:id="'btn'+navBarOptions[5].ref" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse'+navBarOptions[5].ref" aria-expanded="false" aria-controls="locationTimeSeries" v-on:click="switchActive(5)">{{ navBarOptions[5].title }}</button>
+			</h2>
+			<div v-bind:id="'collapse'+navBarOptions[5].ref" class="accordion-collapse collapse" v-bind:aria-labelledby="'header'+navBarOptions[5].ref" data-bs-parent="#locationCharts">
+				<div class="accordion-body">
+					<PolygonHistogramData v-bind:ref="navBarOptions[5].ref"/>
+				</div>
+			</div>
+		</div>
+		<!--polygon density time series for range-->
+		<div class="accordion-item" v-bind:id="'id'+navBarOptions[6].ref">
+			<h2 class="accordion-header" v-bind:id="'header'+navBarOptions[6].ref">
+				<button v-bind:id="'btn'+navBarOptions[6].ref" class="accordion-button collapsed" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse'+navBarOptions[6].ref" aria-expanded="false" aria-controls="locationTimeSeries" v-on:click="switchActive(6)">{{ navBarOptions[6].title }}</button>
+			</h2>
+			<div v-bind:id="'collapse'+navBarOptions[6].ref" class="accordion-collapse collapse" v-bind:aria-labelledby="'header'+navBarOptions[6].ref" data-bs-parent="#locationCharts">
+				<div class="accordion-body">
+					<PolygonDensityTimeSeries v-bind:ref="navBarOptions[6].ref"/>
+				</div>
+			</div>
+		</div>
+  		
+
+  </div>
+
 	<button class="btn btn-secondary mt-3 mx-3" v-on:click="this.$emit('showDashboard')" > Show Region Dashboard</button>
 	<button class="btn btn-secondary mt-3 mx-3" v-on:click="this.$emit('exportCurrentView')"> Export Curent View As Image</button>
 </div>
@@ -71,69 +133,75 @@ export default {
 	},
 	props:{},
 	computed: {
-	curActiveDiagramId: {
-		set(k) {
-			this.curDiagId = k;
+		curActiveDiagramId: {
+			set(k) {
+				this.prevDiagId = this.curDiagId;
+				this.curDiagId = k;
+			},
+			get() {
+				return this.curDiagId;
+			}
 		},
-		get() {
-			return this.curDiagId;
+		panelOpen:{
+			get(){
+				return this.$store.getters.rightPanelVisibility;
+			},
+			set(dt) {
+				this.$store.commit("rightPanelVisibility", dt);
+			}
+		},
+		variable() {
+			return this.$store.getters.variable;
 		}
-	}
 	},
 	data() {
 		return {
-			curDiagId: 0,
-			panelOpen: false,
+			curDiagId: null,
+			prevDiagId: null,
 			navBarOptions: [
 				{
 					ref: "PointTimeSeriesRaw",
 					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
-					class: "text-dark"
+					title: "Dummy Diagram"
 				},
 				{
 					ref: "PointTimeSeriesAnomalies",
 					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
-					class: "text-dark"
+					title: "Dummy Diagram"
 				},
 				{
 					ref: "StratificationTimeSeriesRaw",
 					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
-					class: "text-white"
+					title: "Dummy Diagram"
 				},
 				{
 					ref: "StratificationTimeSeriesAnomalies",
 					condition: () => { return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null;},
-					class: "text-white"
+					title: "Dummy Diagram"
 				},
 				{
 					ref: "PolygonAreaDensityPieChart",
 					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;},
-					class: "text-white"
+					title: "Dummy Diagram"
 				},
 				{
 					ref: "PolygonTimeSeries",
 					condition: () => {return this.$store.getters.product !== null && this.$store.getters.currentDate != null;},
-					class: "text-white"
+					title: "Dummy Diagram"
 				},
 				{	
 					ref: "PolygonHistogramData",
 					condition: () => {return this.$store.getters.product !== null && this.$store.getters.dateStart != null && this.$store.getters.dateEnd != null && this.$store.getters.areaDensity != null ;},
-					class: "text-white"
+					title: "Dummy Diagram"
 				}
 			],
 
 		}
 	},
 	methods: {
-		diagramTitle(ref) {
-			if(this.$refs[ref] == null)
-				return "No Diagram";
-			return this.$refs[ref].diagramTitle;
-		},	
 		switchActive(id) {
-			if (id == null)
+			if (typeof id === 'undefined'|| id == null)
 				return;
-			document.getElementById("navbar_"+this.navBarOptions[id].ref).classList.add("selected");
 			this.curActiveDiagramId = id;
 			this.updateCurrentChart();
 		},
@@ -144,34 +212,81 @@ export default {
 		},
 		resetAllCharts() {
 			this.navBarOptions.forEach( (diag) => {
+				if (this.$refs[diag.ref] == null)
+					return;
 				this.$refs[diag.ref].reset();
 			});
 		},
 		resizeChart() {
 			this.navBarOptions.forEach( (diag) => {
+				if (this.$refs[diag.ref] == null)
+					return;
 				this.$refs[diag.ref].resizeChart();
 			});
 		},
 		updateCurrentChart() {
-			if (!this.panelOpen) {
+			if (!this.panelOpen) 
 				this.panelOpen = true;
-				if(this.$store.getters.stratifiedOrRaw == 0) {
-					if ( this.$store.getters.productStatisticsViewMode == 0)
-						this.curActiveDiagramId = 2;
-					else if (this.$store.getters.productStatisticsViewMode == 1)
-						this.curActiveDiagramId = 3;
-				}
-				else if(this.$store.getters.stratifiedOrRaw == 1) {
-					if ( this.$store.getters.productStatisticsViewMode == 0)
-						this.curActiveDiagramId = 0;
-					else if (this.$store.getters.productStatisticsViewMode == 1)
-						this.curActiveDiagramId = 1;
-				}
+			
+			if(this.$store.getters.stratifiedOrRaw == 0) {
+				if ( this.$store.getters.productStatisticsViewMode == 0)
+					this.curActiveDiagramId = 2;
+				else if (this.$store.getters.productStatisticsViewMode == 1)
+					this.curActiveDiagramId = 3;
 			}
+			else if(this.$store.getters.stratifiedOrRaw == 1) {
+				if ( this.$store.getters.productStatisticsViewMode == 0)
+					this.curActiveDiagramId = 0;
+				else if (this.$store.getters.productStatisticsViewMode == 1)
+					this.curActiveDiagramId = 1;
+			}
+				
+			if (this.curActiveDiagramId == null)
+				return;
+				
+			if(this.prevDiagId != this.curActiveDiagramId) { //the user tries to close the current diagram
+
+				if(this.prevDiagId != null) {
+					let prevBtn = document.getElementById('btn'+this.navBarOptions[this.prevDiagId].ref);
+					let prevCollapsible = document.getElementById("collapse"+this.navBarOptions[this.prevDiagId].ref);	
+				
+					prevBtn.classList.add("collapsed");
+					prevBtn.setAttribute("aria-expanded", false);
+				
+					revCollapsible.classList.remove("show");
+					prevCollapsible.setAttribute("aria-expanded", false);
+				}
+				let newBtn = document.getElementById('btn'+this.navBarOptions[this.curActiveDiagramId].ref);
+				let newCollapsible = document.getElementById("collapse"+this.navBarOptions[this.curActiveDiagramId].ref);
+			
+				newBtn.classList.remove("collapsed");
+				newBtn.setAttribute("aria-expanded", true);
+				
+				newCollapsible.classList.add("show");
+				newCollapsible.setAttribute("aria-expanded", true);
+					
+				let content = newBtn.innerHTML;
+				newBtn.innerHTML= content; 
+			}
+			
 			this.$refs[this.navBarOptions[this.curActiveDiagramId].ref].updateChartData();
 		}
 	},
-	mounted() {}
+	mounted() {
+		this.tmpArray= {};
+		this.navBarOptions.forEach( nav => {
+			this.tmpArray[nav.ref] = setInterval( () =>{
+				if (this.$refs[nav.ref] !== undefined && this.$store.getters.product !== null) {
+					nav.title = this.$refs[nav.ref].diagramTitle;
+					clearInterval(this.tmpArray[nav.ref]);
+				}
+			}, 100);
+		} );
+		
+		
+	
+	
+	}
 }
 </script>
 
@@ -179,17 +294,5 @@ export default {
 .base {
 	background-color: rgb(234, 234, 218, 0.7);
 	height: 100vh;
-}
-
-.text-dark:hover {
-	background-color: #bdc1c6;
-}
-
-.regionDiagramTitle {
-	color:#404040;
-}
-
-.text-white:hover {
-    background-color: #bdc1c6;
 }
 </style>

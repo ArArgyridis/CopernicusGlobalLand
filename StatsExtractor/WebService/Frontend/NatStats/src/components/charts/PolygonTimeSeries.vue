@@ -49,14 +49,10 @@ export default {
 			if (variable !=null) 
 				valueRange = variable.valueRanges;
 			
-			//this.updateChartData();			
 			let step = (valueRange[valueRange.length-1] - valueRange[0])/valueRange.length;
-			
-			let tmpDt = this.diagramData;
-			if (tmpDt == null)
-				tmpDt = this.noData;
+
 			this.resizeChart();
-			return this.__computeChartOptions(tmpDt, valueRange, step);
+			return this.__computeChartOptions(valueRange, step);
 		},
 		noData() {
 			let ret = [null, null, null, null];
@@ -87,7 +83,7 @@ export default {
 			let polyId = this.$store.getters.selectedPolygon;
 			if (productVariable == null || polyId == null)
 				return;
-			console.log(this.$store.getters.product.rtFlag.id);
+
 			if(this.curProductVariable.id == productVariable.id && this.previousPolyId ==polyId && this.$store.getters.product.rtFlag.id == this.rtFlag.id)
 				return;
 			
@@ -133,9 +129,13 @@ export default {
 								diagramData[2][i] = [ it[0], it[1] - it[2], it[1]+it[2] ];
 							}
 						}
-						
-						this.diagramData= diagramData;
+
 						this.isLoading = false;
+						try {
+							this.diagramData= diagramData;
+						} catch (e) {
+							console.log(e); // Logs the error
+						}
 					}
 				})
 				.catch(() =>{
@@ -152,7 +152,11 @@ export default {
 			if (this.diagramTitle != "Dummy Title" && this.$refs.diagram != null)
 				this.$refs.diagram.chart.reflow();
 		},
-		__computeChartOptions(tmpDt=this.noData, valueRange=[0,1.5], step=0.2) {
+		__computeChartOptions(valueRange=[0,1.5], step=0.2) {		
+			let tmpDt = this.diagramData;
+			if (tmpDt == null)
+				tmpDt = this.noData;
+				
 			return {
 				credits:{
 					enabled:false

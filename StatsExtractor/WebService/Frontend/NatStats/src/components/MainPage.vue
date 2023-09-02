@@ -32,10 +32,10 @@
 			<div id="mapView">
 				
 				<MapApp ref="mapApp"
-					v-on:featureClicked="refreshStratificationInfo()"
+					v-on:featureClicked="updateRawDataChart($event)"
 					v-on:mapCoordinate="updateRawDataChart($event)"
 				/>
-				<Legend class="d-fleg relative legend" ref="legend" v-bind:mode="legendMode"/>
+				<Legend class="d-fleg relative legend transition" v-bind:class="{offsetLegend: leftPanelVisibility}" ref="legend" v-bind:mode="legendMode"/>
 
 				<div class="d-flex logo relative"><img alt="Copernicus LMS" src="/assets/copernicus_land_monitoring.png"></div>
 			</div>
@@ -46,7 +46,7 @@
 			</div>
 			
 		</div>		
-		<div id="rightPanel" class="transition noPadding hiddenBar raise sidenav rightnav">
+		<div id="rightPanel" class="transition noPadding raise sidenav rightnav"  v-bind:class="{shownBar: rightPanelVisibility, hiddenBar: !rightPanelVisibility}">
 			<RightPanel ref="rightPanel" 
 			v-on:closeTimechartsPanel="closeRightPanel()" 
 			v-on:exportCurrentView="exportCurrentView()"
@@ -137,7 +137,10 @@ export default {
 			}
 			return mode;
 			
-			}
+		},
+		rightPanelVisibility(){
+			return this.$store.getters.rightPanelVisibility;
+		}
 	},
 	data() {
 		return {
@@ -152,6 +155,7 @@ export default {
 			document.getElementById("rightPanel").addEventListener('transitionend', () => {
 				this.$refs.rightPanel.resizeChart();
 			});
+			//this.setRightPanelVisibility(true);
 			//this.updateStratificationInfo();
 		},
 		closeRightPanel() {
@@ -186,7 +190,7 @@ export default {
 			this.updateStratificationLayerStyle();
 		},
 		resetProducts() {
-			this.setRightPanelVisibility(false);
+			//this.setRightPanelVisibility(false);
 			this.$refs.mapApp.clearWMSLayers();
 			this.$store.commit("clearProducts");
 			this.getProductInfo();
@@ -233,14 +237,14 @@ export default {
 				this.$refs.rightPanel.updateCurrentChart();
 		},
 		updateStratificationLayerVisibility() {
-			this.setRightPanelVisibility(false);
+			//this.setRightPanelVisibility(false);
 			this.$refs.mapApp.updateStratificationLayerVisibility();
 			this.$refs.mapApp.moveMarker(null);
 			this.updateStratificationLayerStyle();
 		},
 		updateAll() {
 			this.updateStratificationLayerStyle();
-			this.setRightPanelVisibility(false);
+			//this.setRightPanelVisibility(false);
 			this.updateWMSLayers();
 		},
 		updateRawDataChart(evt) {
@@ -248,11 +252,12 @@ export default {
 				return;
 			
 			this.clickedCoordinates = evt;
-			this.setRightPanelVisibility(true);
+			this.$refs.rightPanel.updateCurrentChart();
+			//this.setRightPanelVisibility(true);
 		},
 		updateProductView() {
 			this.updateStratificationLayerStyle();
-			this.setRightPanelVisibility(false);
+			//this.setRightPanelVisibility(false);
 			this.$refs.mapApp.updateWMSLayers();
 		},
 		updateWMSLayers() {
@@ -306,11 +311,14 @@ export default {
 
 @media(min-width:901px) {
 	.shownBar {
-		width: 700px;
+		width: 600px;
 	}	
 	.offsetButton {
-		left:700px;
-	}	
+		left:600px;
+	}
+	.offsetLegend {
+		left:610px;
+	}
 	.logo {
 		justify-content:end;
 		position: fixed;
@@ -329,9 +337,7 @@ export default {
 	height: 100px;
 	position: fixed;
 	justify-content:end;
-	top:2%;
-	right:1vh;
-
+	bottom:2%;
 }
 .legendColor {
 	background-image: linear-gradient(to right, #F7FCF5 0%, #C9EAC2 25%, #7BC77C 50%, #2A924B 75%, #00441B 100%);

@@ -48,7 +48,7 @@ export default{
 				categories: new Categories(),
 				stratifications: new StratificationProps(),
 				leftPanelVisible: true,
-				rightPanelVisible: false,
+				rightPanelVisible: true,
 				currentCog: null,
 				previousCog: null
 			},
@@ -385,7 +385,7 @@ export default{
 					return state.stratifiedOrRaw;
 				},
 				variable: (state) => {
-					if (state.categories.current == null)
+					if (state.categories.current == null || state.categories.current.products == null)
 						return null;
 					return state.categories.current.products.current.currentVariable;
 				}

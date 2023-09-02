@@ -471,7 +471,6 @@ export default {
 							this.layers[this.hoverLayers[this.activeHighlightLayer].hoverId].changed();
 							this.$emit("featureClicked", emt);
 						});
-						//console.log(this.map.getFeaturesAtPixel(e.pixel));
 					})
 				}
 				this.activeHighlightLayer = id;

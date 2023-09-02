@@ -119,7 +119,7 @@
 						<div class="col d-flex justify-content-start">
 								<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false"  v-bind:disabled="(statisticsViewSelectedMode == 1 ||  stratifiedOrRaw == 1)">{{polygonViewMode[stratificationViewOptions.viewMode]}}</button>
 								<ul id="currentAreaDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-								<li v-for ="(nav, idx) in polygonViewMode" v-bind:key="key" v-bind:value="key"  v-on:click="stratificationViewOptions=idx"><a class="dropdown-item">{{nav}}</a></li>
+								<li v-for ="(nav, idx) in polygonViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="stratificationViewOptions=idx"><a class="dropdown-item">{{nav}}</a></li>
 								</ul>
 							</div>
 					</div>
@@ -140,8 +140,8 @@
 				</h2>
 				<div id="collapseViewOptionsOne" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
 					<div class="accordion-body">
-						<select class="form-select" size="2" aria-label="size 3 select example">
-							<option v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx"><a class="dropdown-item">{{md}}</a></option>
+						<select class="form-select" size="2" aria-label="size 3 select example" v-bind:disabled="variable.anomalies == null">
+							<option v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx" disabled><a class="dropdown-item">{{md}}</a></option>
 						</select>
 					</div>
 				</div>
@@ -262,8 +262,6 @@ export default {
 				if (this.$store.getters.areaDensity == null)
 					return "Select Area Density";
 				return this.$store.getters.areaDensity.description;
-
-				
 			},
 			set(val) {
 				this.$store.commit("setStratificationAreaDensity",val);
