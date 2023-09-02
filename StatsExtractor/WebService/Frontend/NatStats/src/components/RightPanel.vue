@@ -157,6 +157,7 @@ export default {
 	data() {
 		return {
 			curDiagId: null,
+			firstOpen: true,
 			prevDiagId: null,
 			navBarOptions: [
 				{
@@ -216,6 +217,7 @@ export default {
 					return;
 				this.$refs[diag.ref].reset();
 			});
+			this.firstOpen = true;
 		},
 		resizeChart() {
 			this.navBarOptions.forEach( (diag) => {
@@ -225,37 +227,30 @@ export default {
 			});
 		},
 		updateCurrentChart() {
+			//checking if a polygon or point is selected
+			if (this.$store.getters.selectedPolygon == null && this.$store.getters.clickedCoordinates == null)
+				return;
+			
 			if (!this.panelOpen) 
 				this.panelOpen = true;
 			
-			if(this.$store.getters.stratifiedOrRaw == 0) {
-				if ( this.$store.getters.productStatisticsViewMode == 0)
-					this.curActiveDiagramId = 2;
-				else if (this.$store.getters.productStatisticsViewMode == 1)
-					this.curActiveDiagramId = 3;
-			}
-			else if(this.$store.getters.stratifiedOrRaw == 1) {
-				if ( this.$store.getters.productStatisticsViewMode == 0)
-					this.curActiveDiagramId = 0;
-				else if (this.$store.getters.productStatisticsViewMode == 1)
-					this.curActiveDiagramId = 1;
-			}
+			if (this.firstOpen) {
+				this.firstOpen = false;
 				
-			if (this.curActiveDiagramId == null)
-				return;
-				
-			if(this.prevDiagId != this.curActiveDiagramId) { //the user tries to close the current diagram
-
-				if(this.prevDiagId != null) {
-					let prevBtn = document.getElementById('btn'+this.navBarOptions[this.prevDiagId].ref);
-					let prevCollapsible = document.getElementById("collapse"+this.navBarOptions[this.prevDiagId].ref);	
-				
-					prevBtn.classList.add("collapsed");
-					prevBtn.setAttribute("aria-expanded", false);
-				
-					revCollapsible.classList.remove("show");
-					prevCollapsible.setAttribute("aria-expanded", false);
+				if(this.$store.getters.stratifiedOrRaw == 0) {
+					if ( this.$store.getters.productStatisticsViewMode == 0)
+						this.curActiveDiagramId = 2;
+					else if (this.$store.getters.productStatisticsViewMode == 1)
+						this.curActiveDiagramId = 3;
 				}
+				
+				else if(this.$store.getters.stratifiedOrRaw == 1) {
+					if ( this.$store.getters.productStatisticsViewMode == 0)
+						this.curActiveDiagramId = 0;
+					else if (this.$store.getters.productStatisticsViewMode == 1)
+						this.curActiveDiagramId = 1;
+				}
+
 				let newBtn = document.getElementById('btn'+this.navBarOptions[this.curActiveDiagramId].ref);
 				let newCollapsible = document.getElementById("collapse"+this.navBarOptions[this.curActiveDiagramId].ref);
 			
@@ -264,11 +259,8 @@ export default {
 				
 				newCollapsible.classList.add("show");
 				newCollapsible.setAttribute("aria-expanded", true);
-					
-				let content = newBtn.innerHTML;
-				newBtn.innerHTML= content; 
 			}
-			
+
 			this.$refs[this.navBarOptions[this.curActiveDiagramId].ref].updateChartData();
 		}
 	},

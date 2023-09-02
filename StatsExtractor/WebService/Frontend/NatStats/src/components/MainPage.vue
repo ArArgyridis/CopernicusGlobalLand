@@ -144,7 +144,6 @@ export default {
 	},
 	data() {
 		return {
-			showRightPanel: false,
 			activateClickOnMap: false,
 			showTheDashboard: false,
 		}
@@ -190,16 +189,16 @@ export default {
 			this.updateStratificationLayerStyle();
 		},
 		resetProducts() {
-			//this.setRightPanelVisibility(false);
 			this.$refs.mapApp.clearWMSLayers();
 			this.$store.commit("clearProducts");
+			//this.$refs.rightPanel.resetAllCharts();
 			this.getProductInfo();
 		},
 		//hiding right panel
 		setRightPanelVisibility(status) {
-			if(this.showRightPanel != status) {
+			if(this.rightPanelVisibility != status) {
 				this.togglePanelClasses("rightPanel");
-				this.showRightPanel = status;
+				this.rightPanelVisibility = status;
 			}
 			if(status)
 				this.$refs.rightPanel.updateCurrentChart();
@@ -233,7 +232,7 @@ export default {
 		},
 		updateStratificationLayerStyle(){
 			this.$refs.mapApp.updateStratificationLayerStyle();
-			if(this.showRightPanel)
+			if(this.rightPanelVisibility)
 				this.$refs.rightPanel.updateCurrentChart();
 		},
 		updateStratificationLayerVisibility() {
