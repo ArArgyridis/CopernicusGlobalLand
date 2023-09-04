@@ -236,31 +236,32 @@ export default {
 			
 			if (this.firstOpen) {
 				this.firstOpen = false;
-				
-				if(this.$store.getters.stratifiedOrRaw == 0) {
-					if ( this.$store.getters.productStatisticsViewMode == 0)
-						this.curActiveDiagramId = 2;
-					else if (this.$store.getters.productStatisticsViewMode == 1)
-						this.curActiveDiagramId = 3;
-				}
-				
-				else if(this.$store.getters.stratifiedOrRaw == 1) {
-					if ( this.$store.getters.productStatisticsViewMode == 0)
-						this.curActiveDiagramId = 0;
-					else if (this.$store.getters.productStatisticsViewMode == 1)
-						this.curActiveDiagramId = 1;
-				}
-
-				let newBtn = document.getElementById('btn'+this.navBarOptions[this.curActiveDiagramId].ref);
-				let newCollapsible = document.getElementById("collapse"+this.navBarOptions[this.curActiveDiagramId].ref);
 			
-				newBtn.classList.remove("collapsed");
-				newBtn.setAttribute("aria-expanded", true);
+				if (this.curActiveDiagramId == null) {
+					if(this.$store.getters.stratifiedOrRaw == 0) {
+						if ( this.$store.getters.productStatisticsViewMode == 0)
+							this.curActiveDiagramId = 2;
+						else if (this.$store.getters.productStatisticsViewMode == 1)
+							this.curActiveDiagramId = 3;
+					}
 				
-				newCollapsible.classList.add("show");
-				newCollapsible.setAttribute("aria-expanded", true);
-			}
+					else if(this.$store.getters.stratifiedOrRaw == 1) {
+						if ( this.$store.getters.productStatisticsViewMode == 0)
+							this.curActiveDiagramId = 0;
+						else if (this.$store.getters.productStatisticsViewMode == 1)
+							this.curActiveDiagramId = 1;
+					}
 
+					let newBtn = document.getElementById('btn'+this.navBarOptions[this.curActiveDiagramId].ref);
+					let newCollapsible = document.getElementById("collapse"+this.navBarOptions[this.curActiveDiagramId].ref);
+			
+					newBtn.classList.remove("collapsed");
+					newBtn.setAttribute("aria-expanded", true);
+				
+					newCollapsible.classList.add("show");
+					newCollapsible.setAttribute("aria-expanded", true);
+				}
+			}
 			this.$refs[this.navBarOptions[this.curActiveDiagramId].ref].updateChartData();
 		}
 	},

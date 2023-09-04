@@ -37,7 +37,7 @@ export default {
 		diagramTitle() {
 			if (this.$store.getters.product == null || this.$store.getters.areaDensity == null)
 				return "Dummy Title";
-			return "Polygon Value Range Timeseries for Raw Product (" + this.$store.getters.areaDensity.description +")";
+			return "Polygon Value Range Percentage Timeseries for Raw Product (" + this.$store.getters.areaDensity.description +")";
 		},
 		noData() {
 			return  [null];
