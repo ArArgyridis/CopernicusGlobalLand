@@ -36,7 +36,7 @@ export default {
 				return "Dummy Title";
 			
 			let tmpDate = new Date(Date.parse(this.$store.getters.currentDate));
-			return "Region Histogram for raw Product (" + tmpDate.toDateString() + ")";
+			return "Polygon Frequency Histogram for Raw Product (" + tmpDate.toDateString() + ")";
 		},
 		noData() {
 			return [null, null];

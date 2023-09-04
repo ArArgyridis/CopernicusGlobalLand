@@ -35,7 +35,7 @@ export default {
 		diagramTitle() {
 			if (this.product == null)
 				return "Dummy Title";
-			return "Region Time Series for selected Product (" + this.mode + ")";
+			return "Polygon Time Series for Product (" + this.mode + ")";
 		},
 		diagramOptions() {
 			if (this.product == null)

@@ -25,7 +25,7 @@ export default {
 				return "Dummy Title";
 			
 			let tmpDate = new Date(Date.parse(this.$store.getters.currentDate));
-			return "Region Density for raw Product (" + tmpDate.toDateString() + ")";
+			return "Polygon Area Percentage per each Value Range for Raw Product (" + tmpDate.toDateString() + ")";
 		},
 		noData() {
 			return null;
