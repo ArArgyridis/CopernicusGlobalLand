@@ -55,6 +55,14 @@ int main(int argc, char *argv[]) {
 
     boost::filesystem::create_directories(config->filesystem.tmpPath);
 
+
+    //enable BIGTIFF
+
+
+    char **tmpToCOGWarpOptions = nullptr;
+    tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "BIGTIFF", "IF_NEEDED");
+    tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "NUM_THREADS", "ALL_CPUS");
+
     for (auto& product:Constants::productInfo)
         for (auto& variable:product.second->variables) {
             std::string query = fmt::format(R"""(
@@ -133,11 +141,9 @@ int main(int argc, char *argv[]) {
                 GDALDriver *poDriver;
                 poDriver = GetGDALDriverManager()->GetDriverByName("COG");
 
-                //enable BIGTIFF
-                std::unique_ptr<char*, void(*)(char**)> papszOptions(nullptr, CSLDestroy);
-                papszOptions.reset(CSLAddNameValue(papszOptions.get(), "BIGTIFF", "YES"));
 
-                tmpCogData = GDALDatasetUniquePtr(poDriver->CreateCopy(tmpCog.c_str(), inData.get(), FALSE, papszOptions.get(), nullptr, nullptr));
+                tmpCogData = GDALDatasetUniquePtr(poDriver->CreateCopy(tmpCog.c_str(), inData.get(),
+                                                                       FALSE, tmpToCOGWarpOptions, nullptr, nullptr));
                 tmpCogData = nullptr;
                 boost::filesystem::remove(tmpFile);
 
@@ -156,6 +162,7 @@ int main(int argc, char *argv[]) {
 
             }
         }
-    return 0;
 
+    CSLDestroy(tmpToCOGWarpOptions);
+    return 0;
 }
