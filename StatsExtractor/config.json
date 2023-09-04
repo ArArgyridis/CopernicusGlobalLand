@@ -27,6 +27,7 @@
 	},
 	"filesystem": {
 		"imagery_path": "/home/argyros/Projects/JRC/ExperimentalData/Imagery/",
+		"long_term_statistics_path": "/home/argyros/Projects/JRC/DataInventory/lts/",
 		"anomaly_products_path": "/home/argyros/Projects/JRC/AnomalyProducts/",
 		"tmp_path":  "/home/argyros/Projects/JRC/tmp/",
 		"mapserver_data_path": "/home/argyros/Projects/JRC/mapserver/",

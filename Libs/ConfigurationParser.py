@@ -135,6 +135,7 @@ class SFTPConnectionParams(object):
 class FileSystem(object):
     def __init__(self, cfg):
         self.imageryPath            = cfg["imagery_path"]
+        self.ltsPath                = cfg["long_term_statistics_path"]
         self.anomalyProductsPath    = cfg["anomaly_products_path"]
         self.tmpPath                = cfg["tmp_path"]
         self.mapserverPath          = cfg["mapserver_data_path"]

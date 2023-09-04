@@ -254,9 +254,14 @@ def main():
                     inDir = cfg.filesystem.anomalyProductsPath
                 obj.importProductFromLocalStorage(inDir)
             else:
-                if Constants.PRODUCT_INFO[pid].productType != "raw":
+                if Constants.PRODUCT_INFO[pid].productType == "anomaly":
                     continue
-                obj.fetchOrValidateAgainstVITO(dir=sys.argv[2], storageDir=cfg.filesystem.imageryPath)
+
+                storageDir = cfg.filesystem.imageryPath
+                if Constants.PRODUCT_INFO[pid].productType == "lts":
+                    storageDir = cfg.filesystem.ltsPath
+
+                obj.fetchOrValidateAgainstVITO(dir=sys.argv[2], storageDir=storageDir)
 
 
 

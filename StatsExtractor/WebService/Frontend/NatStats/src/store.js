@@ -16,7 +16,7 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-utils.subtractYears(dateStart, 2);
+utils.subtractYears(dateStart, 1);
 
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
