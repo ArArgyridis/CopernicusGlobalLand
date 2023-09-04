@@ -50,13 +50,8 @@ def main():
 					os.makedirs(tmpDir, exist_ok=True)
 
 				obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
-				if Constants.PRODUCT_INFO[pid].productType == "lts":
-					obj.fetchOrValidateAgainstVITO(dir="/home/argyros/Desktop/data/BIOPAR/",
-												   storageDir=cfg.filesystem.ltsPath)
-					continue
-				else:
-					obj.importProductFromLocalStorage(inDir)
-					#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
+				obj.importProductFromLocalStorage(inDir)
+				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 
 				#compute anomalies
 				del obj
