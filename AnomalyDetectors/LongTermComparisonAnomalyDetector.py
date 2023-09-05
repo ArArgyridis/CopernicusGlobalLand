@@ -167,7 +167,7 @@ class LongTermComparisonAnomalyDetector:
         if len(statFiles) > 0 : #compute the average of the LTSmedian/StDev
             print("Starting computing long term median")
             #open a file to get required info
-            medianDt = netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, statFiles[0][0]), statFiles[0][1])
+            medianDt = netCDFSubDataset(os.path.join(self._cfg.filesystem.ltsPath, statFiles[0][0]), statFiles[0][1])
 
 
             tmpInData = gdal.Open(medianDt)
@@ -190,9 +190,9 @@ class LongTermComparisonAnomalyDetector:
             step = int(rasterYSize / (self._nThreads))
             threads = []
             medianImages = [netCDFSubDataset(
-                os.path.join(self._cfg.filesystem.imageryPath, k[0]), k[1]) for k in statFiles]
+                os.path.join(self._cfg.filesystem.ltsPath, k[0]), k[1]) for k in statFiles]
             stdImages =[netCDFSubDataset(
-                os.path.join(self._cfg.filesystem.imageryPath, k[2]), k[3]) for k in statFiles]
+                os.path.join(self._cfg.filesystem.ltsPath, k[2]), k[3]) for k in statFiles]
 
             #computemedian(ret, medianImages, stdImages, 3000, 4000, noDataValue)
 
