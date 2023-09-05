@@ -51,8 +51,6 @@ def main():
 				elif Constants.PRODUCT_INFO[pid].productType == "lts":
 					inDir = cfg.filesystem.ltsPath
 
-				print(Constants.PRODUCT_INFO[pid].productType, inDir)
-
 				obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
 				obj.importProductFromLocalStorage(inDir)
 				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)

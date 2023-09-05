@@ -349,7 +349,6 @@ class LongTermComparisonAnomalyDetector:
 
             #except:
             #    print("An error has occured. Exiting")
-
             return 0
 
 def main():
