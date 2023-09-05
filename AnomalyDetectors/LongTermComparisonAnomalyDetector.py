@@ -336,7 +336,7 @@ class LongTermComparisonAnomalyDetector:
 
             #update db!
             query = """INSERT INTO product_file(product_file_description_id, rel_file_path, date) VALUES ({0},'{1}','{2}') 
-                    ON CONFLICT(product_file_description_id, rel_file_path) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path; 
+                    ON CONFLICT(product_file_description_id, "date", rt_flag) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path; 
                     """.format(
                 self._anomalyProductId,
                 os.path.relpath(outImg, self._cfg.filesystem.anomalyProductsPath),
