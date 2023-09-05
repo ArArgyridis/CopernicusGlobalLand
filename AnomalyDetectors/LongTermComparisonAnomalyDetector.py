@@ -346,6 +346,9 @@ class LongTermComparisonAnomalyDetector:
             #copy to destination
             copy(tmpImg, outImg)
 
+            #deleting tmpImg
+            os.remove(tmpImg)
+
             #update db!
             query = """INSERT INTO product_file(product_file_description_id, rel_file_path, date) VALUES ({0},'{1}','{2}') 
                     ON CONFLICT(product_file_description_id, "date", rt_flag) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path; 
