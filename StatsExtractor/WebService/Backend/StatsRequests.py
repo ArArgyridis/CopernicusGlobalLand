@@ -82,7 +82,7 @@ class StatsRequests(GenericRequest):
         	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
         	JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
         	JOIN LATERAL (
-        		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object( 'id', pfdanom.id, 'name', panom.name[1] , 'variables', row_to_json(anompfv.*)::jsonb)))  anomaly_info
+        		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object( 'id', pfdanom.id, 'name', panom.name[1] , 'variable', row_to_json(anompfv.*)::jsonb)))  anomaly_info
         		FROM long_term_anomaly_info ltai
         		JOIN product_file_variable anompfv ON ltai.anomaly_product_variable_id  = anompfv.id
         		JOIN product_file_description pfdanom ON anompfv.product_file_description_id = pfdanom.id
@@ -95,7 +95,7 @@ class StatsRequests(GenericRequest):
         ),dates AS(
         	SELECT id, json_object_agg(rt_flag, dates)dates FROM (
         		SELECT id, rt_flag, ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates FROM(
-        			SELECT dt.id, pf.date, CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END rt_flag --ARRAY_TO_JSON(ARRAY_AGG("date" order by "date" desc) )::jsonb dates
+        			SELECT dt.id, pf.date, CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END rt_flag
         			FROM dt 
         			JOIN product_file pf ON dt.product_file_description_id = pf.product_file_description_id
         			WHERE pf."date" BETWEEN '{1}' AND '{2}'        	
