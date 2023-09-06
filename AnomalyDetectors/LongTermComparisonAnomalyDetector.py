@@ -1,4 +1,5 @@
 import os,sys, numpy as np, pandas as pd
+
 sys.path.extend(['../'])
 from osgeo import gdal
 from datetime import datetime, timedelta
@@ -7,7 +8,7 @@ from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Utils import xyToColRow, netCDFSubDataset, scaleValue
 from Libs.Constants import Constants
 from multiprocessing import Process, cpu_count
-from shutil import rmtree
+from shutil import copy, rmtree
 gdal.DontUseExceptions()
 
 
@@ -167,7 +168,7 @@ class LongTermComparisonAnomalyDetector:
         if len(statFiles) > 0 : #compute the average of the LTSmedian/StDev
             print("Starting computing long term median")
             #open a file to get required info
-            medianDt = netCDFSubDataset(os.path.join(self._cfg.filesystem.imageryPath, statFiles[0][0]), statFiles[0][1])
+            medianDt = netCDFSubDataset(os.path.join(self._cfg.filesystem.ltsPath, statFiles[0][0]), statFiles[0][1])
 
 
             tmpInData = gdal.Open(medianDt)
@@ -190,9 +191,9 @@ class LongTermComparisonAnomalyDetector:
             step = int(rasterYSize / (self._nThreads))
             threads = []
             medianImages = [netCDFSubDataset(
-                os.path.join(self._cfg.filesystem.imageryPath, k[0]), k[1]) for k in statFiles]
+                os.path.join(self._cfg.filesystem.ltsPath, k[0]), k[1]) for k in statFiles]
             stdImages =[netCDFSubDataset(
-                os.path.join(self._cfg.filesystem.imageryPath, k[2]), k[3]) for k in statFiles]
+                os.path.join(self._cfg.filesystem.ltsPath, k[2]), k[3]) for k in statFiles]
 
             #computemedian(ret, medianImages, stdImages, 3000, 4000, noDataValue)
 
@@ -297,24 +298,32 @@ class LongTermComparisonAnomalyDetector:
                                       *(Constants.PRODUCT_INFO[self._anomalyProductId].productNames[0],
                                         self._dateStart[0:4]))
 
+            tmpImgPath = outImgPath.replace(self._cfg.filesystem.anomalyProductsPath,
+                                            self._cfg.filesystem.tmpPath)
+            os.makedirs(outImgPath, exist_ok=True)
+            os.makedirs(tmpImgPath, exist_ok=True)
+
             outImg = os.path.join(outImgPath,
                                   Constants.PRODUCT_INFO[self._anomalyProductId].fileNameCreationPattern.format(
                                       self._dateStart, self._dateEnd))
-            print(outImg)
+
+            tmpImg = outImg.replace(outImgPath, tmpImgPath)
+
+            print(tmpImg)
             #building output paths
 
-            os.makedirs(outImgPath, exist_ok=True)
+
 
             drv = gdal.GetDriverByName("GTiff")
 
-            outProduct = drv.Create(outImg, xsize=mn.RasterXSize, ysize=mn.RasterYSize,
+            tmpProduct = drv.Create(tmpImg, xsize=mn.RasterXSize, ysize=mn.RasterYSize,
                                     bands=1, eType=gdal.GDT_Byte)
 
-            outProduct.SetProjection(mn.GetProjection())
-            outProduct.SetGeoTransform(mn.GetGeoTransform())
-            outProduct.GetRasterBand(1).SetNoDataValue(noDataValue)
-            outProduct = None
-            #computeAnomaly(outImg, products, ltsmedian, ltsStd, 7000,8000, noDataValue, row[0])
+            tmpProduct.SetProjection(mn.GetProjection())
+            tmpProduct.SetGeoTransform(mn.GetGeoTransform())
+            tmpProduct.GetRasterBand(1).SetNoDataValue(noDataValue)
+            tmpProduct = None
+            #computeAnomaly(tmpImg, products, ltsmedian, ltsStd, 7000,8000, noDataValue, row[0])
 
             prevRow = 0
             step = int(mn.RasterYSize /self._nThreads)
@@ -326,7 +335,7 @@ class LongTermComparisonAnomalyDetector:
                     curRow = mn.RasterYSize
                 print(prevRow, curRow)
                 threads.append(Process(target=computeAnomaly,
-                                       args=(outImg, products, ltsmedian, ltsStd, prevRow, curRow, noDataValue,
+                                       args=(tmpImg, products, ltsmedian, ltsStd, prevRow, curRow, noDataValue,
                                              variable)))
                 threads[-1].start()
                 prevRow = curRow
@@ -334,9 +343,15 @@ class LongTermComparisonAnomalyDetector:
             for trd in threads:
                 trd.join()
 
+            #copy to destination
+            copy(tmpImg, outImg)
+
+            #deleting tmpImg
+            os.remove(tmpImg)
+
             #update db!
             query = """INSERT INTO product_file(product_file_description_id, rel_file_path, date) VALUES ({0},'{1}','{2}') 
-                    ON CONFLICT(product_file_description_id, rel_file_path) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path; 
+                    ON CONFLICT(product_file_description_id, "date", rt_flag) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path; 
                     """.format(
                 self._anomalyProductId,
                 os.path.relpath(outImg, self._cfg.filesystem.anomalyProductsPath),
@@ -349,7 +364,6 @@ class LongTermComparisonAnomalyDetector:
 
             #except:
             #    print("An error has occured. Exiting")
-
             return 0
 
 def main():
