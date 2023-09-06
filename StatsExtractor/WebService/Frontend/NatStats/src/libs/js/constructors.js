@@ -83,26 +83,41 @@ export function	AnomaliesProps(product, variable, dateStart, dateEnd) {
 			return;
 		}
 		
+		for (let i = 0; i < variable.anomaly_info.length; i++) {
+			if ( variable.anomaly_info[i].variable == null)
+				continue;
+			
+			//because the anomaly variable for a product variable can be only one.....
+			let tmp = createVariableInfo( variable.anomaly_info[i].variable);
+			 variable.anomaly_info[i] = {... variable.anomaly_info[i], ...tmp};
+		}
 		variable.currentAnomaly = variable.anomaly_info[0];
-		variable.anomaly_info.forEach( anomaly => {
-			anomaly.valueRanges 	= [anomaly.min_value, anomaly.low_value, anomaly.mid_value, anomaly.high_value, anomaly.max_value];
-			anomaly.cog 			= new CogProps(anomaly, variable, dateStart, dateEnd);
-			anomaly.stratificationInfo 	= new stratificationViewProps("meanval_color");
-			anomaly.style 			= new styleBuilder(anomaly.style, anomaly.max_prod_value);
-		});
 }
 
 export function VariableProperties(product, dateStart, dateEnd) {
-	product.variables.forEach( variable => {
-		AnomaliesProps(product, variable, dateStart, dateEnd);
-		variable.cog					= new CogProps(product, variable, dateStart, dateEnd)
-		variable.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
-		variable.density 				= new areaDensityOptions()[2];
+	for (let i = 0; i < product.variables.length; i++) {
+		if (product.variables[i].anomaly_info != null)
+			AnomaliesProps(product, product.variables[i], dateStart, dateEnd);
+		let tmp = createVariableInfo(product.variables[i]);
 
-		variable.density.description 	= utils.computeDensityDescription(variable.density.description, variable.valueRanges[2], variable.valueRanges[3]);
-		variable.style 				= new styleBuilder(variable.style, variable.max_prod_value);
-		variable.stratificationInfo 		= new stratificationViewProps("meanval_color");
-	});
+		product.variables[i] = {...product.variables[i], ...tmp};
+	}
+
+}
+
+
+export function createVariableInfo(variable) {
+	let ret = new Object();
+	
+	ret.cog					= new CogProps();
+	ret.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
+	ret.density 				= new areaDensityOptions()[2];
+	
+	ret.density.description 	= utils.computeDensityDescription(ret.density.description, ret.valueRanges[2], ret.valueRanges[3]);
+	ret.style 					= new styleBuilder(variable.style, variable.max_prod_value);
+	ret.stratificationInfo 		= new stratificationViewProps("meanval_color");
+
+	return ret;
 }
 
 export function	styleBuilder(style, maxValue) {
@@ -155,7 +170,7 @@ export function	ProductsProps() {
 		this.info = [];
 	
 }
-export function CogProps(product, variable, dateStart, dateEnd) {
+export function CogProps() {
 	this.current 	= null;
 	this.previous = null;
 	this.next 	= null;

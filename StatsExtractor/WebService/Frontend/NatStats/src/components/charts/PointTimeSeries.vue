@@ -49,7 +49,6 @@ export default {
 			
 			let variable = this.product.currentVariable;
 			
-			
 			if (this.mode == "Anomalies")
 				variable = this.$store.getters.currentAnomaly;
 		

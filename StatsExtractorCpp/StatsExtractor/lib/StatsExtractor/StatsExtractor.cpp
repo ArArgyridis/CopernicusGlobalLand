@@ -85,7 +85,6 @@ void StatsExtractor::process() {
                             FROM(
                                 SELECT DISTINCT image --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
                                 FROM info
-                                LIMIT 1
                             )a
                         )b
                         GROUP BY grpid

@@ -29,7 +29,7 @@ function setCurrentCogByDateAndMode(state) {
 		state.currentCog = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	}
 	else { 
-		if (Object.keys(state.categories.current.products.current.currentVariable. currentAnomalycog.layers).length == 0)
+		if (Object.keys(state.categories.current.products.current.currentVariable. currentAnomaly.cog.layers).length == 0)
 			return;
 		state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
 	}
@@ -53,7 +53,7 @@ export default{
 				previousCog: null
 			},
 			mutations: {
-				appendToProductsAnomaliesCogLayers(state, dt) {
+				setCurrentAnomalyCogLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers = dt;
 					let date = state.categories.current.products.current.currentDate;
 					if (date != null && state.categories.current.products.current.currentVariable.currentAnomaly != null) {

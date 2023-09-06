@@ -216,7 +216,7 @@ export default {
 			
 			console.log(this.$store.getters.currentAnomaly);
 			
-			requests.productCog(this.$store.getters.currentAnomaly.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
+			requests.productCog(this.$store.getters.currentAnomaly.id, this.$store.getters.currentAnomaly.variable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
 				if (data.data.data == null)
 					return;
 				let dt = {}
@@ -229,7 +229,7 @@ export default {
 						}
 					});
 				});
-				this.$store.commit("setCurrentVariableCogLayers", dt);
+				this.$store.commit("setCurrentAnomalyCogLayers", dt);
 				if(displayFirst)
 					this.updateWMSVisibility();
 			});
