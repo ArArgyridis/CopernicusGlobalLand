@@ -79,8 +79,8 @@
 			let ret = this.__computeLegendValuesAndStyle(anomaly.valueRanges, anomaly.style);
 			settings.values = ret.values;
 			settings.values[0] += " (-)";
-			settings.values[1] += " (Stable)";
-			settings.values[2] += " (+)";
+			settings.values[2] += " (Stable)";
+			settings.values[4] += " (+)";
 			
 			settings.style = ret.style;
 			return settings;

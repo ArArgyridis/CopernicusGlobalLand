@@ -210,6 +210,32 @@ export default {
 				if(displayFirst)
 					this.updateWMSVisibility();
 			});
+			
+			if (this.$store.getters.currentAnomaly == null)
+				return;
+			
+			console.log(this.$store.getters.currentAnomaly);
+			
+			requests.productCog(this.$store.getters.currentAnomaly.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
+				if (data.data.data == null)
+					return;
+				let dt = {}
+				Object.keys(data.data.data).forEach(rt =>{
+					dt[rt] = {};
+					Object.keys(data.data.data[rt]).forEach(date => {
+						dt[rt][date] = {
+							layerId: null, 
+							url: options.s3CogURL + data.data.data[rt][date]
+						}
+					});
+				});
+				this.$store.commit("setCurrentVariableCogLayers", dt);
+				if(displayFirst)
+					this.updateWMSVisibility();
+			});
+			
+			
+			
 
 			//need to do the same with the anomalies!!!!
 		},

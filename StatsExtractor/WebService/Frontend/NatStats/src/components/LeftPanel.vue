@@ -140,8 +140,8 @@
 				</h2>
 				<div id="collapseViewOptionsOne" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
 					<div class="accordion-body">
-						<select class="form-select" size="2" aria-label="size 3 select example" v-bind:disabled="variable.anomalies == null">
-							<option v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx" disabled><a class="dropdown-item">{{md}}</a></option>
+						<select class="form-select" size="2" aria-label="size 3 select example" >
+							<option v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx" v-bind:disabled="variable.anomaly_info == null"><a class="dropdown-item">{{md}}</a></option>
 						</select>
 					</div>
 				</div>
