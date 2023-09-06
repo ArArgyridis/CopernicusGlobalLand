@@ -82,7 +82,7 @@ class StatsRequests(GenericRequest):
         	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
         	JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
         	JOIN LATERAL (
-        		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object( 'id', pfdanom.id, 'name', panom.name[1] , 'variables', row_to_json(anompfv.*)::jsonb ))  anomaly_info
+        		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object( 'id', pfdanom.id, 'name', panom.name[1] , 'variables', row_to_json(anompfv.*)::jsonb)))  anomaly_info
         		FROM long_term_anomaly_info ltai
         		JOIN product_file_variable anompfv ON ltai.anomaly_product_variable_id  = anompfv.id
         		JOIN product_file_description pfdanom ON anompfv.product_file_description_id = pfdanom.id
