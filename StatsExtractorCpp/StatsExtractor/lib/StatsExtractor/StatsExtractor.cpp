@@ -99,14 +99,14 @@ void StatsExtractor::process() {
             PGPool::PGConn::Pointer cn          = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
             PGPool::PGConn::PGRes processInfo   = cn->fetchQueryResult(query, "product info");
 
-            //Creating stats partition table if not exist
-            query = fmt::format(R"""(CREATE TABLE IF NOT EXISTS poly_stats_{0}_{1}_{2} PARTITION OF poly_stats FOR VALUES FROM ({0},{1}) TO ({0},{2});)""",
-                                variable.second->id, processInfo[0][7].as<size_t>(), processInfo[0][8].as<size_t>());
-            std::cout << query  << "\n";
-            cn->executeQuery(query);
-
             if (processInfo.empty() || processInfo[0][0].is_null() || processInfo[0][1].is_null()) //no data at all, or no polygons, or no images
                 continue;
+
+
+            //Creating stats partition table if not exists
+            query = fmt::format(R"""(CREATE TABLE IF NOT EXISTS poly_stats_{0}_{1}_{2} PARTITION OF poly_stats FOR VALUES FROM ({0},{1}) TO ({0},{2});)""",
+                                variable.second->id, processInfo[0][7].as<size_t>(), processInfo[0][8].as<size_t>());
+            cn->executeQuery(query);
 
             JsonDocumentUniquePtr  imageGroups = std::make_unique<JsonDocument>();
             JsonDocumentSharedPtr polyIds = std::make_shared<JsonDocument>();
