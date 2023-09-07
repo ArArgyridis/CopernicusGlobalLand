@@ -299,7 +299,7 @@ export default {
 			this.stratificationViewProps.rtFlag 			= this.$store.getters.product.rtFlag;
 
 			if (this.$store.getters.productStatisticsViewMode == 1 && this.$store.getters.currentAnomaly != null) //seeing anomalies
-				this.stratificationViewProps.variableID = this.$store.getters.currentAnomaly.id;
+				this.stratificationViewProps.variableID = this.$store.getters.currentAnomaly.variable.id;
 						
 			if (this.stratificationViewProps.stratifiedOrRaw == 1) {
 				let tmpLayer = this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId);

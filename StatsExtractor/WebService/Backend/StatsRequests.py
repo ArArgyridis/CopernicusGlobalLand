@@ -249,7 +249,7 @@ class StatsRequests(GenericRequest):
         GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
         """.format(path, self._requestData["options"]["product_variable_id"])
 
-        threads.append(Process(target=productStats, args=(self._config, mQuery, path, self._requestData, result,  "mean")))
+        threads.append(Process(target=productStats, args=(self._config, mQuery, self._config.filesystem.ltsPath, self._requestData, result,  "mean")))
         threads[-1].start()
         
         stdevQuery = """
@@ -269,7 +269,7 @@ class StatsRequests(GenericRequest):
         GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
         """.format(path, self._requestData["options"]["product_variable_id"])
         
-        threads.append(Process(target=productStats, args=(self._config, stdevQuery, path, self._requestData, result,  "stdev")))
+        threads.append(Process(target=productStats, args=(self._config, stdevQuery, self._config.filesystem.ltsPath, self._requestData, result,  "stdev")))
         threads[-1].start()
 
 

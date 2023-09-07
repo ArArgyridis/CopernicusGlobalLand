@@ -93,7 +93,7 @@ export default {
 			//checking if data should be fetched
 			let productVariable = this.$store.getters.product.currentVariable;
 			if(this.mode == "Anomalies")
-				productVariable = this.$store.getters.currentAnomaly;
+				productVariable = this.$store.getters.currentAnomaly.variable;
 				
 			let coords =this.$store.getters.clickedCoordinates;
 			if (coords != null)

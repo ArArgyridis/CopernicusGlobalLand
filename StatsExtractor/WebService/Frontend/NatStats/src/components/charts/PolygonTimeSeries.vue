@@ -78,7 +78,7 @@ export default {
 		updateChartData() {
 			let productVariable = this.$store.getters.product.currentVariable;
 			if(this.mode == "Anomalies")
-				productVariable = this.$store.getters.currentAnomaly;
+				productVariable = this.$store.getters.currentAnomaly.variable;
 			
 			let polyId = this.$store.getters.selectedPolygon;
 			if (productVariable == null || polyId == null)
