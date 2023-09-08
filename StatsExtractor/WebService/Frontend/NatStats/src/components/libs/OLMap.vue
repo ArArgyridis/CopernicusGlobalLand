@@ -58,7 +58,11 @@ export default {
 				status: false,
 				evtTypes:null,
 				fn: (evt) => {
-					this.$emit("mapCoordinate", {epsg: this.epsg, coordinate: evt.coordinate});
+					let ret = {
+						obj: evt,
+						epsg: this.epsg
+					};
+					this.$emit("mapCoordinate", ret);
 				}
 			},
 			currentHighlightLayer:null,

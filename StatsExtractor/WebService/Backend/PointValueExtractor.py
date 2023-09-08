@@ -36,49 +36,20 @@ class PointValueExtractor():
         return None
 
     def __getNETCDFSubdataset(self, img):
-        return """NETCDF:"{0}":{1}""".format(img, self._data[0])
-
-    def _movingAverage(self, ret,windowSize = 3):
-        if ret is None or ret["raw"] is None:
-            return
-
-        rawData = [s[1] for s in ret["raw"]]
-        averages =pd.Series(rawData).rolling(window=windowSize, min_periods=1).mean()
-        #difs = rawData[windowSize - 1::] - ll
-        difs = list(range(len(rawData)))
-        for k, l, i in zip(rawData, averages, range(len(rawData))):
-            if k is None:
-                difs[i] = np.nan
-            else:
-                difs[i] = k-l
-
-        mn = np.nanmean(difs)
-        std = np.nanstd(difs)
-        difs = np.round(difs, 3)
-        ret["filtered"] = list(range(len(averages)))
-        ret["filtered"] = [ [x[0], None] if np.isnan(y) else [x[0],y] for x,y in zip(ret["raw"], averages)  ]
-        for rawVal, dif in zip(ret["raw"], difs):
-            rawVal.append(int(dif < mn-3*std)*(-3)
-            + int(dif >= mn - 3*std and dif <mn - 2*std)*(-2)
-            + int(dif >= mn - 2*std and dif <mn - 1*std)*(-1)
-            + int(dif >= mn - 1*std and dif <mn + 1*std)*(0)
-            + int(dif >= mn + 1*std and dif <mn + 2*std)*(1)
-            + int(dif >= mn + 2*std and dif <mn + 3*std)*(2)
-            + int(dif >= mn + 3 * std)*(3))
+        return """NETCDF:"{0}":{1}""".format(img, self._data[0][1])
 
     def process(self):
-        ret = {}
-        ret["raw"] = list(range(len(self._data[1])))
-        ret["filtered"] = {}
+        ret = [None]*len(self._data)
         i = 0
         issueImg = None
         try:
             transformed = False
-            for img in self._data[1]:
+            for dataRow in self._data:
+                img = dataRow[2]
                 if not os.path.isfile(img):
                     issueImg  = img
                     raise FileExistsError
-            
+                
                 inData = None
                 if img.endswith(".nc"):
                     inData = gdal.Open(self.__getNETCDFSubdataset(img))
@@ -106,12 +77,13 @@ class PointValueExtractor():
                 gt = inData.GetGeoTransform()
                 col,row = xyToColRow(self._xCoord, self._yCoord, gt)
                 value = inData.GetRasterBand(1).ReadAsArray(col, row, 1, 1)[0,0].astype(float)
-                ret["raw"][i] = [self._data[1][img], value]
+                
+                ret[i] =[dataRow[3],value]
                 if value == inData.GetRasterBand(1).GetNoDataValue():
-                    ret["raw"][i][1] = None
+                    ret[i][1] = None
                 #applying netCDF scaling for raw data
                 elif img.endswith(".nc"):
-                    ret["raw"][i][1] =  np.round(scaleValue(inData.GetMetadata(), ret["raw"][i][1], self._data[0]), 4)
+                    ret[i][1] =  np.round(scaleValue(inData.GetMetadata(), ret[i][1], dataRow[1]), 4)
                 i += 1
         except FileExistsError:
             print("The specified file does not exist: ", issueImg )
@@ -121,26 +93,7 @@ class PointValueExtractor():
             ret = None
         except:
            print("Unable to extract statistics. Exiting")
+           print("Params:", dataRow)
            ret = None
 
-        #self._movingAverage(ret)
         return ret
-
-def main():
-    data = ('NDVI', ['/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2020/20201101/c_gls_NDVI300_202011010000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202011010000_GLOBE_OLCI_V2.0.1.nc', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2020/20201111/c_gls_NDVI300_202011110000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202011110000_GLOBE_OLCI_V2.0.1.nc', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210411/c_gls_NDVI300_202104110000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202104110000_GLOBE_OLCI_V2.0.1.nc', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210421/c_gls_NDVI300_202104210000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202104210000_GLOBE_OLCI_V2.0.1.nc', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210621/c_gls_NDVI300_202106210000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202106210000_GLOBE_OLCI_V2.0.1.nc', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210701/c_gls_NDVI300_202107010000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202107010000_GLOBE_OLCI_V2.0.1.nc'], {'/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2020/20201101/c_gls_NDVI300_202011010000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202011010000_GLOBE_OLCI_V2.0.1.nc': '2020-11-01T00:00:00', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2020/20201111/c_gls_NDVI300_202011110000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202011110000_GLOBE_OLCI_V2.0.1.nc': '2020-11-11T00:00:00', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210411/c_gls_NDVI300_202104110000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202104110000_GLOBE_OLCI_V2.0.1.nc': '2021-04-11T00:00:00', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210421/c_gls_NDVI300_202104210000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202104210000_GLOBE_OLCI_V2.0.1.nc': '2021-04-21T00:00:00', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210621/c_gls_NDVI300_202106210000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202106210000_GLOBE_OLCI_V2.0.1.nc': '2021-06-21T00:00:00', '/home/madagu/Projects/JRCStatsExtractor/ExperimentalData/Imagery/BioPar_NDVI300_V2_Global/2021/20210701/c_gls_NDVI300_202107010000_GLOBE_OLCI_V2.0.1/c_gls_NDVI300_202107010000_GLOBE_OLCI_V2.0.1.nc': '2021-07-01T00:00:00'}, 'c_gls_NDVI300_(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})_GLOBE_OLCI_V2.0.1.nc', '(int, int, int, int, int,)', '{0}-{1}-{2}T{3}:{4}:00')
-
-    xCoord = 3002465.761143498
-    yCoord = 990286.9527982064
-    epsg = "EPSG:3857"
-
-    obj = PointValueExtractor(data, xCoord, yCoord, epsg)
-    val = obj.process()
-
-
-    print(val)
-
-
-
-
-if __name__ == "__main__":
-    main()

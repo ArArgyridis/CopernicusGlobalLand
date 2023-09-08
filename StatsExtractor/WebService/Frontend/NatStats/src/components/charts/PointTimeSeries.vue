@@ -96,15 +96,16 @@ export default {
 				productVariable = this.$store.getters.currentAnomaly.variable;
 				
 			let coords =this.$store.getters.clickedCoordinates;
+
 			if (coords != null)
-				coords = JSON.parse(JSON.stringify(coords));
+				coords = JSON.parse(JSON.stringify(coords.obj.coordinate));
 			let dateStart = JSON.parse(JSON.stringify(this.$store.getters.dateStart));
 			let dateEnd = JSON.parse(JSON.stringify(this.$store.getters.dateEnd));
 			
 			if ( this.$refs.diagram == null ||  productVariable == null || coords == null || dateStart == null || dateEnd == null)
 				return;
-			
-			if (this.curProduct.id == productVariable.id && this.previousCoordinates.coordinate[0] == coords.coordinate[0] && this.previousCoordinates.coordinate[1] == coords.coordinate[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
+
+			if (this.curProduct.id == productVariable.id && this.previousCoordinates[0] == coords[0] && this.previousCoordinates[1] == coords[1]  && this.previousDateStart ==dateStart && this.previousDateEnd == dateEnd)
 				return;
 			
 			this.isLoading = true;
@@ -114,7 +115,7 @@ export default {
 			this.curProduct = productVariable;
 			this.resizeChart();
 
-			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariable.id,  this.product.rtFlag.id, coords).then((response) => {
+			requests.getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariable.id,  this.product.rtFlag.id, this.$store.getters.clickedCoordinates.obj.coordinate, this.$store.getters.clickedCoordinates.epsg).then((response) => {
 				this.resizeChart();
 				let diagramData = null;
 				if (this.mode == "Raw") {
@@ -126,7 +127,9 @@ export default {
 					
 					for (let i = 0; i < response.data.data.length; i++) {
 						let row = response.data.data[i];
-						let tm = new Date(row[0]).getTime();
+						
+						let tm = new Date(Date.parse(row[0]+"+00:00")).getTime();
+				
 						diagramData[0][i] = [tm, row[2] - 2*row[3],  row[2] +2*row[3]];
 						diagramData[1][i] = [tm, row[1]];
 						diagramData[2][i] = [tm, row[2]];
@@ -141,7 +144,7 @@ export default {
 					
 					for (let i = 0; i < response.data.data.length; i++) {
 						let row = response.data.data[i];
-						let tm = new Date(row[0]).getTime();
+						let tm = new Date(Date.parse(row[0]+"+00:00")).getTime();
 						diagramData[1][i] = [tm, row[1]];
 					}
 				}

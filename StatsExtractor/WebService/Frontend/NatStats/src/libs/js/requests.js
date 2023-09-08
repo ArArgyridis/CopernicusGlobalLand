@@ -101,16 +101,17 @@ export default {
 		};
 		return axios.post(options.endpointURL, postParams);
 	},
-	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariableID, rtFlag, coordInfo) {
+	getRawTimeSeriesDataForRegion(dateStart, dateEnd, productVariableID, rtFlag, coordInfo, epsg) {
 		let postParams = {};
 		postParams["request"] = "rawtimeseriesdataforregion";
 		postParams["options"] = {
 			date_start: dateStart,
 			date_end: dateEnd,
 			product_variable_id: productVariableID,
-			rt_flag: rtFlag
+			rt_flag: rtFlag,
+			coordinate: coordInfo,
+			epsg:epsg
 		};
-		postParams["options"] = {...postParams["options"], ...coordInfo};
 		return axios.post(options.endpointURL, postParams);
 	},
 	polygonStatsTimeSeries(polyId, dateStart, dateEnd, productVariableID, rtFlag) {

@@ -108,8 +108,7 @@ export default {
 							];
 							for (let i = 0; i < response.data.data.length; i++ ) {							
 								let it = response.data.data[i];
-								it[0] =  (new Date(it[0])).getTime();
-							
+								it[0] =  new Date(Date.parse(it[0]+"+00:00")).getTime();
 								diagramData[0][i] = [ it[0], it[3]-2*it[4], it[3]+2*it[4]];
 								diagramData[1][i] = [ it[0], it[1] ];
 								diagramData[2][i] = [ it[0], it[1] - it[2], it[1]+it[2] ];
@@ -124,7 +123,7 @@ export default {
 							];
 							for (let i = 0; i < response.data.data.length; i++ ) {
 								let it = response.data.data[i];
-								it[0] =  (new Date(it[0])).getTime();
+								it[0] =  new Date(Date.parse(it[0]+"+00:00")).getTime();
 								diagramData[1][i] = [ it[0], it[1] ];
 								diagramData[2][i] = [ it[0], it[1] - it[2], it[1]+it[2] ];
 							}

@@ -146,7 +146,7 @@ export default {
 			this.$refs.map1.setVisibility(this.clickedPointLayerId, true);
 			this.$refs.map1.clearVectorLayer(this.clickedPointLayerId);
 			let iconProps = utils.markerProperties();
-			this.$refs.map1.addPointToLayer(this.clickedPointLayerId, 2, evt.coordinate[0], evt.coordinate[1],  {icon:	new Icon(iconProps)} );
+			this.$refs.map1.addPointToLayer(this.clickedPointLayerId, 2, evt.obj.coordinate[0], evt.obj.coordinate[1],  {icon:	new Icon(iconProps)} );
 		},
 		refreshCurrentStratificationStyle(){
 			this.$refs.map1.getLayerObject(this.$store.getters.currentStratification.layerId).changed();

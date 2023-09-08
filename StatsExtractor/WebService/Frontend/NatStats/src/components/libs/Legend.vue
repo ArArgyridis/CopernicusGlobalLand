@@ -75,7 +75,7 @@
 			let anomaly = this.$store.getters.currentAnomaly;
 			if (anomaly == null)
 				return;
-			settings.title = anomaly.description;
+			settings.title = anomaly.variable.description;
 			let ret = this.__computeLegendValuesAndStyle(anomaly.valueRanges, anomaly.style);
 			settings.values = ret.values;
 			settings.values[0] += " (-)";

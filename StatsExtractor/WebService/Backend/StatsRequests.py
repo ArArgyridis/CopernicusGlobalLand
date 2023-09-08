@@ -17,23 +17,19 @@ sys.path.extend(['../../../'])
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.GenericRequest import GenericRequest
 from PointValueExtractor import PointValueExtractor
-from osgeo import osr
-from multiprocessing import Process, Queue
-from datetime import datetime
 
-def productStats(cfg, query, path, requestData, queue, key):
-    data = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
-    res = None
-    if len(data) == 0:
-        queue.put({key: res})
-        return
-    
-    obj = PointValueExtractor(data[0],
+from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
+import numpy as np
+from osgeo import osr
+from operator import itemgetter
+
+def productStats(imageInfo, requestData):
+    obj = PointValueExtractor([imageInfo],
                                   requestData["options"]["coordinate"][0], requestData["options"]["coordinate"][1],
                                   requestData["options"]["epsg"])
-    res =  obj.process()
-    #res = None
-    queue.put({key: res})
+    return (imageInfo[0], obj.process())
+
 
 class StatsRequests(GenericRequest):
     def __init__(self, cfg="../../active_config.json", requestData=None):
@@ -130,7 +126,7 @@ class StatsRequests(GenericRequest):
     def polygonStatsTimeseries(self):
         query = """
             WITH dt AS NOT MATERIALIZED(
-                SELECT pf."date", ps.mean , ps.sd ,psltai.mean meanlts, psltai.sd sdlts 
+                SELECT pf."date", ROUND(ps.mean::numeric,4) mean, ROUND(ps.sd::numeric,5) sd, ROUND(psltai.mean::numeric,4) meanlts, ROUND(psltai.sd::numeric,5) sdlts 
                 FROM poly_stats ps 
                 JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
                 JOIN product_file pf ON ps.product_file_id = pf.id 
@@ -188,7 +184,6 @@ class StatsRequests(GenericRequest):
   
     def __getRawTimeSeriesDataForRegion(self):
         #determine the type of product
-        path = self._config.filesystem.imageryPath
         query  = """SELECT type 
                             FROM product_file_description pfd 
                             JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
@@ -196,45 +191,31 @@ class StatsRequests(GenericRequest):
                             WHERE pfv.id = {0}""".format(self._requestData["options"]["product_variable_id"])
 
         productType = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)[0][0]
+        
+        path = self._config.filesystem.imageryPath
         if productType == "anomaly":
             path = self._config.filesystem.anomalyProductsPath
         
         if path[-1] != "/":
             path += "/"
         
-        result = Queue()
+        statsPath = self._config.filesystem.ltsPath
+        if statsPath [-1] != "/":
+            statsPath  += "/"
+        
+        #load all environment variables
+        """
+        if self._config.mapserver.virtualPrefix is not None:
+            for key in self._config.mapserver.configOption:
+                print(key)
+                os.environ[key] = "{0}".format(self._config.mapserver.configOption[key])
+            path            = self._config.mapserver.virtualPrefix + path
+            statsPath   = self._config.mapserver.virtualPrefix + statsPath
+       """
         
         query = """
-            SELECT  CASE WHEN pfv.variable = ''::text THEN NULL ELSE  pfv.variable END
-            ,JSON_OBJECT_AGG('{0}' || rel_file_path, date ORDER BY date ASC)
-            ,pfd.pattern
-            ,pfd.types
-            ,pfd.create_date
-            FROM product_file pf 
-            JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
-            JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-            JOIN product p on pfd.product_id =p.id
-            WHERE date between  '{1}' and '{2}' and pfv.id  = {3}""".format(path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
-            
-        if  self._requestData["options"]["rt_flag"] >= 0:
-            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
-            
-        query += """ GROUP BY pfv.variable, pfd.pattern,pfd.types,pfd.create_date"""
-              
-        threads = []
-        
-        threads.append(Process(target=productStats, args=(self._config, query, path, self._requestData, result, "product")))
-        threads[-1].start()
-        
-        doyStart = datetime.strptime(self._requestData["options"]["date_start"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        doyStart = doyStart.utctimetuple().tm_yday
-        
-        doyEnd = datetime.strptime(self._requestData["options"]["date_end"], "%Y-%m-%dT%H:%M:%S.%fZ")
-        doyEnd = doyEnd.utctimetuple().tm_yday
-        
-        mQuery = """
-        SELECT pfvanom.variable meanVar
-        ,JSON_OBJECT_AGG( '{0}' || pf.rel_file_path, pf.date ORDER BY pf.date ASC)
+        SELECT 'mean', pfvanom.variable meanVar
+        , '{0}' || pf.rel_file_path, pf.date 
         ,pfd.pattern
         ,pfd.types
         ,pfd.create_date
@@ -245,16 +226,10 @@ class StatsRequests(GenericRequest):
         JOIN product_file_variable pfvanom ON ltai.mean_variable_id = pfvanom.id
         JOIN product_file_description pfd ON pfvanom.product_file_description_id = pfd.id 
         JOIN product_file pf ON pf.product_file_description_id = pfd.id
-        WHERE pfv.id = {1}
-        GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
-        """.format(path, self._requestData["options"]["product_variable_id"])
+        WHERE  pfv.id = {4} UNION
 
-        threads.append(Process(target=productStats, args=(self._config, mQuery, self._config.filesystem.ltsPath, self._requestData, result,  "mean")))
-        threads[-1].start()
-        
-        stdevQuery = """
-        SELECT pfvanom.variable meanVar
-        ,JSON_OBJECT_AGG( '{0}' || pf.rel_file_path, pf.date ORDER BY pf.date ASC)
+        SELECT 'stdev',pfvanom.variable meanVar
+        ,'{0}' || pf.rel_file_path, pf.date
         ,pfd.pattern
         ,pfd.types
         ,pfd.create_date
@@ -265,55 +240,60 @@ class StatsRequests(GenericRequest):
         JOIN product_file_variable pfvanom ON ltai.stdev_variable_id = pfvanom.id
         JOIN product_file_description pfd ON pfvanom.product_file_description_id = pfd.id 
         JOIN product_file pf ON pf.product_file_description_id = pfd.id
-        WHERE pfv.id = {1}
-        GROUP BY pfvanom.variable,pfd.pattern ,pfd.types ,pfd.create_date
-        """.format(path, self._requestData["options"]["product_variable_id"])
+        WHERE pfv.id = {4} UNION 
         
-        threads.append(Process(target=productStats, args=(self._config, stdevQuery, self._config.filesystem.ltsPath, self._requestData, result,  "stdev")))
-        threads[-1].start()
-
-
-        for trd in threads:
-            trd.join()
-    
-        resultDict = {}
-        #not working for some reason....
-        #for tmp in iter(result.get, None):
-        #    resultDict.update(tmp)
-        resultDict.update(result.get())
-        resultDict.update(result.get())
-        resultDict.update(result.get())
+        SELECT  'raw', CASE WHEN pfv.variable = ''::text THEN NULL ELSE  pfv.variable END
+            ,'{1}' || rel_file_path, date
+            ,pfd.pattern
+            ,pfd.types
+            ,pfd.create_date
+            FROM product_file pf 
+            JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
+            JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
+            JOIN product p on pfd.product_id =p.id
+            WHERE date between  '{2}' and '{3}' AND pfv.id = {4}""".format(statsPath, path, self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
         
-        #converting mean and stdev dicts to doy        
-        ltsStats = {}
-        tmpDoys = []
-        if productType == "raw" and resultDict["mean"] != None:
-            for mn, sd in zip(resultDict["mean"]["raw"], resultDict["stdev"]["raw"]):
-                doy = datetime.fromisoformat(mn[0])
-                doy = doy.utctimetuple().tm_yday
-                ltsStats[doy] = [mn[1], sd[1]]
-            tmpDoys = ltsStats.keys()
-            tmpDoys = list(tmpDoys)
+        if  self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
 
-        response = list(range(len(resultDict["product"]["raw"])))
+
         
-        i = 0
+        images = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
+       
+        ret = {
+            "raw": [],
+            "mean": [],
+            "stdev": []
+        }
         
-        for row in resultDict["product"]["raw"]:
-            doy = datetime.fromisoformat(row[0])
-            doy = doy.utctimetuple().tm_yday
-            stop = False
-            response[i] = row[0:2]
-            j = 0
-            while not stop and j < len(tmpDoys):
+        with ProcessPoolExecutor(max_workers=20) as executor:
+            #processing computations
+            for result in executor.map(productStats, images, [self._requestData]*len(images)):
+                if result[0] in ["mean", "stdev"]:
+                    #convert date to doy
+                    result[1][0][0] = result[1][0][0].utctimetuple().tm_yday
+                ret[result[0]].append([result[1][0][0], np.round(result[1][0][1],6)])
+            
+            ret["raw"].sort(key = lambda x: x[0])
+            #appending mean, sd to raw
+            for row in ret["raw"]:
+                #convert to doy:
+                rawDoy = row[0].utctimetuple().tm_yday
+                row[0] = row[0].isoformat()
+                stop = False
 
-                if abs(doy - tmpDoys[j]) < 4 :
-                    response[i]+=ltsStats[tmpDoys[j] ]
-                    stop = True
-                j += 1
-            i+=1
+                if len(ret["mean"]) == 0:
+                    continue
+                
+                tmpId = 0
+                while not stop:
+                    if abs(rawDoy - ret["mean"][tmpId][0]) < 4:
+                        stop =True
+                        row += list([ret["mean"][tmpId][1], ret["stdev"][tmpId][1]])
+                    
+                    tmpId += 1
 
-        return response
+        return ret["raw"]
     
     def __histogramDataByProductAndPolygon(self):
         query = """

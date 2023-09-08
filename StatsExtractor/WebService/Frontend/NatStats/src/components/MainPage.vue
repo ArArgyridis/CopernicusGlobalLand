@@ -32,8 +32,8 @@
 			<div id="mapView">
 				
 				<MapApp ref="mapApp"
-					v-on:featureClicked="updateRawDataChart($event)"
-					v-on:mapCoordinate="updateRawDataChart($event)"
+					v-on:mapCoordinate="updateCurrentChart($event)"
+					v-on:featureClicked="updateCurrentChart($event)"
 				/>
 				<Legend class="d-fleg relative legend transition" v-bind:class="{offsetLegend: leftPanelVisibility}" ref="legend" v-bind:mode="legendMode"/>
 
@@ -87,7 +87,7 @@ export default {
 	computed: {
 		clickedCoordinates: {
 			get() {
-				return this.$store.getters.clickedCoordinates();
+				return this.$store.getters.clickedCoordinates;
 			},
 			set(dt) {
 				this.$store.commit("clickedCoordinates", dt);
@@ -246,11 +246,18 @@ export default {
 			//this.setRightPanelVisibility(false);
 			this.updateWMSLayers();
 		},
-		updateRawDataChart(evt) {
-			if (this.$store.getters.product == null) 
+		updateCurrentChart(evt=null) {
+
+		if (this.$store.getters.product == null) 
 				return;
-			
-			this.clickedCoordinates = evt;
+				
+			if (evt != null) {
+				if (evt.getType != null && evt.getType() == "Polygon")
+					this.selectedPolygon = evt;
+				else 
+					this.clickedCoordinates = evt;
+				
+			}
 			this.$refs.rightPanel.updateCurrentChart();
 			//this.setRightPanelVisibility(true);
 		},
