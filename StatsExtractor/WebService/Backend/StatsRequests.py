@@ -126,7 +126,10 @@ class StatsRequests(GenericRequest):
     def polygonStatsTimeseries(self):
         query = """
             WITH dt AS NOT MATERIALIZED(
-                SELECT pf."date", ROUND(ps.mean::numeric,4) mean, ROUND(ps.sd::numeric,5) sd, ROUND(psltai.mean::numeric,4) meanlts, ROUND(psltai.sd::numeric,5) sdlts 
+                SELECT pf."date", CASE WHEN ps.mean IS NOT NULL THEN ROUND(ps.mean::numeric,4) ELSE NULL END mean, 
+                CASE WHEN ps.sd IS NOT NULL THEN ROUND(ps.sd::numeric,5) ELSE NULL END sd, 
+                CASE WHEN psltai.mean IS NOT NULL THEN ROUND(psltai.mean::numeric,4) ELSE NULL ENDmeanlts, 
+                CASE WHEN psltai.sd IS NOT NULL THEN ROUND(psltai.sd::numeric,5) ELSE NULL END sdlts 
                 FROM poly_stats ps 
                 JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
                 JOIN product_file pf ON ps.product_file_id = pf.id 
