@@ -259,20 +259,21 @@ class StatsRequests(GenericRequest):
 
         
         images = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
-       
         ret = {
             "raw": [],
             "mean": [],
             "stdev": []
         }
         
-        with ProcessPoolExecutor(max_workers=20) as executor:
+        with ProcessPoolExecutor(max_workers=8) as executor:
             #processing computations
             for result in executor.map(productStats, images, [self._requestData]*len(images)):
                 if result[0] in ["mean", "stdev"]:
                     #convert date to doy
                     result[1][0][0] = result[1][0][0].utctimetuple().tm_yday
-                ret[result[0]].append([result[1][0][0], np.round(result[1][0][1],6)])
+                
+                if result[1][0][1] is not None:
+                    ret[result[0]].append([result[1][0][0], np.round(result[1][0][1],6)])
             
             ret["raw"].sort(key = lambda x: x[0])
             #appending mean, sd to raw
