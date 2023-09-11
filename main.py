@@ -63,7 +63,8 @@ def main():
 					print("Computing anomalies!")
 					runLongTermComparisonAnomalyDetector(pid, config)
 
-				#put cog generator here
+			cmd = "CogGenerator {0}".format(config)
+			os.system(cmd)
 
 			#fetching stratifications and compute stats for each strata
 
