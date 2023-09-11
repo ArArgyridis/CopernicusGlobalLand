@@ -97,7 +97,7 @@
 				<div id="collapseViewOptionsThree" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
 					<div class="accordion-body">
 						<select class="form-select" size="4" aria-label="size 3 select example">
-							<option v-for ="(stratification, key) in stratifications.info" v-bind:key="key" v-bind:value="key"  v-on:click=" currentStratification = stratification"><a class="dropdown-item">{{stratification.description}}</a></option>
+							<option v-for ="(stratification, key) in stratifications.info" v-bind:key="key" v-bind:value="key"  v-on:click=" currentStratification = stratification" v-bind:selected="currentStratification.id == stratification.id"><a class="dropdown-item">{{stratification.description}}</a></option>
 						</select>
 					</div>
 				</div>
@@ -128,7 +128,7 @@
 						<div class="col d-flex justify-content-start">
 							<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" v-bind:disabled="(stratifiedOrRaw == 0 && this.stratificationViewOptions.viewMode == 0) || stratifiedOrRaw == 1">{{currentAreaDensity}}</button>
 							<ul id="currentAreaDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-								<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(densityType)"><a class="dropdown-item">{{densityType.description}}</a></li>
+								<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(densityType)" v-bind:selected="idx == stratifiedOrRaw"><a class="dropdown-item">{{densityType.description}}</a></li>
 							</ul>
 						</div>
 					</div>
@@ -141,7 +141,7 @@
 				<div id="collapseViewOptionsOne" class="accordion-collapse collapse" aria-labelledby="headingTwentyOne" data-bs-parent="#viewOptions">
 					<div class="accordion-body">
 						<select class="form-select" size="2" aria-label="size 3 select example" >
-							<option v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx" v-bind:disabled="variable.anomaly_info == null"><a class="dropdown-item">{{md}}</a></option>
+							<option v-for ="(md, idx) in statisticsViewMode" v-bind:key="idx" v-bind:value="idx"  v-on:click="statisticsViewSelectedMode=idx" v-bind:disabled="variable.anomaly_info == null" v-bind:selected="idx == statisticsViewSelectedMode"><a class="dropdown-item">{{md}}</a></option>
 						</select>
 					</div>
 				</div>
@@ -283,6 +283,7 @@ export default {
 		},		
 		currentStratification: {
 			get() {
+				console.log(this.$store.getters.currentStratification);
 				return this.$store.getters.currentStratification;
 			},
 			set(val) {
