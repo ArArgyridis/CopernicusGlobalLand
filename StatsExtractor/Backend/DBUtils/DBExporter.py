@@ -20,50 +20,39 @@ class DBExporter:
     def __init__(self, cfg):
         self._cfg = cfg
 
-    def process(self, out="../../schema.sql"):
-        #temp db setup
-        tmpDBPath = os.path.join(self._cfg.filesystem.tmpPath, "tmp_schema.sql")
-        print("exporting tmp backup...")
-        #exporting entire db to tmpdb
-
-        cmd = """export PGPASSWORD='{0}' && pg_dump -d {1} -U {2} -h {3} -Fc > {4}""".format(
+    def process(self, outSchema="../../schema.sql", outData="../../data.sql"):
+        print("exporting schema")
+        cmd = """export PGPASSWORD='{0}' && pg_dump -d {1} -U {2} -h {3} --schema-only -Fc > {4}""".format(
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].password,
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].db,
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].user,
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].host,
-            tmpDBPath
+            outSchema
         )
+
         os.system(cmd)
-        print("import tmp backup to tmpdb")
-        dpl = DBDeployer(self._cfg.cfgFile, tmpDBPath)
-        createDBOptions = self._cfg.pgConnections[self._cfg.statsInfo.exportId]
-        dpl.process(True, createDBOptions)
-        os.remove(tmpDBPath)
-
-        print("truncating uneeded data")
-        #emptying tables which are not needed
-        self._cfg.pgConnections[self._cfg.statsInfo.exportId].executeQueries([
-            """TRUNCATE stratification RESTART IDENTITY CASCADE;""",
-            """TRUNCATE product_file RESTART IDENTITY CASCADE;"""
-        ])
-
-        print("writing final backup")
-        cmd = "export PGPASSWORD='{0}' && pg_dump -d {1} -U {2} -h {3} -Fc > {4}".format(
-            self._cfg.pgConnections[self._cfg.statsInfo.exportId].password,
-            self._cfg.pgConnections[self._cfg.statsInfo.exportId].db,
-            self._cfg.pgConnections[self._cfg.statsInfo.exportId].user,
-            self._cfg.pgConnections[self._cfg.statsInfo.exportId].host,
-            out
+        print("exporting needed data")
+        cmd = """export PGPASSWORD='{0}' && pg_dump -d {1} -U {2} -h {3} \\
+        --data-only -t category -t product -t product_file_description -t product_file_variable -Fc > {4}""".format(
+            self._cfg.pgConnections[self._cfg.statsInfo.connectionId].password,
+            self._cfg.pgConnections[self._cfg.statsInfo.connectionId].db,
+            self._cfg.pgConnections[self._cfg.statsInfo.connectionId].user,
+            self._cfg.pgConnections[self._cfg.statsInfo.connectionId].host,
+            outData
         )
         os.system(cmd)
 
 
-
-
-
-if __name__ == "__main__":
-    cfg = "../../active_config.json"
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: DBExporter.py config_file")
+        return 0
+    cfg = sys.argv[1]
     cfg = ConfigurationParser(cfg)
     if cfg.parse() != 1:
         obj = DBExporter(cfg)
         obj.process()
+
+
+if __name__ == "__main__":
+    main()

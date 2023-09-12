@@ -17,10 +17,11 @@ sys.path.extend(['../../../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 
 class DBDeployer(object):
-    def __init__(self, cfg, template):
+    def __init__(self, cfg, schema, data):
         self._cfg = ConfigurationParser(cfg)
         self._cfg.parse()
-        self._template = template
+        self._schema = schema
+        self._data = data
         self.__creationQueries = []
 
     def __createDBIfNotExists(self, dropDBIfExists, createDBOptions):
@@ -50,8 +51,18 @@ class DBDeployer(object):
             createDBOptions.db,
             self._cfg.pgConnections["admin"].user,
             self._cfg.pgConnections["admin"].host,
-            self._template
+            self._schema
         )
+        os.system(cmd)
+
+        cmd = "export PGPASSWORD='{0}' && pg_restore -d {1} -U {2} -h {3} --role={2} < {4}".format(
+            self._cfg.pgConnections["admin"].password,
+            createDBOptions.db,
+            self._cfg.pgConnections["admin"].user,
+            self._cfg.pgConnections["admin"].host,
+            self._data
+        )
+        print(cmd)
         os.system(cmd)
 
     def dbInit(self, createDBOptions, dropIfExists):
@@ -99,12 +110,13 @@ class DBDeployer(object):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python DBDeployer.py config.json_file schema.sql")
+    if len(sys.argv) < 4:
+        print("Usage: python DBDeployer.py config.json_file schema.sql data.sql")
         return 1
-    cfg = sys.argv[1]
-    template = sys.argv[2]
-    obj = DBDeployer(cfg, template)
+    cfg     = sys.argv[1]
+    schema  = sys.argv[2]
+    data    = sys.argv[3]
+    obj = DBDeployer(cfg, schema, data)
     obj.process()
 
 if __name__ == "__main__":
