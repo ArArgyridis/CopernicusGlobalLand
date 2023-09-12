@@ -48,10 +48,8 @@ unsigned short Constants::load(Configuration::Pointer cfg) {
         }
         query.resize(query.size()-1);
         query +=")";
-        //std::cout << query <<"\n";
     }
     query += " ORDER BY p.id;";
-
 
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query, "");

@@ -75,7 +75,7 @@ class StatsRequests(GenericRequest):
         	SELECT pfd.id,  p.name[1], p.description, product_file_description_id, CASE WHEN pfd.rt_flag_pattern IS NOT NULL THEN TRUE ELSE FALSE END has_rt,
         	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.id)) variables
 	        FROM product p 
-        	JOIN product_file_description pfd ON p.id = pfd.product_id AND p.id != 10
+        	JOIN product_file_description pfd ON p.id = pfd.product_id
         	JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
         	JOIN LATERAL (
         		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object( 'id', pfdanom.id, 'name', panom.name[1] , 'variable', row_to_json(anompfv.*)::jsonb)))  anomaly_info

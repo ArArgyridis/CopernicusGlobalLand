@@ -77,11 +77,13 @@ void ProductVariable::loadMetadata() {
     std::string s = (firstProductVariablePath->string()).substr(0,6);
 
     if ((firstProductVariablePath->string()).substr(0,6) == "NETCDF") {
-        scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
-        if((*metadata)[variable+"#add_offset"].length() > 0)
-        addOffset = std::stod((*metadata)[variable+"#add_offset"]);
-        scaler = &scalerFunc;
-        reverseScaler = &reverseScalerFunc;
+        if (metadata->find(variable+"#scale_factor") != metadata->end()) {
+            scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
+            if((*metadata)[variable+"#add_offset"].length() > 0)
+                addOffset = std::stod((*metadata)[variable+"#add_offset"]);
+                scaler = &scalerFunc;
+                reverseScaler = &reverseScalerFunc;
+        }
     }
 
     noData = stof((*metadata)["MY_NO_DATA_VALUE"]);

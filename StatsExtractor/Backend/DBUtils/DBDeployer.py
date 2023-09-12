@@ -62,7 +62,6 @@ class DBDeployer(object):
             self._cfg.pgConnections["admin"].host,
             self._data
         )
-        print(cmd)
         os.system(cmd)
 
     def dbInit(self, createDBOptions, dropIfExists):
