@@ -92,8 +92,14 @@ export default {
 		updateChartData() {
 			//checking if data should be fetched
 			let productVariable = this.$store.getters.product.currentVariable;
-			if(this.mode == "Anomalies")
+			if(this.mode == "Anomalies") {
+				if (this.$store.getters.currentAnomaly == null) {
+					this.isLoading = false;
+					return;
+				}
 				productVariable = this.$store.getters.currentAnomaly.variable;
+
+			}
 				
 			let coords =this.$store.getters.clickedCoordinates;
 

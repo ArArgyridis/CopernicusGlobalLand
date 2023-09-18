@@ -128,7 +128,7 @@
 						<div class="col d-flex justify-content-start">
 							<button class="btn btn-secondary btn-block dropdown-toggle " type="button" id="areaDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" v-bind:disabled="(stratifiedOrRaw == 0 && this.stratificationViewOptions.viewMode == 0) || stratifiedOrRaw == 1">{{currentAreaDensity}}</button>
 							<ul id="currentAreaDropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-								<li v-for ="(densityType, key) in areaDensityTypes" v-bind:key="key" v-bind:value="key"  v-on:click="setStratificationAreaDensity(densityType)" v-bind:selected="idx == stratifiedOrRaw"><a class="dropdown-item">{{densityType.description}}</a></li>
+								<li v-for ="(densityType, idx) in areaDensityTypes" v-bind:key="idx" v-bind:value="idx"  v-on:click="setStratificationAreaDensity(densityType)" v-bind:selected="idx == stratifiedOrRaw"><a class="dropdown-item">{{densityType.description}}</a></li>
 							</ul>
 						</div>
 					</div>
@@ -283,7 +283,6 @@ export default {
 		},		
 		currentStratification: {
 			get() {
-				console.log(this.$store.getters.currentStratification);
 				return this.$store.getters.currentStratification;
 			},
 			set(val) {

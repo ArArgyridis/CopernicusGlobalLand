@@ -163,7 +163,6 @@ export default {
 			for (let i = 0; i < 2; i++) { 
 
 				let tmpKey = "map3"+this.types[i];
-				console.log("hereee");
 				//registering end render event for report maps
 				this.$refs[tmpKey].addMapEvent("rendercomplete", ()=>{
 					this.reportMapLoads[i] = false;
@@ -274,32 +273,22 @@ export default {
 						let variable = product.currentVariable;
 						if (type == "anom") 						
 							variable		= this.$store.getters.currentAnomaly;
-							
-						if (variable == null || variable.wms.current == null)
+
+
+						if (variable == null || variable.cog.current == null)
 							return;
 
-						let layerProps = {
-							url: variable.wms.current.url,
-							projection: variable.wms.current.projection,
-							wmsParams: {
-								LAYERS: variable.wms.current.title,
-								WIDTH:256,
-								HEIGHT:256
-							},
-							serverType: "mapserver",
-							crossOrigin: "anonymous",
-							zIndex: this.productWMSLayerZIndex
-						};
 
 						//product raw/anomalies Data
-						let wmsLayerId = this.$refs[tmpKey].addCustomWMSLayerToMap(layerProps);
+						let cogLayerId = this.$refs[tmpKey].createGeoTIFFLayer(variable.cog.current.url, this.productVariableZIndex);
 
-						this.$refs[tmpKey].setVisibility(wmsLayerId, true);
-						this.$refs[tmpKey].cropWMSByGeoJSON(wmsLayerId, response.data.data);
+						this.$refs[tmpKey].setVisibility(cogLayerId, true);
+
+						//this.$refs[tmpKey].cropWMSByGeoJSON(cogLayerId, response.data.data);
 						
 						//pointlayer
 						let pointLayer = this.$refs[tmpKey].createEmptyVectorLayer(this.pointLayerZIndex);
-						this.$refs[tmpKey].addPointToLayer(pointLayer, 2, clickedCoords.coordinate[0], clickedCoords.coordinate[1],  {icon: new Icon(iconProps)} );
+						this.$refs[tmpKey].addPointToLayer(pointLayer, 2, clickedCoords.obj.coordinate[0], clickedCoords.obj.coordinate[1],  {icon: new Icon(iconProps)} );
 						this.$refs[tmpKey].setVisibility(pointLayer, true);
 
 					});

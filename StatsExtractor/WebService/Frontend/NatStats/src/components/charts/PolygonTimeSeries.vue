@@ -77,8 +77,14 @@ export default {
 		},
 		updateChartData() {
 			let productVariable = this.$store.getters.product.currentVariable;
-			if(this.mode == "Anomalies")
+			if(this.mode == "Anomalies") {
+				if(this.$store.getters.currentAnomaly == null) {
+					this.isLoading = false;
+					return;
+				}
+
 				productVariable = this.$store.getters.currentAnomaly.variable;
+			}
 			
 			let polyId = this.$store.getters.selectedPolygon;
 			if (productVariable == null || polyId == null)
