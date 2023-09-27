@@ -16,27 +16,30 @@ projections.forEach(function (item) {
 
 let dateEnd = new Date();
 let dateStart = new Date();
-utils.subtractYears(dateStart, 1);
+utils.subtractYears(dateStart, 3);
 
 //dateEnd = new Date("2020-07-10 00:00:00");
 //dateStart = new Date("2020-07-01 00:00:00");
 function setCurrentCogByDateAndMode(state) {
+
 	state.previousCog = state.currentCog;
+
 	let rtFlag = state.categories.current.products.current.rtFlag;
-	if (state.categories.current.products.current.statisticsViewMode == 0) {
-		if( Object.keys(state.categories.current.products.current.currentVariable.cog.layers).length == 0)
-			return;
-		state.currentCog = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+
+	if (state.categories.current.products.current.statisticsViewMode == 0) { //raw product
+		if( Object.keys(state.categories.current.products.current.currentVariable.cog.layers).length != 0) {
+			state.categories.current.products.current.currentVariable.cog.current = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+			state.currentCog = state.categories.current.products.current.currentVariable.cog.current;
+		}
 	}
-	else { 
-		if (Object.keys(state.categories.current.products.current.currentVariable. currentAnomaly.cog.layers).length == 0)
-			return;
-		state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+	else { //anomalies
+		if (Object.keys(state.categories.current.products.current.currentVariable. currentAnomaly.cog.layers).length != 0) {
+			state.categories.current.products.current.currentVariable.currentAnomaly.cog.current =  state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
+			state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.current;
+		}
 	}
-	state.categories.current.products.current.currentVariable.cog.current = state.categories.current.products.current.currentVariable.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];
-	if (state.categories.current.products.current.currentVariable.currentAnomaly != null)
-		state.categories.current.products.current.currentVariable.currentAnomaly.cog.current =  state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][state.categories.current.products.current.currentDate];	
 }
+
 export default{
 	buildStore() {
 		return createStore({
@@ -56,10 +59,11 @@ export default{
 				setCurrentAnomalyCogLayers(state, dt) {
 					state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers = dt;
 					let date = state.categories.current.products.current.currentDate;
-					if (date != null && state.categories.current.products.current.currentVariable.currentAnomaly != null) {
-						state.categories.current.products.current.currentVariable.currentAnomaly.cog.current = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[date];
+					if (date != null) {
+						let rtFlag = state.categories.current.products.current.rtFlag;
+						state.categories.current.products.current.currentVariable.currentAnomaly.cog.current = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[rtFlag.id][date];
 						if(state.categories.current.products.current.statisticsViewMode == 1)
-							state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.layers[date];
+							state.currentCog = state.categories.current.products.current.currentVariable.currentAnomaly.cog.current;
 					}
 				},
 				setCurrentVariableCogLayers(state, dt) {

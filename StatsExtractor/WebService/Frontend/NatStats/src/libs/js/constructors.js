@@ -161,7 +161,7 @@ export function	ProductViewProperties(product, dateStart, dateEnd) {
 	product.previousRtFlag				= null;
 	VariableProperties(product, dateStart, dateEnd);
 	product.currentVariable				= product.variables[0];
-	product.currentDate 					= product.dates[product.rtFlag.id][0];
+	product.currentDate 				= product.dates[product.rtFlag.id][0];
 }
 
 export function	ProductsProps() {
