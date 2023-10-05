@@ -225,7 +225,7 @@ export default {
 						dt[rt][date] = {
 							layerId: null,
 							url: options.s3CogURL + data.data.data[rt][date][0],
-							raw: options.fetchRawDataURL + "/" +data.data.data[rt][date][1]
+							raw: options.fetchAnomaliesDataURL + "/" +data.data.data[rt][date][1]
 						}
 					});
 				});
