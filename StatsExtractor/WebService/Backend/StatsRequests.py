@@ -350,15 +350,15 @@ class StatsRequests(GenericRequest):
                         """.format(self._requestData["options"]["poly_id"])
         return self.__getResponseFromDB(query)
     
-    def __productCog(self):
+    def __productFiles(self):
         query = """
                 WITH tmp  AS NOT MATERIALIZED (
-            SELECT pf.date,  CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END, wf.rel_file_path 
+            SELECT pf.date,  CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END, wf.rel_file_path, pf.rel_file_path raw_file_path
             FROM product_file pf 
             JOIN wms_file wf ON pf.id = wf.product_file_id AND pf.product_file_description_id = {0} AND wf.product_file_variable_id  = {1}
             WHERE pf.date between '{2}' AND '{3}' 
         ),tmp2 AS NOT MATERIALIZED (
-            SELECT tmp.rt_flag, JSON_OBJECT_AGG(tmp.date, tmp.rel_file_path) AS info
+            SELECT tmp.rt_flag, JSON_OBJECT_AGG(tmp.date, select ARRAY_TO_JSON(array[tmp.rel_file_path, tmp.raw_file_path]) ) AS info
             FROM tmp 
             GROUP BY tmp.rt_flag
         )SELECT JSON_OBJECT_AGG(rt_flag, info) FROM tmp2""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"], 
@@ -383,8 +383,8 @@ class StatsRequests(GenericRequest):
             ret = self.polygonStatsTimeseries()
         elif self._requestData["request"] == "productinfo":
             ret = self.__fetchProductInfo()
-        elif self._requestData["request"] == "productcog":
-            ret = self.__productCog()
+        elif self._requestData["request"] == "productfiles":
+            ret = self.__productFiles()
         elif self._requestData["request"] == "rankstratabydensity":
             ret = self.__rankStrataByDensity()
         elif self._requestData["request"] == "stratificationinfo":
