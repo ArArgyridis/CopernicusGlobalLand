@@ -23,24 +23,31 @@
 			<button v-for="nav in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActiveCategory(nav)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
 		</div>
 		
-		<div class="m-3 border border-2 rounded">
+		<div class="border border-2 rounded">
 			<div class="container mt-3">
 				<h5>Time Range for Timeseries Analysis</h5>
 				<div class=row>
 					<div class="col">From Date</div>
 					<div class="col">To Date</div>
 					<div class="col">Currently Displayed</div>
+					<div class="col-1"></div>
 				</div>
 					
-				<div class="row mb-3">
+				<div class="row mb-3 align-items-center">
 					<div class ="col d-flex text-justify"><Datepicker class="dp__theme_dark" v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false" v-bind:clearable="false" dark/></div>
 					<div class ="col d-flex text-justify"><Datepicker v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false" class="dp__theme_dark"  dark v-bind:clearable="false"/></div>
 					<div class="col d-flex justify-content-center">
-					<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ new Date(currentDate).toDateString().substring(3,15) }} </button>
-					<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
-						<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{new Date(date).toDateString().substring(3,15)}}</a></li>
-					</ul>
-				</div>
+						<button class="btn btn-secondary btn-block dropdown-toggle " type="button"  data-bs-toggle="dropdown" aria-expanded="false">{{ new Date(currentDate).toDateString().substring(3,15) }} </button>
+						<ul id="wmsLayersDropdown" class="dropdown-menu scrollable" aria-labelledby="dropdownMenuButton1" v-if="currentStratification != null">
+							<li v-for ="(date, idx) in productDates" v-bind:key="idx" v-bind:value="idx"  v-on:click="currentDate=date"><a class="dropdown-item">{{new Date(date).toDateString().substring(3,15)}}</a></li>
+						</ul>
+					</div>
+					<div class="col-1">
+						<a class="btn btn-secondary btn-circle" v-bind:href="downloadDataPath">
+							<FontAwesomeIcon icon="download"  size="1x">
+							</FontAwesomeIcon>
+						</a>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -158,11 +165,12 @@ import Datepicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
+import { faDownload} from '@fortawesome/free-solid-svg-icons'
 import Legend from "./libs/Legend.vue";
 import {consolidationPeriods} from "../libs/js/constructors.js";
 
-library.add(faArrowLeft);
+library.add(faDownload);
+
 export default {
 	name: 'Left Panel',
 	components: {
@@ -194,6 +202,13 @@ export default {
 				return "Select Statistics View Mode";
 			
 			return this.statisticsViewMode[this.statisticsViewSelectedMode];
+		},
+		downloadDataPath() {
+			if(this.$store.getters.currentCogLayer == null)
+				return null;
+			return this.$store.getters.currentCogLayer.raw;
+
+
 		},
 		productDescription: {
 			get() {
@@ -397,8 +412,7 @@ export default {
 		}
 	},
 	methods: {
-		init() {
-		},
+		init() {},
 		getProduct(key) {
 			return this.products[key];
 		},
@@ -462,6 +476,31 @@ export default {
 	background-color: rgba(234, 234, 218, 0.7);
 	height: 100vh;
 	color: black;
+}
+
+.btn-circle {
+	width: 30px;
+	height: 30px;
+	text-align: center;
+	padding: 6px 0;
+	font-size: 12px;
+	border-radius: 15px;
+}
+.btn-circle.btn-lg {
+	width: 50px;
+	height: 50px;
+	padding: 10px 16px;
+	font-size: 18px;
+	line-height: 1.33;
+	border-radius: 25px;
+}
+.btn-circle.btn-xl {
+	width: 70px;
+	height: 70px;
+	padding: 10px 16px;
+	font-size: 24px;
+	line-height: 1.33;
+	border-radius: 35px;
 }
 
 

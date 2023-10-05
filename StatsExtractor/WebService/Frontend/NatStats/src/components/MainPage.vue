@@ -30,13 +30,11 @@
 		</div>
 		<div class="noPadding">
 			<div id="mapView">
-				
 				<MapApp ref="mapApp"
 					v-on:mapCoordinate="updateCurrentChart($event)"
 					v-on:featureClicked="updateCurrentChart($event)"
 				/>
 				<Legend class="d-fleg relative legend transition" v-bind:class="{offsetLegend: leftPanelVisibility}" ref="legend" v-bind:mode="legendMode"/>
-
 				<div class="d-flex logo relative"><img alt="Copernicus LMS" src="/assets/copernicus_land_monitoring.png"></div>
 			</div>
 			<div class="d-flex">
