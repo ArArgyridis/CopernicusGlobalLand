@@ -193,7 +193,7 @@ export default {
 			if (this.product == null || this.$store.getters.productWMSLayer != null) 
 				return;
 			
-			requests.productCog(this.product.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
+			requests.productFiles(this.product.id, this.product.currentVariable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
 				if (data.data.data == null)
 					return;
 				let dt = {}
@@ -202,7 +202,8 @@ export default {
 					Object.keys(data.data.data[rt]).forEach(date => {
 						dt[rt][date] = {
 							layerId: null, 
-							url: options.s3CogURL + data.data.data[rt][date]
+							url: options.s3CogURL + data.data.data[rt][date][0],
+							raw: options.fetchRawDataURL + data.data.data[rt][date][1]
 						}
 					});
 				});
@@ -214,9 +215,7 @@ export default {
 			if (this.$store.getters.currentAnomaly == null)
 				return;
 			
-			console.log(this.$store.getters.currentAnomaly);
-			
-			requests.productCog(this.$store.getters.currentAnomaly.id, this.$store.getters.currentAnomaly.variable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
+			requests.productFiles(this.$store.getters.currentAnomaly.id, this.$store.getters.currentAnomaly.variable.id, this.$store.getters.dateStart, this.$store.getters.dateEnd).then(data =>{
 				if (data.data.data == null)
 					return;
 				let dt = {}
@@ -224,8 +223,9 @@ export default {
 					dt[rt] = {};
 					Object.keys(data.data.data[rt]).forEach(date => {
 						dt[rt][date] = {
-							layerId: null, 
-							url: options.s3CogURL + data.data.data[rt][date]
+							layerId: null,
+							url: options.s3CogURL + data.data.data[rt][date][0],
+							raw: options.fetchRawDataURL + data.data.data[rt][date][1]
 						}
 					});
 				});

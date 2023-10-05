@@ -41,9 +41,9 @@ export default {
 		}
 		return axios.post(options.endpointURL, postParams);
 	},
-	productCog(productId, productVariableID, dateStart, dateEnd) {
+	productFiles(productId, productVariableID, dateStart, dateEnd) {
 		let postParams = {};
-		postParams["request"] = "productcog";
+		postParams["request"] = "productfiles";
 		postParams["options"] = {
 			product_id:productId,
 			product_variable_id: productVariableID,
