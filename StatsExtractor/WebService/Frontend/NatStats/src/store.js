@@ -52,8 +52,9 @@ export default{
 				stratifications: new StratificationProps(),
 				leftPanelVisible: true,
 				rightPanelVisible: true,
+				downloadPanelVisible: false,
 				currentCog: null,
-				previousCog: null
+				previousCog: null,
 			},
 			mutations: {
 				setCurrentAnomalyCogLayers(state, dt) {
@@ -109,6 +110,9 @@ export default{
 				},
 				rightPanelVisibility(state, dt) {
 					state.rightPanelVisible = dt;
+				},
+				showDownloadPanel(state, dt) {
+					state.downloadPanelVisible = dt;
 				},
 				setCategoryProducts(state, dt) {
 					state.categories.current.products = new ProductsProps();
@@ -381,6 +385,9 @@ export default{
 					catch {
 						return null;
 					}
+				},
+				showDownloadPanel: (state) => {
+					return state.downloadPanelVisible;	
 				},
 				stratifications: (state) => {
 					return state.stratifications;

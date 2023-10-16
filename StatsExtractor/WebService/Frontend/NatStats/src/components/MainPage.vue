@@ -13,6 +13,7 @@
 --->
 <template>
 <Dashboard v-show="showTheDashboard==true" ref="dashboard"/>
+<DownloadPanel v-if="showDownloadPanel==true" ref="downloadPanel" />
 <div class="container-fluid fixed-top">
 	<div class="row">
 		<div id="leftPanel" class="noPadding raise sidenav leftnav" v-bind:class="{shownBar: leftPanelVisibility, hiddenBar: !leftPanelVisibility}">
@@ -61,6 +62,7 @@ import html2canvas from 'html2canvas';
 import MapApp from "./MapApp.vue";
 import LeftPanel from "./LeftPanel.vue";
 import Dashboard from "./Dashboard.vue";
+import DownloadPanel from "./DownloadPanel.vue";
 import RightPanel from "./RightPanel.vue";
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faUserSecret, faEye, faBars } from '@fortawesome/free-solid-svg-icons'
@@ -80,6 +82,7 @@ export default {
 		FontAwesomeIcon,
 		RightPanel,
 		Dashboard,
+		DownloadPanel,
 		Legend
 	},
 	computed: {
@@ -114,7 +117,6 @@ export default {
 			set(dt) {
 				this.$store.commit("leftPanelVisibility", dt);
 			}
-			
 		},
 		legendMode() {
 			let mode = null;
@@ -138,6 +140,9 @@ export default {
 		},
 		rightPanelVisibility(){
 			return this.$store.getters.rightPanelVisibility;
+		},
+		showDownloadPanel () {
+			return this.$store.getters.showDownloadPanel;
 		}
 	},
 	data() {
