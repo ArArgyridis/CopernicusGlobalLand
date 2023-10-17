@@ -44,14 +44,12 @@
 					</div>
 					<div class="col-1">
 						<a class="btn btn-secondary btn-circle" v-bind:href="downloadDataPath">
-							<FontAwesomeIcon icon="download"  size="1x">
-							</FontAwesomeIcon>
+							<FontAwesomeIcon icon="download"  size="1x" />
 						</a>
 					</div>
 				</div>
 			</div>
 		</div>
-		
 		
 		<h5>Product Options</h5>
 		<div class="accordion accordion-flush overflow-auto mb-2" id="productOptions" v-if="product != null">
