@@ -26,6 +26,7 @@ import Crop from "ol-ext/filter/Crop";
 //import FeatureFormat from 'ol/format/Feature';
 import GeoJSON from 'ol/format/GeoJSON';
 //import WKT from 'ol/format/WKT';
+import KML from 'ol/format/KML';
 import LayerGroup from 'ol/layer/Group';
 import Map from 'ol/Map';
 import MVT from 'ol/format/MVT';
@@ -184,6 +185,12 @@ export default {
 			this.map.addInteraction(draw);
 			return {draw: draw, layer: newVectorLayer};
 		},
+		addFeatureToLayer(layerId, ft) {
+			this.layers[layerId].getSource().addFeature(ft);
+		},
+		addFeaturesToLayer(layerId, ft) {
+			this.layers[layerId].getSource().addFeatures(ft);
+		},
 		addMapEvent(type, listener) {
 			this.map.on(type, listener);
 		}, 
@@ -272,7 +279,7 @@ export default {
 			});
 			ft.setId(featureId);
 			ft.setStyle(this.__newMarkerStyle(color, featureId));
-			this.layers[layerId].getSource().addFeature(ft);
+			this.addFeatureToLayer(layerId, ft);
 		},
 		createVectorTileLayer(params){
 			let tmpSource = new VectorTileSource({
@@ -671,7 +678,8 @@ export default {
 				style.setText(text);
 			}
 			return style;
-		},__toggleHighlightLayerVisibility(id, status) {
+		},
+		__toggleHighlightLayerVisibility(id, status) {
 			this.setVisibility(this.hoverLayers[id].hoverId, status); //turning off current hover layer
 			if(!status) {
 				this.map.un("singleclick", this.hoverLayers[id].listener); 

@@ -43,11 +43,6 @@
 						</ul>
 					</div>
 					<div class="col-1">
-<<<<<<< HEAD
-						<a class="btn btn-secondary btn-circle" v-bind:href="downloadDataPath">
-							<FontAwesomeIcon icon="download"  size="1x" />
-						</a>
-=======
 						<div class="dropdown show">
 							<a class="btn btn-secondary btn-circle dropdown-toggle"  href="#" role="button" data-bs-toggle="dropdown" id="downloadMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"> <!--v-bind:href="downloadDataPath"-->
 								<FontAwesomeIcon icon="download"  size="1x" />
@@ -57,7 +52,6 @@
 								<a class="dropdown-item" href="#" v-on:click="showDownloadPanel=true">Retrieve from Archive...</a>
 							</div>
 						</div>
->>>>>>> 1fc0f703a647615e326cec5f452837e610ea99b4
 					</div>
 				</div>
 			</div>

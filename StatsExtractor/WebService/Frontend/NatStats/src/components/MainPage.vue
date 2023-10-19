@@ -70,7 +70,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import requests from "../libs/js/requests.js";
 import Legend from "./libs/Legend.vue";
 
-library.add(faUserSecret)
+library.add(faUserSecret);
 library.add(faEye);
 library.add(faBars);
 
