@@ -55,7 +55,7 @@
 									</div>
 									<div class="row mt-3">
 										<div class ="col-4 d-flex justify-content-end"><p > Email(*)</p></div>
-										<div class="col"><input type="email" class="form-control" v-on:keyup="__validateEmail()" placeholder="Enter email" ref="emailForm"></div>
+										<div class="col"><input type="email" class="form-control" placeholder="Enter email" ref="emailForm" v-on:keyup="__validateEmail()"></div>
 									</div>
 								</div>
 
@@ -106,8 +106,25 @@
 					</div>
 				</div>
 				<div class="modal-footer" id="footer">
-					<button class="btn btn-secondary modal-default-button" v-on:click="showDownloadPanel = false">OK</button>
-					<button class="btn btn-primary modal-default-button aoiToolbarButton"> Submit</button>
+					<div class="container">
+						<div class="row">
+							<div class="col-9 d-flex my-auto justify-content-end">
+								<div class="form-check">
+									<input class="form-check-input" type="checkbox" v-model="activateSubmit" ref="activateSubmit"
+									v-bind:disabled="confirmDisabled">
+									<label class="form-check-label" for="flexCheckDefault">
+										I verify that all provided   parameters are correct
+									</label>
+								</div>
+							</div>
+							<div class="col">
+								<button class="btn btn-secondary modal-default-button" v-on:click="showDownloadPanel = false">Close</button>
+							</div>
+							<div class="col">
+								<button class="btn btn-primary modal-default-button aoiToolbarButton" v-on:click="__submitOrder()" v-bind:disabled="submitDisabled"> Submit</button>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -212,15 +229,24 @@ export default {
 		},
 		statisticsGetModes() {
 			return statisticsGetModeOptions;
+		},
+		confirmDisabled() {
+			return Object.keys(this.downloadOptions) == 0 || !this.validMail || !this.aoiSet
+		},
+		submitDisabled() {
+			 return this.confirmDisabled || !this.activateSubmit
+
 		}
 	},
 	data() {
 		return{
 			bingId: null,
+			activateSubmit: false,
 			aoiOLOptions: {
 				layer: null
 			},
 			aoiMode:null,
+			aoiSet: false,
 			dateFormat: "MMM dd yyyy",
 			downloadOptions: {},
 			dtStart: this.$store.getters.dateStart,
@@ -250,7 +276,7 @@ export default {
 						color: 'rgba(226, 226, 226, 0.6)'
 					})
 				}),
-			tooltips: []
+			validMail: false,
 		}
 	},
 	methods: {
@@ -275,38 +301,28 @@ export default {
 				delay: { "show": 200, "hide": 100 },
 				trigger:"hover"})
 			);
-
 		},
 		__appendToDownloadList() {
 			if(this.selectedVariable.id in this.downloadOptions) {
-				console.log("Product already exists, please remove the old entry and append it again");
 				return 1;
 			}
 
-
 			this.downloadOptions[this.selectedVariable.id] = {
-				dateStart: this.dtStart,
-				dateEnd: this.dateEnd,
+				dateStart: utils.localDateAsUTCString(this.dtStart),
+				dateEnd: utils.localDateAsUTCString(this.dtEnd),
 				dataFlag: document.getElementById("rawDataFetch").checked*0 + document.getElementById("anomaliesFetch").checked*1 + document.getElementById("bothDatasetsFetch").checked*2,
-				rtFlag: this.selectedRT.id
+				rtFlag: this.selectedRT.id,
 			};
 
 			let description = "Examination Period: [" + this.dtStart.toDateString() + " to " +this.dtEnd.toDateString() +"]/Variable: " + this.selectedVariable.description + " (" + this.statisticsGetMode.description + ")";
 
-
-
-
-
 			if(this.selectedRT.id > -1)
 				description += "/Consolidation: " + this.selectedRT.id + " dekads";
 
-
-			console.log(description);
 			let option = document.createElement("option");
 			option.text = description;
 			option.value = this.selectedVariable.id;
 			this.$refs.downloadOptions.appendChild(option);
-
 		},
 		__drawAOI() {
 			this.__eraseAOI();
@@ -314,12 +330,14 @@ export default {
 			this.aoiOLOptions.draw.setActive(true);
 			this.aoiOLOptions.draw.on("drawend", () => {
 				this.aoiOLOptions.draw.setActive(false);
+				this.aoiSet = true;
 			});
-
 		},
 		__eraseAOI() {
 		this.aoiMode = "eraseAOI";
 			this.$refs.aoiMap.clearVectorLayer(this.aoiOLOptions.layer);
+			this.aoiSet = false;
+			this.activateSubmit = false;
 		},
 		__onKMLChange(evt) {
 			let file = evt.target.files[0];
@@ -333,6 +351,7 @@ export default {
 				});
 
 				this.$refs.aoiMap.addFeaturesToLayer(this.aoiOLOptions.layer, features);
+				this.aoiSet = true;
 			});
 		},
 		__setToMaxExtent() {
@@ -342,6 +361,23 @@ export default {
 			axios.get(options.maxAOIBounds3857URL).then((response) => {
 				let features = new GeoJSON().readFeatures(response.data);
 				this.$refs.aoiMap.addFeaturesToLayer(this.aoiOLOptions.layer, features);
+				this.aoiSet = true;
+			});
+		},
+		__submitOrder(){
+			let aoi = null;
+			if (!['maxExtentAOI','eraseAOI'].includes(this.aoiMode)) {
+				aoi = this.$refs.aoiMap.convertVectorLayerToGeoJSON(this.aoiOLOptions.layer);
+			}
+
+			let optionsObj =  {
+				email: this.$refs.emailForm.value,
+				aoi:aoi,
+				request_data: this.downloadOptions
+			};
+			requests.insertOrder(optionsObj).then((response) => {
+				console.log(response.data.data);
+
 			});
 
 		},
@@ -372,18 +408,26 @@ export default {
 			}
 		},
 		__uploadAOI() {
-			this.aoiMode = "uploadAOI";
 			this.__eraseAOI();
+			this.aoiMode = "uploadAOI";
 			this.$refs.kmlUpload.value = "";
 			this.$refs.kmlUpload.click();
 
 		},
 		__validateEmail() {
-			if (this.$refs.emailForm.value.match(this.emailRegex))
-				return true;
-			return false;
-		}
+			let ret = false;
 
+			if (this.$refs.emailForm != null) {
+				if (this.$refs.emailForm.value.match(this.emailRegex)) {
+					ret = true;
+				}
+				else {
+					ret = false;
+				}
+				this.validMail = ret;
+				return this.validMail;
+			}
+		}
 	},
 	mounted() {
 		this.init();

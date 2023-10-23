@@ -281,6 +281,10 @@ export default {
 			ft.setStyle(this.__newMarkerStyle(color, featureId));
 			this.addFeatureToLayer(layerId, ft);
 		},
+		convertVectorLayerToGeoJSON(layerId) {
+			let fmt = new GeoJSON();
+			return fmt.writeFeatures(this.layers[layerId].getSource().getFeatures());
+		},
 		createVectorTileLayer(params){
 			let tmpSource = new VectorTileSource({
 				format: new MVT(),
@@ -516,7 +520,7 @@ export default {
 		rorateMap(angle) {
 			this.map.getView().setRotation(angle);
 		},
-		setVisibility(id, status) {			
+		setVisibility(id, status) {
 			this.layers[id].setVisible(status);
 			if(id in this.hoverLayers)
 				this.__toggleHighlightLayerVisibility(id, status);

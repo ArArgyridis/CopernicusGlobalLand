@@ -325,6 +325,33 @@ class StatsRequests(GenericRequest):
                                                                                                                                   self._requestData["options"]["stratification_id"], self._requestData["options"]["date"], self._requestData["options"]["product_id"])
         return self.__getResponseFromDB(query)
 
+    def __insertOrder(self):
+        checkQuery = """
+        WITH tmp as(
+            SELECT EXTRACT (EPOCH FROM now() AT time ZONE ('utc') - po.date_created) > 120 deltacheck
+            FROM  product_order po
+            WHERE po.email ='{0}'
+            ORDER BY po.date_created DESC LIMIT 1
+        )
+        SELECT  a.existscheck, tmp.*
+        FROM(
+            SELECT NOT EXISTS(SELECT * FROM tmp) existscheck ) a
+            FULL OUTER JOIN tmp ON TRUE;""".format(self._requestData["options"]["email"])
+        ret = self.__getResponseFromDB(query)
+
+        if ret[0][0] == True or ret[0][1] == True:
+            insertQuery = """INSERT INTO product_order(email, aoi, request_data) VALUES
+            ('{0}', ST_GeomFromText('{1}'), '{2}'::jsonb)""".format(self._requestData["options"]["email"],
+                                                                    self._requestData["options"]["aoi"],
+                                                                    json.dumps(self._requestData["options"]["request_data"]).encode("UTF-8"))
+            self._config.pgConnections[self._config.statsInfo.connectionId].executeQuery(insertQuery)
+            return {"result": "OK", "message": "Your request has been submitted successfully. You will receive an email when the data are available"}
+        else:
+            return {"result": "error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
+
+
+
+
     def __pieDataByDateAndPolygon(self):
         query = """
         SELECT row_to_json(a.*) response FROM(
@@ -377,6 +404,8 @@ class StatsRequests(GenericRequest):
             ret = self.densityStatsByPolygonAndDateRange()
         elif self._requestData["request"] == "histogrambypolygonanddate":
             ret = self.__histogramDataByProductAndPolygon()
+        elif self._requestData["request"] == "insertOrder":
+            ret = self.__insertOrder()
         elif self._requestData["request"] == "polygonDescription":
             ret = self.polygonDescription()
         elif self._requestData["request"] == "polygonStatsTimeseries":

@@ -27,5 +27,8 @@ export default {
 	},
 	subtractYears(date, years) {
 		date.setFullYear(date.getFullYear() - years);
+	},
+	localDateAsUTCString(date) {
+		return new Date(date.getTime() - date.getTimezoneOffset()*60000).toISOString();
 	}
 } 
