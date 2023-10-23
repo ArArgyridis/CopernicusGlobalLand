@@ -119,9 +119,7 @@ export default {
 		postParams["request"] = "insertOrder";
 		postParams["options"] = orderData;
 		return axios.post(options.endpointURL, postParams);
-
-
-	}
+	},
 	polygonStatsTimeSeries(polyId, dateStart, dateEnd, productVariableID, rtFlag) {
 		let postParams = {};
 		postParams["request"] = "polygonStatsTimeseries";

@@ -337,17 +337,24 @@ class StatsRequests(GenericRequest):
         FROM(
             SELECT NOT EXISTS(SELECT * FROM tmp) existscheck ) a
             FULL OUTER JOIN tmp ON TRUE;""".format(self._requestData["options"]["email"])
-        ret = self.__getResponseFromDB(query)
+
+        ret = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(checkQuery)
 
         if ret[0][0] == True or ret[0][1] == True:
+            aoi = "NULL"
+            if self._requestData["options"]["aoi"] is not None:
+                aoi = " ST_GeomFromText('{0}')".format(self._requestData["options"]["aoi"])
+
+
             insertQuery = """INSERT INTO product_order(email, aoi, request_data) VALUES
-            ('{0}', ST_GeomFromText('{1}'), '{2}'::jsonb)""".format(self._requestData["options"]["email"],
-                                                                    self._requestData["options"]["aoi"],
-                                                                    json.dumps(self._requestData["options"]["request_data"]).encode("UTF-8"))
-            self._config.pgConnections[self._config.statsInfo.connectionId].executeQuery(insertQuery)
+            ('{0}',{1}, '{2}'::jsonb)""".format(self._requestData["options"]["email"],
+                                                                    aoi,
+                                                                    json.dumps(self._requestData["options"]["request_data"]))
+
+            self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([insertQuery,])
             return {"result": "OK", "message": "Your request has been submitted successfully. You will receive an email when the data are available"}
         else:
-            return {"result": "error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
+            return {"result": "Error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
 
 
 
