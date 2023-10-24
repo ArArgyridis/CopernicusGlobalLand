@@ -17,9 +17,9 @@
 							<div class="col-8 border border-secondary position-relative">
 								<OLMap id="aoiMap" v-bind:center="[0,0]" v-bind:zoom=1 v-bind:bingKey=bingKey v-bind:epsg=mapProjection ref="aoiMap" class="aoiMap" />
 								<div class="aoiToolbar aoiToolbar">
-									<button type = "button" class = "btn btn-secondary aoiToolbarButton" v-bind:class="{active: aoiMode =='maxExtentAOI'}" data-bs-toggle="tooltip"  title="Set AOI To Maximum Extent" v-on:click = "__setToMaxExtent()" ref ="maxExtentAOI"><FontAwesomeIcon icon="globe"  size="1x" :style="{ color: '#eaeada'}"/></button>
-									<button class = "btn btn-secondary aoiToolbarButton" v-bind:class="{active: aoiMode =='drawAOI'}" data-bs-toggle="tooltip" data-bs-placement="top" title="Draw Custom AOI" v-on:click = "__drawAOI()" ref ="customAOI"> <FontAwesomeIcon icon="draw-polygon"  size="1x" :style="{ color: '#eaeada'}" /></button>
-									<button class = "btn btn-secondary aoiToolbarButton" v-bind:class="{active: aoiMode =='uploadAOI'}" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload AOI from KML" v-on:click = "__uploadAOI()" ref ="uploadAOI"> <FontAwesomeIcon icon="upload"  size="1x" :style="{ color: '#eaeada'}" /></button>
+									<button type = "button" class = "btn btn-secondary aoiToolbarButton" data-bs-toggle="tooltip"  title="Set AOI To Maximum Extent" v-on:click = "__setToMaxExtent()" ref ="maxExtentAOI"><FontAwesomeIcon icon="globe"  size="1x" :style="{ color: '#eaeada'}"/></button>
+									<button class = "btn btn-secondary aoiToolbarButton" v-bind:class="{active: aoiMode =='drawAOI' && aoiSet == false}" data-bs-toggle="tooltip" data-bs-placement="top" title="Draw Custom AOI" v-on:click = "__drawAOI()" ref ="customAOI"> <FontAwesomeIcon icon="draw-polygon"  size="1x" :style="{ color: '#eaeada'}" /></button>
+									<button class = "btn btn-secondary aoiToolbarButton" data-bs-toggle="tooltip" data-bs-placement="top" title="Upload AOI from KML" v-on:click = "__uploadAOI()" ref ="uploadAOI"> <FontAwesomeIcon icon="upload"  size="1x" :style="{ color: '#eaeada'}" /></button>
 									<button class = "btn btn-secondary aoiToolbarButton" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear AOI" v-on:click = "__eraseAOI()" ref ="eraseAOI"><FontAwesomeIcon icon="eraser"  size="1x" :style="{ color: '#eaeada'}" /></button>
 									<input type="file" ref="kmlUpload" accept=".kml" style="display:none" v-on:change="__onKMLChange($event)"/>
 								</div>
@@ -61,6 +61,22 @@
 
 							</div>
 						</div>
+
+						<div class="row">
+							<div class = "col-2 border-secondary">
+								Category
+							</div>
+							<div class = "col-3 border-secondary">
+								Product
+							</div>
+							<div class = "col-3 border-secondary">
+								Consolidation Period
+							</div>
+							<div class = "col border-secondary">
+								Variable
+							</div>
+						</div>
+
 						<div class="row">
 							<div class="col-2 border border-secondary">
 								<div class="accordion-body">
@@ -143,8 +159,10 @@ import DateTime from "./libs/DateTime.vue";
 import options from "../libs/js/options.js";
 import utils from "../libs/js/utils.js";
 import {Fill, Stroke, Style, Text} from 'ol/style';
-import GeoJSON from 'ol/format/GeoJSON';
-import KML from 'ol/format/KML';
+import GeoJSON from "ol/format/GeoJSON";
+import {Polygon, LineString, MultiPolygon} from 'ol/geom';
+import KML from "ol/format/KML";
+import WKT from "ol/format/WKT";
 import {consolidationPeriods} from "../libs/js/constructors.js";
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faDrawPolygon, faEraser, faGlobe, faDownload, faUpload } from '@fortawesome/free-solid-svg-icons';
@@ -343,21 +361,35 @@ export default {
 			let file = evt.target.files[0];
 			let reader = new FileReader();
 			reader.readAsText(file);
+
+			let validGeoms = true;
+
 			reader.onload = (e => {
 				let features = new KML().readFeatures(e.target.result);
+				let newFeatures = [];
 				features.forEach(ft =>{
-					ft.getGeometry().transform("EPSG:4326", this.mapProjection);
-					ft.setStyle(this.showStyle);
+					if (ft.getGeometry() instanceof Polygon || ft.getGeometry() instanceof MultiPolygon) {
+						ft.getGeometry().transform("EPSG:4326", this.mapProjection);
+						ft.setStyle(this.showStyle);
+						newFeatures.push(ft);
+					}
+					else
+						validGeoms = false;
 				});
 
-				this.$refs.aoiMap.addFeaturesToLayer(this.aoiOLOptions.layer, features);
-				this.aoiSet = true;
+				if(!validGeoms)
+					window.alert("The system accepts only Polygon/Multipolygon geometries. Please update your KML data accordingly");
+				else {
+					this.$refs.aoiMap.addFeaturesToLayer(this.aoiOLOptions.layer, newFeatures);
+					this.aoiSet = true;
+				}
+
 			});
 		},
 		__setToMaxExtent() {
 			//pressing the button down...
-			this.aoiMode = "maxExtentAOI";
 			this.__eraseAOI();
+			this.aoiMode = "maxExtentAOI";
 			axios.get(options.maxAOIBounds3857URL).then((response) => {
 				let features = new GeoJSON().readFeatures(response.data);
 				this.$refs.aoiMap.addFeaturesToLayer(this.aoiOLOptions.layer, features);
@@ -367,7 +399,8 @@ export default {
 		__submitOrder(){
 			let aoi = null;
 			if (!['maxExtentAOI','eraseAOI'].includes(this.aoiMode)) {
-				aoi = this.$refs.aoiMap.convertVectorLayerToGeoJSON(this.aoiOLOptions.layer);
+				let fmt = new WKT();
+				aoi = fmt.writeFeatures(this.$refs.aoiMap.getLayerObject(this.aoiOLOptions.layer).getSource().getFeatures());
 			}
 
 			let optionsObj =  {

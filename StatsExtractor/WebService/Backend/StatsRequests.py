@@ -343,8 +343,7 @@ class StatsRequests(GenericRequest):
         if ret[0][0] == True or ret[0][1] == True:
             aoi = "NULL"
             if self._requestData["options"]["aoi"] is not None:
-                aoi = " ST_GeomFromGeoJSON('{0}')".format(self._requestData["options"]["aoi"])
-
+                aoi = " ST_Force2D(ST_Union(ST_GeomFromText('{0}')))".format(self._requestData["options"]["aoi"])
 
             insertQuery = """INSERT INTO product_order(email, aoi, request_data) VALUES
             ('{0}',{1}, '{2}'::jsonb)""".format(self._requestData["options"]["email"],
