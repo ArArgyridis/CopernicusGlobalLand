@@ -345,11 +345,13 @@ class StatsRequests(GenericRequest):
             if self._requestData["options"]["aoi"] is not None:
                 aoi = " ST_Force2D(ST_Union(ST_GeomFromText('{0}')))".format(self._requestData["options"]["aoi"])
 
-            insertQuery = """INSERT INTO product_order(email, aoi, request_data) VALUES
-            ('{0}',{1}, '{2}'::jsonb)""".format(self._requestData["options"]["email"],
-                                                                    aoi,
-                                                                    json.dumps(self._requestData["options"]["request_data"]))
-
+            insertQuery = """
+            WITH tmp AS(
+            SELECT '{0}'::text, {1}, '{2}'::jsonb
+            )
+            INSERT INTO product_order(email, aoi, request_data)
+            SELECT * FROM tmp""".format(self._requestData["options"]["email"],aoi,json.dumps(self._requestData["options"]["request_data"]))
+            print(insertQuery)
             self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([insertQuery,])
             return {"result": "OK", "message": "Your request has been submitted successfully. You will receive an email when the data are available"}
         else:
