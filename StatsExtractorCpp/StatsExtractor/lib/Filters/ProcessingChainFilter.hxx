@@ -22,6 +22,7 @@
 
 
 #include "ProcessingChainFilter.h"
+#include "../Utils/Utils.hxx"
 
 namespace otb {
 
@@ -51,7 +52,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Confi
     this->SetNthInput(0, reader->GetOutput());
 
     this->processGeomIdsAndImages(polyIds, images);
-    this->alignAOIToImage(envlp);
+    this->aoi = alignAOIToImage<TInputImage>(envlp, this->GetReferenceImage());
 }
 
 
@@ -74,7 +75,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     std::stringstream data;
 
     for (auto row: res) {
-        data <<"(" << row[0] <<"," << row[1] <<"," << row[2] <<",";
+        data <<"(" << row[0].as<std::string>() <<"," << row[1].as<std::string>() <<"," << row[2].as<std::string>() <<",";
         for (size_t i = 0; i< variable->colorInterpolation.size(); i++) {
             RGBVal color = variable->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
             data << "'" << rgbToArrayString(color) << "',";
@@ -89,9 +90,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
         RGBVal meanColor = variable->styleColors[variable->reverseValue(dt)];
         //std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
         data <<"'" << rgbToArrayString(meanColor) <<"'),";
-
     }
-
 
     if (data.tellp() == 0)
         return;
@@ -282,48 +281,7 @@ typename ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData Proces
     return ret;
 }
 
-template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::alignAOIToImage(OGREnvelope &envlp){
-    //aligning aoi to image
-    this->aoi = envlp;
 
-    point2d upperLeft, lowerRight;
-    typename TInputImage::IndexType upperLeftIdx, lowerRightIdx;
-    upperLeft[0]    = aoi.MinX;
-    upperLeft[1]    = aoi.MaxY;
-
-    lowerRight[0]   = aoi.MaxX;
-    lowerRight[1]   = aoi.MinY;
-
-
-    //anchoring to indexes
-    TInputImagePointer inputImage = this->GetReferenceImage();
-
-    inputImage->TransformPhysicalPointToIndex(upperLeft, upperLeftIdx);
-    inputImage->TransformPhysicalPointToIndex(lowerRight, lowerRightIdx);
-
-    //getting centroid coordinates
-    inputImage->TransformIndexToPhysicalPoint(upperLeftIdx, upperLeft);
-    inputImage->TransformIndexToPhysicalPoint(lowerRightIdx, lowerRight);
-
-    typename TInputImage::SpacingType spacing;
-    spacing     = inputImage->GetSignedSpacing();
-
-    aoi.MinX    = upperLeft[0] - spacing[0]/2;
-    aoi.MaxY    = upperLeft[1] - abs(spacing[1]/2);
-
-    aoi.MaxX    = lowerRight[0] + spacing[0]/2;
-    aoi.MinY    = lowerRight[1] - abs(spacing[1]/2);
-
-    //get aoi from input image
-    OGREnvelope imageEnvelope = regionToEnvelope<TInputImage>(inputImage, inputImage->GetLargestPossibleRegion());
-
-    //when data fall completely outside of product aoi
-    if (!aoi.Intersects(imageEnvelope))
-        aoi.MinX = aoi.MaxY = aoi.MaxX = aoi.MinY = 0;
-    else //intersect two aois to get the common one-> this is the actual aoi
-        aoi.Intersect(imageEnvelope);
-}
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonValue &images) {

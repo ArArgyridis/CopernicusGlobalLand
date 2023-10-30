@@ -32,7 +32,7 @@ unsigned short Configuration::parse() {
         return 1;
     }
 
-    std::unique_ptr<FILE, decltype(&fclose)> inFile (fopen(cfgFile.c_str(), "r"), &fclose);
+    std::unique_ptr<FILE, int(*)(FILE*)> inFile (fopen(cfgFile.c_str(), "r"), &fclose);
     std::unique_ptr<char[]> readBuffer(new char[80000]);
     rapidjson::FileReadStream inputFileStream(inFile.get(), readBuffer.get(), 80000);
     rapidjson::Document cfg;
@@ -67,6 +67,7 @@ unsigned short Configuration::parse() {
     filesystem.imageryPath          = cfg["filesystem"]["imagery_path"].GetString();
     filesystem.anomalyProductsPath  = cfg["filesystem"]["anomaly_products_path"].GetString();
     filesystem.tmpPath              = cfg["filesystem"]["tmp_path"].GetString();
+    filesystem.tmpZipPath           = cfg["filesystem"]["tmp_zip_path"].GetString();
     filesystem.mapserverPath        = cfg["filesystem"]["mapserver_data_path"].GetString();
     filesystem.mapFilePath          = cfg["filesystem"]["mapserver_mapfile_path"].GetString();
 

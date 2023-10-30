@@ -12,6 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <gdal_alg.h>
 #include <otbGdalDataTypeBridge.h>
 #include <iomanip>
 
@@ -20,7 +21,7 @@
 //public
 namespace otb {
 template <class TOutputImage>
-void VectorWktToLabelImageFilter<TOutputImage>::AppendData(std::string wkt, size_t id) {
+void VectorWktToLabelImageFilter<TOutputImage>::AppendData(std::string wkt, typename TOutputImage::ValueType id) {
 
     OGRGeometryH geom;
     if (this->geomType == wkbMultiPolygon)
@@ -56,6 +57,7 @@ void VectorWktToLabelImageFilter<TOutputImage>::SetGeometryMetaData(int epsg, OG
 template <class TOutputImage>
 void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
     this->AllocateOutputs();
+    std::cout << "hereeeeeee\n";
 
     typename TOutputImage::Pointer out = this->GetOutput();
 
@@ -79,7 +81,6 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
            << "PIXELOFFSET=" << sizeof(OutputImageInternalPixelType) * nbBands << ","
            << "LINEOFFSET=" << sizeof(OutputImageInternalPixelType) * nbBands * bufferedRegion.GetSize()[0] << ","
            << "BANDOFFSET=" << sizeof(OutputImageInternalPixelType);
-
 
     GDALDatasetUniquePtr memRasterDataset;
     memRasterDataset = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( stream.str().c_str(), GA_Update )));

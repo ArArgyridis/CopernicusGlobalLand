@@ -343,7 +343,7 @@ class StatsRequests(GenericRequest):
         if ret[0][0] == True or ret[0][1] == True:
             aoi = "NULL"
             if self._requestData["options"]["aoi"] is not None:
-                aoi = " ST_Force2D(ST_Union(ST_GeomFromText('{0}')))".format(self._requestData["options"]["aoi"])
+                aoi = "ST_MakeValid(ST_Force2D(ST_Multi(ST_Union(ST_GeomFromText('{0}'))))".format(self._requestData["options"]["aoi"])
 
             insertQuery = """
             WITH tmp AS(

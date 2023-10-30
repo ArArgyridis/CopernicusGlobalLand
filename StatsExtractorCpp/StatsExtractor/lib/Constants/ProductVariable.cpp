@@ -102,6 +102,5 @@ void ProductVariable::loadMetadata() {
 #pragma omp for
         for (i = 0; i < lutProductValues.size(); i++)
             lutProductValues[i] = scaler(minMaxProdValues[0]+static_cast<int>(i), scaleFactor, addOffset);
-
     }
 }

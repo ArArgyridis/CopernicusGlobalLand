@@ -18,6 +18,8 @@ SET (POSTGRES_DIR .)
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
 find_package(OpenMP)
+find_package(LibZip REQUIRED)
+
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -52,6 +54,7 @@ set(SOURCE
     lib/Utils/ColorInterpolation.cpp
     lib/Constants/ProductInfo.cpp
     lib/Constants/ProductVariable.cpp
+    lib/ProductOrderProcessor/ProductOrderProcessor.cpp
 )
 
 set (HEADERS
@@ -76,13 +79,12 @@ set (HEADERS
     lib/Constants/ProductVariable.h
     lib/Filters/RasterReprojection/RasterReprojectionFilter.h
     lib/Filters/RasterReprojection/RasterReprojectionFilter.hxx
+    lib/ProductOrderProcessor/ProductOrderProcessor.h
+    lib/Filters/Functors/LinearScaler.h
 )
 
 #add_compile_options(-fsanitize=address)
 #add_link_options(-fsanitize=address)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
@@ -90,19 +92,27 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif()
 
-add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS})
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS}
+    lib/ProductOrderProcessor/Crop.hxx)
 
 set (PROCESSORS
     processors/CogGenerator.cpp
     processors/StatsExtractor.cpp
+    processors/OrderProcessor.cpp
 )
 
 foreach(sourceFile IN LISTS PROCESSORS)
     get_filename_component(fileName ${sourceFile} NAME_WE)
     message("creating: ${fileName}")
     add_executable(${fileName} ${sourceFile})
-    target_link_libraries(${fileName} ${PROJECT_NAME} ${PQXX_LIBRARIES} ${OTB_LIBRARIES}
-            ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only OpenMP::OpenMP_CXX)
+    target_include_directories(${fileName} PRIVATE ${LIBZIP_INCLUDE_DIR})
+    target_link_libraries(${fileName} ${PROJECT_NAME} ${LIBZIP_LIBRARY} ${PQXX_LIBRARIES} ${OTB_LIBRARIES}
+            ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only OpenMP::OpenMP_CXX )
 endforeach()
 
 

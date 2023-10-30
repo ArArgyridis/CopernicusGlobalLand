@@ -60,7 +60,7 @@ public:
     itkNewMacro(Self);
 
     /** Method to add single wkt geometry with it's respective id*/
-    void AppendData(std::string wkt, size_t i);
+    void AppendData(std::string wkt, typename TOutputImage::ValueType i);
 
     /** Getting valid features **/
     size_t GetFeatureCount();
@@ -70,7 +70,8 @@ public:
 
 protected:
 
-    virtual void GenerateData();
+    virtual void GenerateData() override;
+    virtual void ThreadedGenerateData(const typename TOutputImage::RegionType& outputRegionForThread, itk::ThreadIdType threadId) override {};
     virtual void GenerateOutputInformation(void) override;
     VectorWktToLabelImageFilter();
     virtual ~VectorWktToLabelImageFilter();

@@ -30,6 +30,7 @@
 		"long_term_statistics_path": "/home/argyros/Projects/JRC/DataInventory/lts/",
 		"anomaly_products_path": "/home/argyros/Projects/JRC/AnomalyProducts/",
 		"tmp_path":  "/home/argyros/Projects/JRC/tmp/",
+		"tmp_zip_path": "/home/argyros/Projects/JRC/tmpzip/",
 		"mapserver_data_path": "/home/argyros/Projects/JRC/mapserver/",
 		"mapserver_mapfile_path":"/home/argyros/Projects/JRC/DataInventory/mapfile/"
 	},

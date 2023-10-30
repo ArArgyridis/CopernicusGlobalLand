@@ -55,10 +55,6 @@ int main(int argc, char *argv[]) {
 
     boost::filesystem::create_directories(config->filesystem.tmpPath);
 
-
-    //enable BIGTIFF
-
-
     char **tmpToCOGWarpOptions = nullptr;
     tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "BIGTIFF", "IF_NEEDED");
     tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "NUM_THREADS", "ALL_CPUS");

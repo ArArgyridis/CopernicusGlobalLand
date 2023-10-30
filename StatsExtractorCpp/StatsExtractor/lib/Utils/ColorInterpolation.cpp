@@ -42,7 +42,7 @@ RGBVal ColorInterpolation::interpolateColor(long double areaPerc) {
     else if (areaPerc == keys.back())
         ret = values[keys.back()];
     else {
-        size_t bins = values.size() -1;
+        size_t bins = values.size()-1;
         float valueRange = 100/bins;
 
         size_t mn = static_cast<int>(areaPerc/valueRange);

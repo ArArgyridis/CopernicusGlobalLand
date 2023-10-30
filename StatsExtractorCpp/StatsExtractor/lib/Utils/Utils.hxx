@@ -88,8 +88,8 @@ size_t reverseNoScalerFunc(float x, float &scale, float &offset);
 size_t reverseScalerFunc(float x, float& scale, float& offset);
 
 float scalerFunc(float x, float& scale, float& offset);
-std::vector<std::string> split(std::string s, std::string delimiter);
 
+std::vector<std::string> split(std::string s, std::string delimiter);
 //template functions
 
 
@@ -159,6 +159,51 @@ GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image) {
     memRasterDataset->SetGeoTransform(const_cast<double*>(geoTransform.GetDataPointer()));
 
     return std::move(memRasterDataset);
+}
+
+template <class TInputImage>
+OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer inputImage){
+    //aligning aoi to image
+    OGREnvelope aoi = envlp;
+
+    point2d upperLeft, lowerRight;
+    typename TInputImage::IndexType upperLeftIdx, lowerRightIdx;
+    upperLeft[0]    = aoi.MinX;
+    upperLeft[1]    = aoi.MaxY;
+
+    lowerRight[0]   = aoi.MaxX;
+    lowerRight[1]   = aoi.MinY;
+
+
+    //anchoring to indexes
+    //TInputImagePointer inputImage = this->GetReferenceImage();
+
+    inputImage->TransformPhysicalPointToIndex(upperLeft, upperLeftIdx);
+    inputImage->TransformPhysicalPointToIndex(lowerRight, lowerRightIdx);
+
+    //getting centroid coordinates
+    inputImage->TransformIndexToPhysicalPoint(upperLeftIdx, upperLeft);
+    inputImage->TransformIndexToPhysicalPoint(lowerRightIdx, lowerRight);
+
+    typename TInputImage::SpacingType spacing;
+    spacing     = inputImage->GetSignedSpacing();
+
+    aoi.MinX    = upperLeft[0] - spacing[0]/2;
+    aoi.MaxY    = upperLeft[1] - abs(spacing[1]/2);
+
+    aoi.MaxX    = lowerRight[0] + spacing[0]/2;
+    aoi.MinY    = lowerRight[1] - abs(spacing[1]/2);
+
+    //get aoi from input image
+    OGREnvelope imageEnvelope = regionToEnvelope<TInputImage>(inputImage, inputImage->GetLargestPossibleRegion());
+
+    //when data fall completely outside of product aoi
+    if (!aoi.Intersects(imageEnvelope))
+        aoi.MinX = aoi.MaxY = aoi.MaxX = aoi.MinY = 0;
+    else //intersect two aois to get the common one-> this is the actual aoi
+        aoi.Intersect(imageEnvelope);
+
+    return aoi;
 }
 
 

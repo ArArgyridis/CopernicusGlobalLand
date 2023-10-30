@@ -60,7 +60,7 @@ MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
     tmpDataset->GetGeoTransform(gt);
     (*bandMetadata)["MY_PIXEL_SIZE"] = std::to_string(gt[1]);
     (*bandMetadata)["MY_NO_DATA_VALUE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetNoDataValue());
-
+    (*bandMetadata)["GDAL_RASTER_TYPE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetRasterDataType());
     meta = nullptr;
     return bandMetadata;
 }
@@ -132,6 +132,7 @@ std::vector<std::string> split(std::string s, std::string delimiter) {
     res.push_back (s.substr (pos_start));
     return res;
 }
+
 
 std::string stringstreamToString(std::stringstream &stream) {
         stream.seekp(-1, stream.cur);

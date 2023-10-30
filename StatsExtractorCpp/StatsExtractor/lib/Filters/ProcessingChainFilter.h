@@ -43,7 +43,7 @@ public:
     using Pointer                   = itk::SmartPointer<Self>;
     using ConstPointer              = itk::SmartPointer<const Self>;
 
-    using  TInputImageConstIterator = itk::ImageRegionConstIterator<TInputImage>;
+    using TInputImageConstIterator  = itk::ImageRegionConstIterator<TInputImage>;
     using OutputIterator            = itk::ImageRegionIterator<TInputImage>;
     using TInputImagePointer        = typename TInputImage::Pointer;
     using TPolygonDataTypePointer   = typename TPolygonDataType::Pointer;
@@ -65,7 +65,7 @@ public:
     /** typedefs for needed filters */
     using labelType             = unsigned int;
     const short Dimension       = 2;
-    using LabelImageType        = Image< labelType, 2 >;
+    using LabelImageType        = Image< labelType, 2>;
 
     using VectorDataToLabelImageFilterType      = VectorDataToLabelImageFilter<TPolygonDataType, LabelImageType>;
     using RawDataImageReaderType                = ImageFileReader<TInputImage>;
@@ -120,7 +120,6 @@ private:
     std::string stratification, polyIdsStr, imageIdsStr;
     RegionData rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
 
-    void alignAOIToImage(OGREnvelope& envlp);
     void prepareImageInfo(JsonValue& images);
     void processGeomIdsAndImages(JsonDocumentSharedPtr &polyIds, JsonValue& images);
 

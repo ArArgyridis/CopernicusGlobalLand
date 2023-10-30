@@ -20,9 +20,10 @@ class ProductVariable {
     size_t (*reverseScaler)(float, float&, float&);
 
     void loadMetadata();
-    MetadataDictPtr metadata;
+
 
 public:
+    MetadataDictPtr metadata;
     using Pointer = std::shared_ptr<ProductVariable>;
     StringPtr productType;
     PathSharedPtr rootPath, firstProductPath, firstProductVariablePath;
