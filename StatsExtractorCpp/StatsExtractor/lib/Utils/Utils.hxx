@@ -16,6 +16,7 @@
 #define UTILS_HXX
 
 #include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <gdal_priv.h>
 #include <itkPoint.h>
 #include <libxml2/libxml/tree.h>
@@ -69,13 +70,14 @@ using XmlXpathObjectPtr         = std::unique_ptr<xmlXPathObject, void(*)(xmlXPa
 using StringPtr                 = std::shared_ptr<std::string>;
 
 /** typedef for Paths */
-using PathSharedPtr             = std::shared_ptr<boost::filesystem::path>;
+using PathSharedPtr             = std::shared_ptr<std::filesystem::path>;
 
 /** Image statistics Info */
 
-void createDirectoryForFile(boost::filesystem::path dstFile);
+void createDirectoryForFile(std::filesystem::path dstFile);
 
-MetadataDictPtr getMetadata(boost::filesystem::path &dataPath);
+unsigned long long getFolderSizeOnDisk(std::filesystem::path &dataPath);
+MetadataDictPtr getMetadata(std::filesystem::path &dataPath);
 OGRPolygon envelopeToGeometry(OGREnvelope& envelope);
 long double pixelsToAreaM2Degrees(long double& pixelCount, long double pixelSize);
 long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize);
@@ -90,9 +92,11 @@ size_t reverseScalerFunc(float x, float& scale, float& offset);
 float scalerFunc(float x, float& scale, float& offset);
 
 std::vector<std::string> split(std::string s, std::string delimiter);
+
+
+
+
 //template functions
-
-
 template <class TInputImage>
 OGREnvelope regionToEnvelope(typename TInputImage::Pointer inputImage, typename TInputImage::RegionType region) {
 

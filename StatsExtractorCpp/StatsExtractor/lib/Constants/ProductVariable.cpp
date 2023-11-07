@@ -28,7 +28,7 @@ firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), 
 
     if (firstProductPath != nullptr) {
         if(*productType == "raw" && firstProductPath->extension() == ".nc")
-            firstProductVariablePath = std::make_shared<boost::filesystem::path>(std::string("NETCDF:") + firstProductPath->string() + ":" + variable);
+            firstProductVariablePath = std::make_shared<std::filesystem::path>(std::string("NETCDF:") + firstProductPath->string() + ":" + variable);
 
         loadMetadata();
     }
@@ -39,8 +39,8 @@ ProductVariable::Pointer ProductVariable::New(JsonValue &params, StringPtr prdTy
 }
 
 
-boost::filesystem::path ProductVariable::productAbsPath(boost::filesystem::path &relPath) {
-    boost::filesystem::path retPath;
+std::filesystem::path ProductVariable::productAbsPath(std::filesystem::path &relPath) {
+    std::filesystem::path retPath;
 
     if(relPath.extension() == ".nc")
         retPath = std::string("NETCDF:") + (*rootPath/relPath).string() + ":" + variable;

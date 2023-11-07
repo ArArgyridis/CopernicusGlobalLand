@@ -21,14 +21,26 @@
 #include "Utils.hxx"
 
 
-void createDirectoryForFile(boost::filesystem::path dstFile) {
+void createDirectoryForFile(std::filesystem::path dstFile) {
     auto splitDir = split(dstFile.string(), "/");
     splitDir.pop_back();
     std::string outPath = boost::algorithm::join(splitDir,"/");
-    boost::filesystem::create_directories(outPath);
+    std::filesystem::create_directories(outPath);
 }
 
-MetadataDictPtr getMetadata(boost::filesystem::path &dataPath) {
+unsigned long long getFolderSizeOnDisk(std::filesystem::path &dataPath) {
+    unsigned long long size = 0;
+    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(dataPath)) {
+
+        if (std::filesystem::is_directory(dirEntry))
+            continue;
+        size += std::filesystem::file_size(dirEntry);
+    }
+
+    return size;
+}
+
+MetadataDictPtr getMetadata(std::filesystem::__cxx11::path &dataPath) {
     GDALDatasetUniquePtr tmpDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( dataPath.c_str(), GA_ReadOnly)));
     char **meta = tmpDataset->GetMetadata();
 

@@ -47,7 +47,7 @@ public:
 
     long double convertPixelsToArea(long double pixels);
     float getNoData();
-    boost::filesystem::path productAbsPath(boost::filesystem::path &relPath);
+    std::filesystem::path productAbsPath(std::filesystem::path &relPath);
     size_t reverseValue(float value);
     float scaleValue(float value);
 

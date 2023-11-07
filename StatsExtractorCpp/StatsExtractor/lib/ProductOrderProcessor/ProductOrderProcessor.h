@@ -13,7 +13,9 @@
 #include <otbImageFileWriter.h>
 
 #include "../../lib/ConfigurationParser/ConfigurationParser.h"
+#include "../../lib/Constants/Constants.h"
 #include "../../lib/Filters/IO/VectorWktToLabelImageFilter.hxx"
+#include "../../lib/PostgreSQL/PostgreSQL.h"
 #include "../../lib/Utils/Utils.hxx"
 
 class ProductOrderProcessor {
@@ -31,10 +33,11 @@ class ProductOrderProcessor {
     Configuration::Pointer config;
 
     template <class TInputImage>
-    void crop(boost::filesystem::path &inImage, boost::filesystem::path &outImage, AOINfo &mask, bool scale=false, double a=0, double b=0);
+    void crop(std::filesystem::path &inImage, std::filesystem::path &outImage, AOINfo &mask, bool scale=false, double a=0, double b=0);
 
     template <class TInputImage>
     AOINfo rasterizeAOI(PathSharedPtr imgPath, std::string& ogrPolygonStr);
+    void processFile(std::filesystem::path inRelFile, std::filesystem::path &orderPath, AOINfo& maskInfo);
 
 protected:
     ProductOrderProcessor(Configuration::Pointer& cfg);

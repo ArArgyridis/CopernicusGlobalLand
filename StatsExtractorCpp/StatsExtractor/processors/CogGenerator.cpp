@@ -12,6 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <filesystem>
 #include <fmt/format.h>
 #include <gdal_frmts.h>
 #include <gdalwarper.h>
@@ -50,10 +51,10 @@ int main(int argc, char *argv[]) {
         return 1;
 
     //clean up tmp directory before starting
-    if(boost::filesystem::exists(config->filesystem.tmpPath))
-        boost::filesystem::remove_all(config->filesystem.tmpPath);
+    if(std::filesystem::exists(config->filesystem.tmpPath))
+        std::filesystem::remove_all(config->filesystem.tmpPath);
 
-    boost::filesystem::create_directories(config->filesystem.tmpPath);
+    std::filesystem::create_directories(config->filesystem.tmpPath);
 
     char **tmpToCOGWarpOptions = nullptr;
     tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "BIGTIFF", "IF_NEEDED");
@@ -73,36 +74,36 @@ int main(int argc, char *argv[]) {
             for (size_t rowId = 0; rowId < res.size(); rowId++) {
 
                 //create output paths
-                boost::filesystem::path filePath = res[rowId][1].as<std::string>();
-                boost::filesystem::path inFile      = variable.second->productAbsPath(filePath).string();
+                std::filesystem::path filePath = res[rowId][1].as<std::string>();
+                std::filesystem::path inFile      = variable.second->productAbsPath(filePath).string();
 
 
                 //tmp output file
-                boost::filesystem::path tmpFile = config->filesystem.tmpPath/filePath;
+                std::filesystem::path tmpFile = config->filesystem.tmpPath/filePath;
                 if (variable.second->variable.length() > 0) {
                     std::vector<std::string> splitPath = split(tmpFile.string(), "/");
                     splitPath.insert(splitPath.end()-1, variable.second->variable);
                     tmpFile = boost::algorithm::join(splitPath,"/");
-                    filePath = boost::filesystem::relative(tmpFile, config->filesystem.tmpPath);
+                    filePath = std::filesystem::relative(tmpFile, config->filesystem.tmpPath);
                 }
 
                 tmpFile.replace_extension("tif");
-                if(boost::filesystem::exists(tmpFile))
-                    boost::filesystem::remove(tmpFile);
+                if(std::filesystem::exists(tmpFile))
+                    std::filesystem::remove(tmpFile);
                 createDirectoryForFile(tmpFile);
 
                 //tmp cog file
-                boost::filesystem::path tmpCog(tmpFile);
+                std::filesystem::path tmpCog(tmpFile);
                 tmpCog.replace_extension(".cog.tif");
-                if(boost::filesystem::exists(tmpCog))
-                    boost::filesystem::remove(tmpCog);
+                if(std::filesystem::exists(tmpCog))
+                    std::filesystem::remove(tmpCog);
 
                 //destination cog file
-                boost::filesystem::path outCog = config->filesystem.mapserverPath/filePath;
+                std::filesystem::path outCog = config->filesystem.mapserverPath/filePath;
                 outCog.replace_extension(".tif");
                 //check if a file exists
-                if(boost::filesystem::exists(outCog))
-                    boost::filesystem::remove(outCog);
+                if(std::filesystem::exists(outCog))
+                    std::filesystem::remove(outCog);
                 createDirectoryForFile(outCog);
                 //std::cout << tmpFile << "\n" << tmpCog <<"\n" << outCog <<"\n\n";
 
@@ -141,19 +142,19 @@ int main(int argc, char *argv[]) {
                 tmpCogData = GDALDatasetUniquePtr(poDriver->CreateCopy(tmpCog.c_str(), inData.get(),
                                                                        FALSE, tmpToCOGWarpOptions, nullptr, nullptr));
                 tmpCogData = nullptr;
-                boost::filesystem::remove(tmpFile);
+                std::filesystem::remove(tmpFile);
 
                 std::cout << "Copy to destination\n";
                 //copy file to destination directory
-                boost::filesystem::copy(tmpCog, outCog);
+                std::filesystem::copy(tmpCog, outCog);
                 //delete tmp file
-                boost::filesystem::remove(tmpCog);
+                std::filesystem::remove(tmpCog);
 
                 //update db
                 std::string updateQuery = fmt::format(R"""(
                 INSERT INTO wms_file(product_file_id, product_file_variable_id, rel_file_path)
                 VALUES({0},{1},'{2}') ON CONFLICT(product_file_id,product_file_variable_id) DO UPDATE SET rel_file_path=EXCLUDED.rel_file_path;
-                )""", res[rowId][0].as<size_t>(), variable.second->id, (boost::filesystem::relative(outCog, config->filesystem.mapserverPath)).string());
+                )""", res[rowId][0].as<size_t>(), variable.second->id, (std::filesystem::relative(outCog, config->filesystem.mapserverPath)).string());
                 cn->executeQuery(updateQuery);
 
             }

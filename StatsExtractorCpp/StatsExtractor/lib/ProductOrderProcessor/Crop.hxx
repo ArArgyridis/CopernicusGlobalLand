@@ -6,7 +6,7 @@
 #include "../../lib/Filters/Functors/LinearScaler.h"
 
 template <class TInputImage>
-void ProductOrderProcessor::crop(boost::filesystem::path &inImage, boost::filesystem::path &outImage, AOINfo &mask, bool scale, double a, double b) {
+void ProductOrderProcessor::crop(std::filesystem::path &inImage, std::filesystem::path &outImage, AOINfo &mask, bool scale, double a, double b) {
     using InputImageReader  = otb::ImageFileReader<TInputImage>;
     using InputImageWriter  = otb::ImageFileWriter<TInputImage>;
 
@@ -29,14 +29,16 @@ void ProductOrderProcessor::crop(boost::filesystem::path &inImage, boost::filesy
 
     //scale if needed - it's going to be activated only for float images
     auto scaler = otb::NewFunctorFilter(LinearScaler<typename TInputImage::ValueType, typename TInputImage::ValueType>(a,b));
+    std::string compressArgs = "";// "?gdal:co:COMPRESS=DEFLATE&gdal:co:PREDICTOR=2&gdal:co:ZLEVEL=9";
     if(scale) {
-        std::cout << "SCALING!\n";
+        //std::cout << "SCALING!\n";
         scaler->SetInput(tmpImage);
         tmpImage = scaler->GetOutput();
+        //compressArgs = "?gdal:co:COMPRESS=ZSTD&gdal:co:PREDICTOR=3&gdal:co:ZLEVEL=1";
     }
 
     typename InputImageWriter::Pointer writer = InputImageWriter::New();
-    writer->SetFileName(outImage.string()+"?gdal:co:COMPRESS=DEFLATE&gdal:co:PREDICTOR=2&gdal:co:ZLEVEL=9");
+    writer->SetFileName(outImage.string()+compressArgs);
     writer->SetInput(tmpImage);
     writer->GetStreamingManager()->SetDefaultRAM(500);
     writer->Update();
@@ -100,11 +102,13 @@ ProductOrderProcessor::AOINfo ProductOrderProcessor::rasterizeAOI(PathSharedPtr 
     rasterizer->SetBackgroundValue(0);
     rasterizer->Update();
 
+    /*
     LabelImageWriter::Pointer writer = LabelImageWriter::New();
     writer->SetInput(rasterizer->GetOutput());
     writer->SetFileName("test.tif");
     //writer->GetStreamingManager()->SetDefaultRAM(2500);
     writer->Update();
+    */
 
 
     ret.labelImagePtr = rasterizer->GetOutput();

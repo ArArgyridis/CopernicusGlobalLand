@@ -287,7 +287,7 @@ template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonValue &images) {
     for (auto &image:images.GetArray()) {
         size_t imageId = image.GetArray()[1].GetInt64();
-        boost::filesystem::path relPath = image.GetArray()[0].GetString();
+        std::filesystem::path relPath = image.GetArray()[0].GetString();
         productImages.insert(std::pair<size_t, std::string>(imageId,variable->productAbsPath(relPath).string()));
         imageIdsStr += std::to_string(imageId)+",";
     }

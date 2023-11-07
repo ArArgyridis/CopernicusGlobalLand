@@ -14,10 +14,11 @@
 
 #ifndef CONFIGURATIONPARSER_HXX
 #define CONFIGURATIONPARSER_HXX
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 struct StatsInfo {
     std::string schema, tmpSchema, connectionId, exportId;
@@ -30,7 +31,7 @@ struct SFTPProxy {
 };
 
 struct FileSystem {
-    boost::filesystem::path imageryPath, anomalyProductsPath, tmpPath, tmpZipPath, mapserverPath, mapFilePath;
+    std::filesystem::path imageryPath, anomalyProductsPath, tmpPath, tmpZipPath, mapserverPath, mapFilePath;
 };
 
 
