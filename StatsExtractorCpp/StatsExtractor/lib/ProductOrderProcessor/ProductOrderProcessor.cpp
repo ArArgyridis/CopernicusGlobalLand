@@ -17,7 +17,6 @@ void ProductOrderProcessor::processFile(std::filesystem::path inRelFile, std::fi
 
     //for each sub-dataset identify the data type
     for (size_t i = 0; meta[i] != nullptr; i+=2) {
-
         std::string subDatasetPath(meta[i]);
         auto splitPath = split(subDatasetPath, ":");
         std::filesystem::path inSubDt = std::string("NETCDF:") + std::string(inFile.c_str()) + ":" + splitPath.back();
@@ -61,6 +60,7 @@ void ProductOrderProcessor::process() {
             std::filesystem::path tmpOrderPath = config->filesystem.tmpZipPath/unprocessedOrders[order][0].as<std::string>();
             if(std::filesystem::exists(tmpOrderPath))
                 std::filesystem::remove_all(tmpOrderPath);
+            std::filesystem::create_directories(tmpOrderPath);
 
             for (auto& dataReq: requestDataJSON.GetObject()){
                 std::string rawDataQuery =  fmt::format(R"""(
@@ -116,9 +116,8 @@ void ProductOrderProcessor::compressAndEMail(std::filesystem::path &tmpOrderPath
     //std::string command = fmt::format("zip -r -s 500m \"{0}\" \"{1}\"", outZipFile.c_str(), sourceDir.c_str());
     std::string command = fmt::format("7z a -l -mx=5 -m0=LZMA2 -v512000k \"{0}\" \"{1}\"", tmpZipFile.string(), tmpOrderPath.string());
     system(command.c_str());
-    auto orderSize  = getFolderSizeOnDisk(tmpOrderPath);
-
-    auto archiveSize        =   getFolderSizeOnDisk(tmpZipPath);
+    auto orderSize      = getFolderSizeOnDisk(tmpOrderPath);
+    auto archiveSize    = getFolderSizeOnDisk(tmpZipPath);
 
     //copy 7z files to destination folder
     if (std::filesystem::exists(dstOrderPath))
