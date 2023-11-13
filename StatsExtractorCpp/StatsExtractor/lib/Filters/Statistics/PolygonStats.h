@@ -50,8 +50,8 @@ public:
 
     void addToHistogram(float &value);
     void computeColors();
-    static void updateDB(const size_t& productFileID, Configuration::Pointer cfg, PolyStatsMapPtr polygonData);
-    static void updateDBTmp(const size_t& productFileID, size_t &regionId, Configuration::Pointer cfg, PolyStatsMapPtr polygonData);
+    static void updateDB(const size_t& productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData);
+    static void updateDBTmp(const size_t& productFileID, size_t &regionId, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData);
 
 
     long double mean, sd;

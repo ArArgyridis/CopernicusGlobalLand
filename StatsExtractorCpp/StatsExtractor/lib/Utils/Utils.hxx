@@ -74,6 +74,8 @@ using PathSharedPtr             = std::shared_ptr<std::filesystem::path>;
 
 /** Image statistics Info */
 
+std::string bytesToMaxUnit(unsigned long long& bytes);
+
 void createDirectoryForFile(std::filesystem::path dstFile);
 
 unsigned long long getFolderSizeOnDisk(std::filesystem::path &dataPath);
@@ -110,7 +112,6 @@ OGREnvelope regionToEnvelope(typename TInputImage::Pointer inputImage, typename 
     envelope.MinY = lowerRight[1] - abs(inputImage->GetSignedSpacing()[1]/2);
     envelope.MaxX = lowerRight[0] + inputImage->GetSignedSpacing()[0]/2;
     envelope.MaxY = upperLeft[1]  + abs(inputImage->GetSignedSpacing()[1]/2);
-    //std::cout << maxEnvelope.MinX <<","<<maxEnvelope.MaxY<<"\n" <<maxEnvelope.MaxX <<","<<maxEnvelope.MinY <<"\n";
     return envelope;
 
 }

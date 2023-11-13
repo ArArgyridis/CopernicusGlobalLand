@@ -4,7 +4,7 @@
 
 ProductInfo::ProductInfo(){}
 
-ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg) {
+ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg) {
 
     auto productNamesArr = row[0].as_array();
     PGPool::pgArrayToVector<std::string>(productNamesArr, productNames);
@@ -36,6 +36,6 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg) 
     }
 }
 
-ProductInfo::Pointer ProductInfo::New(PGPool::PGConn::PGRow row, Configuration::Pointer cfg) {
+ProductInfo::Pointer ProductInfo::New(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg) {
     return std::shared_ptr<ProductInfo>(new ProductInfo(row, cfg));
 }

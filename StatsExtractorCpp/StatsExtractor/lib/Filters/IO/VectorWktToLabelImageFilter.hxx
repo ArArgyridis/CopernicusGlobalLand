@@ -57,8 +57,6 @@ void VectorWktToLabelImageFilter<TOutputImage>::SetGeometryMetaData(int epsg, OG
 template <class TOutputImage>
 void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
     this->AllocateOutputs();
-    std::cout << "hereeeeeee\n";
-
     typename TOutputImage::Pointer out = this->GetOutput();
 
     // Fill the buffer with the background value
@@ -106,7 +104,6 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
                                 &(burnValues[0]), options, GDALDummyProgress, nullptr);
 
     CSLDestroy(options);
-
 }
 
 template <class TOutputImage>

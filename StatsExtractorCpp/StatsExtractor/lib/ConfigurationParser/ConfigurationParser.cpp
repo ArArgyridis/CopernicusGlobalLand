@@ -63,11 +63,19 @@ unsigned short Configuration::parse() {
     statsInfo.exportId      = cfg["statsinfo"]["export_id"].GetString();
     statsInfo.memoryMB      = cfg["statsinfo"]["available_memory_mb"].GetInt();
 
+    smtpOptions.server      = cfg["smtp_options"]["server"].GetString();
+    smtpOptions.user        = cfg["smtp_options"]["user"].GetString();
+    smtpOptions.password    = cfg["smtp_options"]["password"].GetString();
+    smtpOptions.certificate = cfg["smtp_options"]["certificate"].GetString();
+    smtpOptions.selfSigned  = cfg["smtp_options"]["self_signed"].GetBool();
+
+
     //filesystem
     filesystem.imageryPath          = cfg["filesystem"]["imagery_path"].GetString();
     filesystem.anomalyProductsPath  = cfg["filesystem"]["anomaly_products_path"].GetString();
     filesystem.tmpPath              = cfg["filesystem"]["tmp_path"].GetString();
     filesystem.tmpZipPath           = cfg["filesystem"]["tmp_zip_path"].GetString();
+    filesystem.serverZipPath        = cfg["filesystem"]["server_zip_path"].GetString();
     filesystem.mapserverPath        = cfg["filesystem"]["mapserver_data_path"].GetString();
     filesystem.mapFilePath          = cfg["filesystem"]["mapserver_mapfile_path"].GetString();
 
@@ -77,9 +85,14 @@ unsigned short Configuration::parse() {
             enabledProductIds.emplace_back(id.GetInt());
     }
 
+    //natstatsURL
+    natStatsURL = cfg["natstats_url"].GetString();
+    if (natStatsURL.back() != '/')
+        natStatsURL += '/';
+
     return 0;
 }
 
-Configuration::Pointer Configuration::New(std::string cfgPath) {
-    return std::make_shared<Configuration>(cfgPath);
+Configuration::SharedPtr Configuration::New(std::string cfgPath) {
+    return Configuration::SharedPtr(new Configuration(cfgPath));
 }

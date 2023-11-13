@@ -21,11 +21,11 @@
 #include "../Filters/Statistics/StatisticsFromLabelImageFilter.h"
 
 class StatsExtractor {
-    Configuration::Pointer config;
+    Configuration::SharedPtr config;
     std::string stratification;
 
 public:
-    StatsExtractor(Configuration::Pointer& cfg, std::string stratificationType);
+    StatsExtractor(Configuration::SharedPtr& cfg, std::string stratificationType);
     void process();
     void process(bool k);
 };

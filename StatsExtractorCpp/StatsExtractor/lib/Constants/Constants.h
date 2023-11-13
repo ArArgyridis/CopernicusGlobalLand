@@ -27,7 +27,7 @@ class Constants {
 public:
     static std::map<std::size_t, ProductInfo::Pointer> productInfo;
     Constants();
-    static unsigned short load(Configuration::Pointer cfg);
+    static unsigned short load(Configuration::SharedPtr cfg);
 
 };
 

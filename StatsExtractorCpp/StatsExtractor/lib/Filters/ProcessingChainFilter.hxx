@@ -37,7 +37,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Reset() {
 }
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::SharedPtr config, const ProductInfo::Pointer product,
                                                                      const ProductVariable::Pointer variable, OGREnvelope &envlp,
                                                                      JsonValue &images, JsonDocumentSharedPtr polyIds, size_t &polySRID) {
     this->config        = config;

@@ -20,7 +20,7 @@ std::map<std::size_t, ProductInfo::Pointer> Constants::productInfo;
 
 Constants::Constants() {}
 
-unsigned short Constants::load(Configuration::Pointer cfg) {
+unsigned short Constants::load(Configuration::SharedPtr cfg) {
     std::string query =  R""""(
                 WITH product_variables as not MATERIALIZED(
                     SELECT pfv.product_file_description_id , array_to_json(ARRAY_AGG(row_to_json(pfv.*))) product_variables

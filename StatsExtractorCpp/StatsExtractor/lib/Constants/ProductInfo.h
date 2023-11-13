@@ -5,7 +5,7 @@
 #include "ProductVariable.h"
 
 class ProductInfo {
-    Configuration::Pointer config;
+    Configuration::SharedPtr config;
 
 public:
     using Pointer = std::shared_ptr<ProductInfo>;
@@ -15,11 +15,11 @@ public:
     PathSharedPtr rootPath, firstProductPath;
     std::vector<std::string> productNames;
     size_t id;
-    static Pointer New(PGPool::PGConn::PGRow row, Configuration::Pointer cfg);
+    static Pointer New(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg);
 
 protected:
     ProductInfo();
-    ProductInfo(PGPool::PGConn::PGRow row, Configuration::Pointer cfg);
+    ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg);
 
 };
 

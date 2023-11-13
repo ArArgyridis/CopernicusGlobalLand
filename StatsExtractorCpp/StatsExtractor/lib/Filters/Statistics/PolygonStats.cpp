@@ -169,7 +169,7 @@ void PolygonStats::computeColors() {
 
 }
 
-void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer cfg, PolyStatsMapPtr polygonData){
+void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData){
     std::stringstream data;
     for(auto & polyData:*polygonData) {
         auto hist = polyData.second->histogramToJSON();
@@ -197,7 +197,7 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::Pointer 
 }
 
 
-void PolygonStats::updateDBTmp(const size_t &productFileID, size_t& regionId, Configuration::Pointer cfg, PolyStatsMapPtr polygonData) {
+void PolygonStats::updateDBTmp(const size_t &productFileID, size_t& regionId, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData) {
     std::stringstream data;
 
     for(auto & polyData:*polygonData) {

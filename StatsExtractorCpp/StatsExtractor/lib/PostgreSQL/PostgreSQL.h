@@ -14,10 +14,9 @@
 
 #ifndef POSTGRESQL_HXX
 #define POSTGRESQL_HXX
-#include <pqxx/pqxx>
 #include <atomic>
 #include <mutex>
-
+#include <pqxx/pqxx>
 
 namespace PGPool {
 using CnType            = pqxx::connection;

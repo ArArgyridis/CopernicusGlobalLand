@@ -38,8 +38,8 @@ public:
     PolygonStats::Pointer GetPolygonStatsByLabel(size_t &label) {
         return this->GetFilter()->GetPolygonStatsByLabel(label);
     }
-
-    void SetConfig (const Configuration::Pointer cfg) {
+    
+    void SetConfig (const Configuration::SharedPtr cfg) {
         this->GetFilter()->SetConfig(cfg);
     }
 

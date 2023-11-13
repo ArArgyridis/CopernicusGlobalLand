@@ -29,27 +29,30 @@ class ProductOrderProcessor {
     };
 
     std::mutex cropMtx, labelMtx;
-
-    Configuration::Pointer config;
+    
+    Configuration::SharedPtr config;
 
     template <class TInputImage>
     void crop(std::filesystem::path &inImage, std::filesystem::path &outImage, AOINfo &mask, bool scale=false, double a=0, double b=0);
 
-    template <class TInputImage>
-    AOINfo rasterizeAOI(PathSharedPtr imgPath, std::string& ogrPolygonStr);
     void processFile(std::filesystem::path inRelFile, std::filesystem::path &orderPath, AOINfo& maskInfo);
 
+    template <class TInputImage>
+    AOINfo rasterizeAOI(PathSharedPtr imgPath, std::string& ogrPolygonStr);
+    
+    void compressAndEMail(std::filesystem::path &tmpOrderPath, std::string orderId, std::string email);
+
 protected:
-    ProductOrderProcessor(Configuration::Pointer& cfg);
+    ProductOrderProcessor(Configuration::SharedPtr& cfg);
 
 public:
     using SharedPtr = std::shared_ptr<ProductOrderProcessor>;
     using UniquePtr = std::unique_ptr<ProductOrderProcessor>;
 
     void process();
-
-    static SharedPtr NewShared(Configuration::Pointer& cfg);
-    static UniquePtr NewUnique(Configuration::Pointer& cfg);
+    
+    static SharedPtr NewShared(Configuration::SharedPtr& cfg);
+    static UniquePtr NewUnique(Configuration::SharedPtr& cfg);
 
 
 

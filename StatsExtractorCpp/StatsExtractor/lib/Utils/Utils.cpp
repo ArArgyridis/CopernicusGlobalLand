@@ -20,6 +20,20 @@
 
 #include "Utils.hxx"
 
+std::string bytesToMaxUnit(unsigned long long &bytes){
+    std::vector<std::string> units = {"Bytes","KB", "MB", "GB", "TB"};
+    if (bytes == 0)
+        return "OB";
+
+    double retSize;
+    size_t unId = 0;
+    for(unId = 0; unId < units.size() && bytes > 0 && bytes / static_cast<unsigned long long>(pow(1024, unId)) > 0; unId++) {
+        continue;
+    }
+    std::stringstream out;
+    out << std::setprecision(2) << std::fixed << round(bytes /pow(1024, --unId)*100)/100 << units[unId];
+    return out.str();
+}
 
 void createDirectoryForFile(std::filesystem::path dstFile) {
     auto splitDir = split(dstFile.string(), "/");

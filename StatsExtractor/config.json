@@ -1,16 +1,16 @@
 {
-	"pg_connections": {
+	"pg_connections":{
 		"admin":{"db":"postgres", "host":"localhost", "port":5432, "user":"postgres", "password":null},
 		"the_localhost":{"db":"jrcstats_test", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"},
 		"exportdb":{"db":"jrcstats_export", "host":"localhost", "port":5432, "user":"statsuser", "password":"testpassword"}
 	},
-	"sftp_connections": {
-		"connection_id": {
+	"sftp_connections":{
+		"connection_id":{
 			"host":"a_host", 
 			"user":"my_user", 
 			"password":"my_password", 
 			"port":22,
-			"proxy": {
+			"proxy":{
 				"user": "userName",
 				"password": "pass",
 				"host": "url_or_ip",
@@ -18,23 +18,31 @@
 			}
 		}
 	},
-	"statsinfo": {
+	"statsinfo":{
 		"schema": "public",
 		"tmp_schema": "tmp",
 		"connection_id":"the_localhost",
 		"export_id":"exportdb",
 		"available_memory_mb": 12000
 	},
-	"filesystem": {
+	"smtp_options":{
+		"server": "",
+		"user":	"",
+		"password": "",
+		"certificate": "",
+		"self-signed": false
+	},
+	"filesystem":{
 		"imagery_path": "/home/argyros/Projects/JRC/ExperimentalData/Imagery/",
 		"long_term_statistics_path": "/home/argyros/Projects/JRC/DataInventory/lts/",
 		"anomaly_products_path": "/home/argyros/Projects/JRC/AnomalyProducts/",
 		"tmp_path":  "/home/argyros/Projects/JRC/tmp/",
 		"tmp_zip_path": "/home/argyros/Projects/JRC/tmpzip/",
+		"server_zip_path": "/home/argyros/Projects/JRC/zip/",
 		"mapserver_data_path": "/home/argyros/Projects/JRC/mapserver/",
 		"mapserver_mapfile_path":"/home/argyros/Projects/JRC/DataInventory/mapfile/"
 	},
-	"mapserver": {
+	"mapserver":{
 		"raw_data_wms": "url_here/{0}/{1}/{2}",
 		"anomalies_wms": "url_here/{0}/{1}",
 		"virtual_prefix_path": "/vsis3/",
@@ -54,5 +62,6 @@
 			"AWS_REQUEST_PAYER":"requester"
 		}
 	},
-	"enabled_product_ids": null
+	"enabled_product_ids": null,
+	"natstats_url": "https://sdfdsf.com"
 } 

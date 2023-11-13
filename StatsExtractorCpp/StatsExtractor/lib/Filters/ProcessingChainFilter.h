@@ -82,7 +82,7 @@ public:
 
 
     virtual void Reset(void) override;
-    virtual void SetParams(const Configuration::Pointer config, const ProductInfo::Pointer product,
+    virtual void SetParams(const Configuration::SharedPtr config, const ProductInfo::Pointer product,
                            const ProductVariable::Pointer variable, OGREnvelope& envlp, JsonValue& images,
                            JsonDocumentSharedPtr polyIds, size_t& polSRID);
     virtual void Synthetize(void) override;
@@ -107,9 +107,9 @@ private:
       LabelImageType::Pointer labelImage=nullptr;
       LabelsArrayPtr labels=nullptr;
     };
-
-
-    Configuration::Pointer config;
+    
+    
+    Configuration::SharedPtr config;
     ProductInfo::Pointer product;
     ProductVariable::Pointer variable;
     OGREnvelope aoi;

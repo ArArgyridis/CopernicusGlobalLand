@@ -47,8 +47,8 @@ public:
     void UpdateOutputInformation() override {
         this->GetFilter()->UpdateOutputInformation();
     }
-
-    void SetParams(const Configuration::Pointer& config, const ProductInfo::Pointer& product, const ProductVariable::Pointer variable, OGREnvelope &envlp, JsonValue &images, JsonDocumentSharedPtr polyIds, size_t& polySRID) {
+    
+    void SetParams(const Configuration::SharedPtr& config, const ProductInfo::Pointer& product, const ProductVariable::Pointer variable, OGREnvelope &envlp, JsonValue &images, JsonDocumentSharedPtr polyIds, size_t& polySRID) {
         this->GetFilter()->SetParams(config, product, variable, envlp, images, polyIds, polySRID);
     }
 

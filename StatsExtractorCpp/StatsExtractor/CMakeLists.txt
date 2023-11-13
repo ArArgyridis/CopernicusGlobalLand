@@ -50,7 +50,7 @@ set(SOURCE
     lib/Constants/Constants.cpp
     lib/StatsExtractor/StatsExtractor.cpp
     lib/Utils/Utils.cpp
-    lib/Utils/EmailClient/EmailClient.cpp
+    lib/Utils/EmailClient/SmtpServer.cpp
     lib/Filters/Statistics/PolygonStats.cpp
     lib/Utils/ColorInterpolation.cpp
     lib/Constants/ProductInfo.cpp
@@ -64,7 +64,7 @@ set (HEADERS
     lib/Constants/Constants.h
     lib/StatsExtractor/StatsExtractor.h
     lib/Utils/Utils.hxx
-    lib/Utils/EmailClient/EmailClient.h
+    lib/Utils/EmailClient/SmtpServer.h
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.h
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.hxx
     lib/Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h
@@ -95,7 +95,7 @@ if(COMPILER_SUPPORTS_MARCH_NATIVE)
 endif()
 
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 

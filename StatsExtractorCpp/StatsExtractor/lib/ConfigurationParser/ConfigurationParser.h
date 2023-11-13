@@ -30,26 +30,33 @@ struct SFTPProxy {
     unsigned short port;
 };
 
+struct SMTPOptions {
+    std::string server, user, password, certificate;
+    bool selfSigned;
+};
+
 struct FileSystem {
-    std::filesystem::path imageryPath, anomalyProductsPath, tmpPath, tmpZipPath, mapserverPath, mapFilePath;
+    std::filesystem::path imageryPath, anomalyProductsPath, tmpPath, tmpZipPath, serverZipPath, mapserverPath, mapFilePath;
 };
 
 
 class Configuration {
     std::string cfgFile;
-
-public:
+protected:
     Configuration();
     Configuration(std::string &cfg);
+public:
 
-    using Pointer = std::shared_ptr<Configuration>;
+    std::string natStatsURL;
+    using SharedPtr = std::shared_ptr<Configuration>;
     FileSystem filesystem;
     StatsInfo statsInfo;
+    SMTPOptions smtpOptions;
     std::vector<std::size_t> enabledProductIds;
 
     unsigned short parse();
 
-    static Pointer New(std::string cfgPath);
+    static SharedPtr New(std::string cfgPath);
     static std::map<std::string, std::size_t> connectionIds;
 
 };

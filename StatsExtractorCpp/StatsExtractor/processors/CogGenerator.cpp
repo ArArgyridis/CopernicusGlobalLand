@@ -42,8 +42,8 @@ int main(int argc, char *argv[]) {
     size_t noData                   = 65535;
 
     std::string cfgFile(argv[1]);
-
-    Configuration::Pointer config = Configuration::New(cfgFile);
+    
+    Configuration::SharedPtr config = Configuration::New(cfgFile);
     if (config->parse() != 0)
         return 1;
 

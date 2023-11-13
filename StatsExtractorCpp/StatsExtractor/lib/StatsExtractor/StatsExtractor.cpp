@@ -51,7 +51,7 @@ using ExtractROIFilter          = otb::ExtractROI<RawDataImageType::PixelType, R
 using ProcessingChainFilter     = otb::StreamedProcessingChainFilter<RawDataImageType, otb::VectorDataType>;
 
 
-StatsExtractor::StatsExtractor(Configuration::Pointer &cfg, std::string stratificationType):config(cfg), stratification(stratificationType) {}
+StatsExtractor::StatsExtractor(Configuration::SharedPtr &cfg, std::string stratificationType):config(cfg), stratification(stratificationType) {}
 
 void StatsExtractor::process() {
     for (auto& product: Constants::productInfo) {

@@ -30,8 +30,8 @@ int main(int argc, char *argv[]) {
 	GDALAllRegister();
 	
 	std::string cfgFile(argv[1]), stratification(argv[2]);
-	
-	Configuration::Pointer config = Configuration::New(cfgFile);
+    
+    Configuration::SharedPtr config = Configuration::New(cfgFile);
 	if (config->parse() != 0)
 		return 1;
 	

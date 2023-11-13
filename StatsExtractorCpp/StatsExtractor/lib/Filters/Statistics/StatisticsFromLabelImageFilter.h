@@ -64,8 +64,8 @@ public:
     using RegionType                        = typename InputImageType::RegionType;
     using InputPixelType                    = typename InputImageType::PixelType;
     using LabelPixelType                    = typename LabelImageType::PixelType;
-
-    itkSetMacro(Config, Configuration::Pointer);
+    
+    itkSetMacro(Config, Configuration::SharedPtr);
     itkSetMacro(ParentRegionId, size_t);
     itkSetMacro(ParentThreadId, itk::ThreadIdType);
 
@@ -93,7 +93,7 @@ private:
     ProductInfo::Pointer product;
     ProductVariable::Pointer variable;
     itk::ThreadIdType m_ParentThreadId;
-    Configuration::Pointer m_Config;
+    Configuration::SharedPtr m_Config;
     size_t m_ParentRegionId, imageId;
     PolygonStats::PolyStatsPerRegionPtr perRegionStats;
 };
