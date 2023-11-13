@@ -398,7 +398,7 @@ export default {
 		},
 		__submitOrder(){
 			let aoi = null;
-			if (!['eraseAOI'].includes(this.aoiMode)) {
+			if (!['maxExtentAOI','eraseAOI'].includes(this.aoiMode)) {
 				let fmt = new WKT();
 				aoi = fmt.writeFeatures(this.$refs.aoiMap.getLayerObject(this.aoiOLOptions.layer).getSource().getFeatures());
 			}
