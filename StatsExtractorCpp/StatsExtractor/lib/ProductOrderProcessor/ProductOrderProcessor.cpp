@@ -132,7 +132,7 @@ void ProductOrderProcessor::compressAndEMail(std::filesystem::path &tmpOrderPath
 
         if (flStr.find(".7z") != std::string::npos) {
             std::filesystem::path dstFileName = dstOrderPath/fl.path().filename();
-            std::string url = config->natStatsURL + "orders/" + orderId+fl.path().filename().string();
+            std::string url = config->natStatsURL + "orders/" + orderId+"/"+fl.path().filename().string();
             urls += url + "\r\n";
             std::filesystem::copy(fl, dstFileName);
             std::filesystem::remove(fl);
