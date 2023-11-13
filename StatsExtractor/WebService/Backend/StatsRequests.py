@@ -347,18 +347,15 @@ class StatsRequests(GenericRequest):
 
             insertQuery = """
             WITH tmp AS(
-            SELECT '{0}'::text, {1}, '{2}'::jsonb
+            SELECT '{0}'::text, {1}, '{2}'::jsonb, false
             )
-            INSERT INTO product_order(email, aoi, request_data)
+            INSERT INTO product_order(email, aoi, request_data, processed)
             SELECT * FROM tmp""".format(self._requestData["options"]["email"],aoi,json.dumps(self._requestData["options"]["request_data"]))
             print(insertQuery)
             self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([insertQuery,])
             return {"result": "OK", "message": "Your request has been submitted successfully. You will receive an email when the data are available"}
         else:
             return {"result": "Error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
-
-
-
 
     def __pieDataByDateAndPolygon(self):
         query = """
