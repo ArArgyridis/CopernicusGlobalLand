@@ -343,13 +343,13 @@ class StatsRequests(GenericRequest):
         if ret[0][0] == True or ret[0][1] == True:
             aoi = "NULL"
             if self._requestData["options"]["aoi"] is not None:
-                aoi = "ST_MakeValid(ST_Force2D(ST_Multi(ST_Union(ST_GeomFromText('{0}'))))".format(self._requestData["options"]["aoi"])
+                aoi = "ST_MakeValid(ST_Force2D(ST_Multi(ST_Union(ST_GeomFromText('{0}')))))".format(self._requestData["options"]["aoi"])
 
             insertQuery = """
             WITH tmp AS(
-            SELECT '{0}'::text, {1}, '{2}'::jsonb, false
+            SELECT '{0}'::text, {1}, '{2}'::jsonb
             )
-            INSERT INTO product_order(email, aoi, request_data, processed)
+            INSERT INTO product_order(email, aoi, request_data)
             SELECT * FROM tmp""".format(self._requestData["options"]["email"],aoi,json.dumps(self._requestData["options"]["request_data"]))
             print(insertQuery)
             self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([insertQuery,])
