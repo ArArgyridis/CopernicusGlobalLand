@@ -74,18 +74,20 @@ void ProductOrderProcessor::process() {
                 if(dataReq.value["rtFlag"].GetInt() > -1)
                     rawDataQuery += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
                 //rawDataQuery += " LIMIT 1";
-                std::string aoi = unprocessedOrders[order][2].as<std::string>();
+                std::string aoi = "MULTIPOLYGON(((-180 85.06,180 85.06,180 -85.06,-180 -85.06,-180 85.06)))";
+
+                if (!unprocessedOrders[order][2].is_null())
+                    aoi = unprocessedOrders[order][2].as<std::string>();
+
                 PGPool::PGConn::PGRes rawFiles = cn->fetchQueryResult(rawDataQuery);
 
                 //don't process these files
                 if (rawFiles.size() == 0)
                     continue;
 
-
                 //based on product's first file create a raster representation for the aoi
                 AOINfo maskInfo = rasterizeAOI<FloatImageType>(Constants::productInfo[rawFiles[order][1].as<size_t>()]->variables[rawFiles[order][2].as<std::string>()]->firstProductVariablePath, aoi);
                 size_t fl = 0;
-
 
 #pragma omp parallel for private(fl)
                 for(fl = 0; fl < rawFiles.size(); fl++)

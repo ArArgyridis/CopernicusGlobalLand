@@ -24,7 +24,7 @@ template <class TInputImage, class TPolygonDataType>
 class ITK_EXPORT StreamedProcessingChainFilter: public PersistentFilterStreamingDecorator<ProcessingChainFilter<TInputImage, TPolygonDataType>> {
 public:
     /** Standard Self typedef */
-    using Self                      =  StreamedProcessingChainFilter;
+    using Self                      = StreamedProcessingChainFilter;
     using BaseClass                 = ProcessingChainFilter<TInputImage, TPolygonDataType>;
     using Superclass                = PersistentFilterStreamingDecorator<BaseClass> ;
     using Pointer                   = itk::SmartPointer<Self>;

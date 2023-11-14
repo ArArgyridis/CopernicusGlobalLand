@@ -86,6 +86,7 @@ long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize)
 
 float noScalerFunc(float x, float& scale, float& offset);
 
+std::string randomString(size_t len);
 std::string rgbToArrayString(RGBVal& array);
 
 size_t reverseNoScalerFunc(float x, float &scale, float &offset);
@@ -194,7 +195,7 @@ OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer in
     spacing     = inputImage->GetSignedSpacing();
 
     aoi.MinX    = upperLeft[0] - spacing[0]/2;
-    aoi.MaxY    = upperLeft[1] - abs(spacing[1]/2);
+    aoi.MaxY    = upperLeft[1] + abs(spacing[1]/2);
 
     aoi.MaxX    = lowerRight[0] + spacing[0]/2;
     aoi.MinY    = lowerRight[1] - abs(spacing[1]/2);

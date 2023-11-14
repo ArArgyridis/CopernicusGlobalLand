@@ -66,7 +66,6 @@ ProductOrderProcessor::AOINfo ProductOrderProcessor::rasterizeAOI(PathSharedPtr 
     inReader->SetFileName(imgPath->c_str());
     inReader->UpdateOutputInformation();
 
-
     OGRMultiPolygon geom;
     std::unique_ptr<const char*> tmpGeom = std::make_unique<const char*>(const_cast<char*>(ogrPolygonStr.c_str()));
     geom.importFromWkt(tmpGeom.get());
@@ -86,8 +85,8 @@ ProductOrderProcessor::AOINfo ProductOrderProcessor::rasterizeAOI(PathSharedPtr 
 
 
     point2d origin;
-    origin[0] = aoiEnvelope.MinX-spacing[0]/2;
-    origin[1] = aoiEnvelope.MaxY-spacing[1]/2;
+    origin[0] = aoiEnvelope.MinX;
+    origin[1] = aoiEnvelope.MaxY;
 
     UCharImageType::IndexType originIdx;
     inReader->GetOutput()->TransformPhysicalPointToIndex(origin, ret.originIdx);

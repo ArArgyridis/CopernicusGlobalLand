@@ -126,6 +126,20 @@ size_t reverseScalerFunc(float x, float &scale, float &offset) {
     return static_cast<size_t>(round( (x-offset)/scale));
 }
 
+std::string randomString(size_t len) {
+    static const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+    std::string tmp;
+    tmp.reserve(len);
+
+    for (int i = 0; i < len; ++i) {
+        tmp += alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+    return tmp;
+}
+
 
 std::string rgbToArrayString(RGBVal &array) {
     std::stringstream k;

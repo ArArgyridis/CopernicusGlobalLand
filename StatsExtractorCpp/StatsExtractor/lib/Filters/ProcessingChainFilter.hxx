@@ -24,6 +24,8 @@
 #include "ProcessingChainFilter.h"
 #include "../Utils/Utils.hxx"
 
+
+
 namespace otb {
 
 template <class TInputImage, class TPolygonDataType>
@@ -243,8 +245,8 @@ typename ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData Proces
     OGREnvelope evlp = regionToEnvelope<TInputImage>(out, region);
     typename TInputImage::SpacingType spacing = out->GetSignedSpacing();
     //loading polygons from DB
-    std::string query = fmt::format("with region AS( select st_setsrid((st_makeenvelope({0},{1},{2},{3})),4326) bbox) select sg.id, ST_ASTEXT(ST_MULTI(case when st_contains(region.bbox, sg.geom) then sg.geom else st_intersection(sg.geom, region.bbox) end)) geom from stratification_geom sg join region on TRUE where sg.id IN ({4}) AND st_intersects(sg.geom, region.bbox)",
-                                    evlp.MinX-spacing[0]/2, evlp.MinY-abs(spacing[1]/2),evlp.MaxX+spacing[0]/2, evlp.MaxY+abs(spacing[1]/2), polyIdsStr);
+    std::string query = fmt::format("with region AS( select st_setsrid((st_makeenvelope({0},{1},{2},{3})),4326) bbox) select sg.id, ST_ASTEXT(ST_MULTI(case when ST_CONTAINS(region.bbox, sg.geom) THEN sg.geom ELSE st_intersection(sg.geom, region.bbox) END)) geom FROM stratification_geom sg JOIN region ON TRUE WHERE sg.id IN ({4}) AND st_intersects(sg.geom, region.bbox)",
+                                    evlp.MinX, evlp.MinY,evlp.MaxX, evlp.MaxY, polyIdsStr);
     PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     PGPool::PGConn::PGRes res   = cn->fetchQueryResult(query, "fetching polygon info for thread_"+std::to_string(threadId));
 
@@ -268,10 +270,10 @@ typename ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData Proces
         return ret;
 
     rasterizer->Update();
-    /*
+/*
     using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
     ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
-    labelWriter->SetFileName(std::to_string(repeat) + "_"+std::to_string(threadId) + "labelImage_v2.tif");
+    labelWriter->SetFileName(randomString(4) + "_"+std::to_string(threadId) + "labelImage_v2.tif");
     labelWriter->SetInput(rasterizer->GetOutput());
     labelWriter->Update();
 */
