@@ -16,6 +16,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <iostream>
 #include <libxml/xpathInternals.h>
+#include <libxml/parser.h>
 #include <sstream>
 
 #include "Utils.hxx"

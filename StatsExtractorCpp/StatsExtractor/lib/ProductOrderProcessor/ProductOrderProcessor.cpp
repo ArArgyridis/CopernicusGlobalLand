@@ -10,6 +10,23 @@
 #include "ProductOrderProcessor.h"
 #include "../Utils/EmailClient/SmtpServer.h"
 
+PGPool::PGConn::PGRes ProductOrderProcessor::getRawData(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<> > &dataReq) {
+    PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
+    std::string rawDataQuery =  fmt::format(R"""(
+                SELECT
+                pf.rel_file_path, pfd.id, pfv.variable
+                FROM product_file pf
+                JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
+                JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
+                WHERE pfv.id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.name.GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
+
+    if(dataReq.value["rtFlag"].GetInt() > -1)
+        rawDataQuery += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
+    //rawDataQuery += " LIMIT 1";
+
+    return cn->fetchQueryResult(rawDataQuery);
+}
+
 void ProductOrderProcessor::processFile(std::filesystem::path inRelFile, std::filesystem::path &tmpOrderPath, AOINfo &maskInfo){
     std::filesystem::path inFile  = config->filesystem.imageryPath/inRelFile;
     GDALDatasetUniquePtr inDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(inFile.c_str(), GA_ReadOnly)));
@@ -62,24 +79,14 @@ void ProductOrderProcessor::process() {
                 std::filesystem::remove_all(tmpOrderPath);
             std::filesystem::create_directories(tmpOrderPath);
 
-            for (auto& dataReq: requestDataJSON.GetObject()){
-                std::string rawDataQuery =  fmt::format(R"""(
-                SELECT
-                pf.rel_file_path, pfd.id, pfv.variable
-                FROM product_file pf
-                JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
-                JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-                WHERE pfv.id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.name.GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
+            for (auto& dataReq: requestDataJSON.GetObject()) {
+                PGPool::PGConn::PGRes rawFiles = getRawData(dataReq);
 
-                if(dataReq.value["rtFlag"].GetInt() > -1)
-                    rawDataQuery += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
-                //rawDataQuery += " LIMIT 1";
                 std::string aoi = "MULTIPOLYGON(((-180 85.06,180 85.06,180 -85.06,-180 -85.06,-180 85.06)))";
 
                 if (!unprocessedOrders[order][2].is_null())
                     aoi = unprocessedOrders[order][2].as<std::string>();
 
-                PGPool::PGConn::PGRes rawFiles = cn->fetchQueryResult(rawDataQuery);
 
                 //don't process these files
                 if (rawFiles.size() == 0)

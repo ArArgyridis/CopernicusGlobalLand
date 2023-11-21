@@ -409,8 +409,7 @@ export default {
 				request_data: this.downloadOptions
 			};
 			requests.insertOrder(optionsObj).then((response) => {
-				console.log(response.data.data);
-
+				window.alert(response.data.data);
 			});
 
 		},

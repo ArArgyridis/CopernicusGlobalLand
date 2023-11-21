@@ -73,6 +73,7 @@ public:
     using Pointer   = std::unique_ptr<PGConn>;
     using PGRes     = pqxx::result;
     using PGRow     = pqxx::row;
+    using PGField   = pqxx::field;
 
     ~PGConn();
     PGRes fetchQueryResult(std::string& query, std::string workName="single query");

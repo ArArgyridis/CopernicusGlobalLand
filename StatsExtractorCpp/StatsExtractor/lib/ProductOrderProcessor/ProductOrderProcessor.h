@@ -42,6 +42,8 @@ class ProductOrderProcessor {
     
     void compressAndEMail(std::filesystem::path &tmpOrderPath, std::string orderId, std::string email);
 
+    PGPool::PGConn::PGRes getRawData(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<> >& dataReq);
+
 protected:
     ProductOrderProcessor(Configuration::SharedPtr& cfg);
 
