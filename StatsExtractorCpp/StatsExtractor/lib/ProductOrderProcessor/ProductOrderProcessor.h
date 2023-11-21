@@ -34,15 +34,15 @@ class ProductOrderProcessor {
 
     template <class TInputImage>
     void crop(std::filesystem::path &inImage, std::filesystem::path &outImage, AOINfo &mask, bool scale=false, double a=0, double b=0);
-
-    void processFile(std::filesystem::path inRelFile, std::filesystem::path &orderPath, AOINfo& maskInfo);
+    void createOutput(std::filesystem::path inRelFile, std::filesystem::path &orderPath, AOINfo& maskInfo, std::string rawOrAnomaly);
+    void processSingleFile(std::filesystem::path& inFile, std::filesystem::path& tmpOrderPath, std::filesystem::path& inRelFile, AOINfo& maskInfo, std::string variable="");
 
     template <class TInputImage>
     AOINfo rasterizeAOI(PathSharedPtr imgPath, std::string& ogrPolygonStr);
     
     void compressAndEMail(std::filesystem::path &tmpOrderPath, std::string orderId, std::string email);
-
-    PGPool::PGConn::PGRes getRawData(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<> >& dataReq);
+    std::string createAnomaliesDataQuery(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<>>& dataReq);
+    std::string createRawDataQuery(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<>>& dataReq);
 
 protected:
     ProductOrderProcessor(Configuration::SharedPtr& cfg);

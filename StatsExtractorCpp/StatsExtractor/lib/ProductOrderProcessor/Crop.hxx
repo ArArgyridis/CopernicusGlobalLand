@@ -51,7 +51,6 @@ void ProductOrderProcessor::crop(std::filesystem::path &inImage, std::filesystem
 
 }
 
-
 template <class TInputImage>
 ProductOrderProcessor::AOINfo ProductOrderProcessor::rasterizeAOI(PathSharedPtr imgPath, std::string &ogrPolygonStr){
     using InputImageReader  = otb::ImageFileReader<TInputImage>;
@@ -66,11 +65,11 @@ ProductOrderProcessor::AOINfo ProductOrderProcessor::rasterizeAOI(PathSharedPtr 
     inReader->SetFileName(imgPath->c_str());
     inReader->UpdateOutputInformation();
 
-    OGRMultiPolygon geom;
-    std::unique_ptr<const char*> tmpGeom = std::make_unique<const char*>(const_cast<char*>(ogrPolygonStr.c_str()));
-    geom.importFromWkt(tmpGeom.get());
+    OGRMultiPolygon maxAOI;
+    std::unique_ptr<const char*> requestAOI = std::make_unique<const char*>(const_cast<char*>(ogrPolygonStr.c_str()));
+    maxAOI.importFromWkt(requestAOI.get());
     OGREnvelope aoiEnvelope;
-    geom.getEnvelope(&aoiEnvelope);
+    maxAOI.getEnvelope(&aoiEnvelope);
 
     aoiEnvelope = alignAOIToImage<TInputImage>(aoiEnvelope, inReader->GetOutput());
     UCharImageType::SpacingType spacing = inReader->GetOutput()->GetSignedSpacing();

@@ -10,56 +10,80 @@
 #include "ProductOrderProcessor.h"
 #include "../Utils/EmailClient/SmtpServer.h"
 
-PGPool::PGConn::PGRes ProductOrderProcessor::getRawData(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<> > &dataReq) {
-    PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
-    std::string rawDataQuery =  fmt::format(R"""(
+std::string ProductOrderProcessor::createRawDataQuery(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<> > &dataReq) {
+    std::string query =  fmt::format(R"""(
                 SELECT
-                pf.rel_file_path, pfd.id, pfv.variable
+                pf.rel_file_path, pfd.id, pfv.variable, 'raw' flag
                 FROM product_file pf
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                 JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
                 WHERE pfv.id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.name.GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
 
     if(dataReq.value["rtFlag"].GetInt() > -1)
-        rawDataQuery += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
-    //rawDataQuery += " LIMIT 1";
-
-    return cn->fetchQueryResult(rawDataQuery);
+        query += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
+    //query += " LIMIT 1 ";
+    return query;
 }
 
-void ProductOrderProcessor::processFile(std::filesystem::path inRelFile, std::filesystem::path &tmpOrderPath, AOINfo &maskInfo){
-    std::filesystem::path inFile  = config->filesystem.imageryPath/inRelFile;
-    GDALDatasetUniquePtr inDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(inFile.c_str(), GA_ReadOnly)));
-    char **meta = inDataset->GetMetadata("SUBDATASETS");
+std::string ProductOrderProcessor::createAnomaliesDataQuery(rapidjson::GenericMember<rapidjson::UTF8<>, rapidjson::MemoryPoolAllocator<> > &dataReq) {
+    std::string query =  fmt::format(R"""(
+                SELECT  pf.rel_file_path, pfv.product_file_description_id , pfv.variable, 'anomaly' flag
+                FROM long_term_anomaly_info ltai
+                JOIN product_file_variable pfv  ON pfv.id = ltai.anomaly_product_variable_id
+                JOIN product_file pf  ON pf.product_file_description_id = pfv.product_file_description_id
+                WHERE ltai.raw_product_variable_id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.name.GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
 
-    //for each sub-dataset identify the data type
-    for (size_t i = 0; meta[i] != nullptr; i+=2) {
-        std::string subDatasetPath(meta[i]);
-        auto splitPath = split(subDatasetPath, ":");
-        std::filesystem::path inSubDt = std::string("NETCDF:") + std::string(inFile.c_str()) + ":" + splitPath.back();
-        auto subDatasetMetadata = getMetadata(inSubDt);
+    if(dataReq.value["rtFlag"].GetInt() > -1)
+        query += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
+    //query += " LIMIT 0 ";
+    return query;
+}
 
-        //all outfiles have a .tif extension
-        std::filesystem::path outFile = tmpOrderPath/inRelFile;
-        outFile.replace_extension("tif");
+void ProductOrderProcessor::createOutput(std::filesystem::path inRelFile, std::filesystem::path &tmpOrderPath, AOINfo &maskInfo, std::string rawOrAnomaly){
+    std::filesystem::path dataPath = config->filesystem.imageryPath;
+    if (rawOrAnomaly == "anomaly")
+        dataPath = config->filesystem.anomalyProductsPath;
 
-        auto splitNewPath = split(outFile.c_str(), "/");
-        splitNewPath[splitNewPath.size()-1] = splitPath.back() + "_" + splitNewPath.back();
-
-        outFile = boost::algorithm::join(splitNewPath, "/");
-        if(std::filesystem::exists(outFile))
-            std::filesystem::remove(outFile);
-        createDirectoryForFile(outFile);
-
-        //identifying proper crop function
-        bool scale = subDatasetMetadata->find(splitPath.back()+"#add_offset") != subDatasetMetadata->end();
-        if(scale)
-            crop<FloatImageType>(inSubDt, outFile, maskInfo, scale, stof((*subDatasetMetadata)[splitPath.back()+"#scale_factor"]), stof((*subDatasetMetadata)[splitPath.back()+"#add_offset"])  );
-        else if(stoi((*subDatasetMetadata)["GDAL_RASTER_TYPE"]) == GDT_Byte)
-            crop<UCharImageType>(inSubDt, outFile, maskInfo);
-        else if(stoi((*subDatasetMetadata)["GDAL_RASTER_TYPE"]) == GDT_UInt16)
-            crop<UShortImageType>(inSubDt, outFile, maskInfo);
+    std::filesystem::path inFile  = dataPath/inRelFile;
+    if (inFile.extension() == ".nc") {
+        GDALDatasetUniquePtr inDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(inFile.c_str(), GA_ReadOnly)));
+        char **meta = inDataset->GetMetadata("SUBDATASETS");
+        for (size_t i = 0; meta[i] != nullptr; i+=2) {
+            std::string subDatasetPath(meta[i]);
+            auto splitPath = split(subDatasetPath, ":");
+            std::filesystem::path inSubDt = std::string("NETCDF:") + std::string(inFile.c_str()) + ":" + splitPath.back();
+            processSingleFile(inSubDt, tmpOrderPath, inRelFile, maskInfo, splitPath.back());
+        }
     }
+    else { //right now assuming that all other file types are GeoTIFF from the anomalies
+        processSingleFile(inFile, tmpOrderPath, inRelFile, maskInfo);
+    }
+
+}
+
+void ProductOrderProcessor::processSingleFile(std::filesystem::path &inFile, std::filesystem::path &tmpOrderPath, std::filesystem::path &inRelFile, AOINfo &maskInfo, std::string variable) {
+    auto metadata = getMetadata(inFile);
+    //all outfiles have a .tif extension
+    std::filesystem::path outFile = tmpOrderPath/inRelFile;
+    outFile.replace_extension("tif");
+
+    std::vector<std::string> splitNewPath = split(outFile.c_str(), "/");
+    if (variable.length() > 0 )
+        splitNewPath[splitNewPath.size()-1] = variable + "_" + splitNewPath.back();
+
+    outFile = boost::algorithm::join(splitNewPath, "/");
+    if(std::filesystem::exists(outFile))
+        std::filesystem::remove(outFile);
+    createDirectoryForFile(outFile);
+
+    //identifying proper crop function
+    bool scale = metadata->find(variable+"#add_offset") != metadata->end();
+    if(scale)
+        crop<FloatImageType>(inFile, outFile, maskInfo, scale, stof((*metadata)[variable+"#scale_factor"]), stof((*metadata)[variable+"#add_offset"])  );
+    else if(stoi((*metadata)["GDAL_RASTER_TYPE"]) == GDT_Byte)
+        crop<UCharImageType>(inFile, outFile, maskInfo);
+    else if(stoi((*metadata)["GDAL_RASTER_TYPE"]) == GDT_UInt16)
+        crop<UShortImageType>(inFile, outFile, maskInfo);
 }
 
 
@@ -79,31 +103,71 @@ void ProductOrderProcessor::process() {
                 std::filesystem::remove_all(tmpOrderPath);
             std::filesystem::create_directories(tmpOrderPath);
 
+            std::string aoi = "MULTIPOLYGON(((-180 90,180 90,180 -90,-180 -90,-180 90)))";
+
+            if (!unprocessedOrders[order][2].is_null())
+                aoi = unprocessedOrders[order][2].as<std::string>();
+
+
             for (auto& dataReq: requestDataJSON.GetObject()) {
-                PGPool::PGConn::PGRes rawFiles = getRawData(dataReq);
 
-                std::string aoi = "MULTIPOLYGON(((-180 85.06,180 85.06,180 -85.06,-180 -85.06,-180 85.06)))";
-
-                if (!unprocessedOrders[order][2].is_null())
-                    aoi = unprocessedOrders[order][2].as<std::string>();
+                PGPool::PGConn::PGRes processFiles;
+                std::string dataQuery;
+                std::map<std::string, AOINfo> maskInfo;
 
 
-                //don't process these files
-                if (rawFiles.size() == 0)
+
+                if (dataReq.value["dataFlag"].GetInt() == 0)
+                    dataQuery = createRawDataQuery(dataReq);
+                else if (dataReq.value["dataFlag"].GetInt() == 1)
+                    dataQuery = createAnomaliesDataQuery(dataReq);
+                else if (dataReq.value["dataFlag"].GetInt() == 2)
+                    dataQuery = createRawDataQuery(dataReq) + " UNION " + createAnomaliesDataQuery(dataReq) + " ORDER BY flag DESC";
+                //don't process if there are no files
+                processFiles = cn->fetchQueryResult(dataQuery);
+
+                std::cout << dataQuery << "\n";
+                if (processFiles.size() == 0)
                     continue;
 
+                if (dataReq.value["dataFlag"].GetInt() == 0) {
+                    maskInfo["raw"] = rasterizeAOI<FloatImageType>(Constants::productInfo[processFiles[0][1].as<size_t>()]->variables[processFiles[0][2].as<std::string>()]->firstProductVariablePath, aoi);
+                }
+                else if (dataReq.value["dataFlag"].GetInt() == 1) {
+                    maskInfo["anomaly"] = rasterizeAOI<FloatImageType>(Constants::productInfo[processFiles[0][1].as<size_t>()]->variables[processFiles[0][2].as<std::string>()]->firstProductVariablePath, aoi);
+                }
+                else if (dataReq.value["dataFlag"].GetInt() == 2) {
+                    maskInfo["raw"] = rasterizeAOI<FloatImageType>(Constants::productInfo[processFiles[0][1].as<size_t>()]->variables[processFiles[0][2].as<std::string>()]->firstProductVariablePath, aoi);
+                    bool stop = false;
+                    size_t flId;
+                    for(flId = 0; flId < processFiles.size() && !stop; flId++ )
+                        if (processFiles[flId][3].as<std::string>() == "anomaly")
+                            stop = true;
+
+                    auto k = Constants::productInfo;
+
+                    if (flId < processFiles.size()) //an anomaly has been found
+                        maskInfo["anomaly"] = rasterizeAOI<FloatImageType>(Constants::productInfo[processFiles[flId][1].as<size_t>()]->variables[processFiles[flId][2].as<std::string>()]->firstProductVariablePath, aoi);
+                }
+
+
+
+
+
                 //based on product's first file create a raster representation for the aoi
-                AOINfo maskInfo = rasterizeAOI<FloatImageType>(Constants::productInfo[rawFiles[order][1].as<size_t>()]->variables[rawFiles[order][2].as<std::string>()]->firstProductVariablePath, aoi);
+                //AOINfo maskInfo = rasterizeAOI<FloatImageType>(Constants::productInfo[processFiles[0][1].as<size_t>()]->variables[processFiles[0][2].as<std::string>()]->firstProductVariablePath, aoi);
                 size_t fl = 0;
 
 #pragma omp parallel for private(fl)
-                for(fl = 0; fl < rawFiles.size(); fl++)
-                    processFile(rawFiles[fl][0].as<std::string>(), tmpOrderPath, maskInfo);
+                for(fl = 0; fl < processFiles.size(); fl++)
+                    createOutput(processFiles[fl][0].as<std::string>(), tmpOrderPath, maskInfo[processFiles[fl][3].as<std::string>()], processFiles[fl][3].as<std::string>());
 
             }
+
             compressAndEMail(tmpOrderPath, unprocessedOrders[order][0].as<std::string>(), unprocessedOrders[order][1].as<std::string>());
             std::string updateQuery = fmt::format("UPDATE product_order SET processed = TRUE WHERE id = '{0}'",  unprocessedOrders[order][0].as<std::string>());
             cn->executeQuery(updateQuery);
+
         }
         std::cout << "Waiting....\n";
         sleep(12);
