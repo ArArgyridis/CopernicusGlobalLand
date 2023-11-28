@@ -50,6 +50,7 @@ protected:
 
     WMSCogFilter(const Self&) = delete;
     void operator=(const Self&) = delete;
+    virtual void BeforeThreadedGenerateData() override;
     virtual void GenerateOutputInformation() override;
     void ThreadedGenerateData(const InputRegionType& outputRegionForThread, itk::ThreadIdType threadId) override;
 

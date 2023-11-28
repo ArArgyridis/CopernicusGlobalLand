@@ -144,7 +144,7 @@ class DataCrawler:
 
                     rtFlag = 'NULL'
                     if self._prodInfo.rtFlag is not None:
-                        rtFlag = self._prodInfo.rtFlag.format(productParams)
+                        rtFlag = self._prodInfo.rtFlag.format(*productParams)
 
                     self._store(["({0})".format(",".join([str(self._prodInfo.id),
                                                       "'{0}'".format(os.path.relpath(outFilePath, storageDir)),

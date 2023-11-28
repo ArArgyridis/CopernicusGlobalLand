@@ -104,7 +104,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     ", meanval_color = tmp.meanval_color "
     "FROM tmp "
     "WHERE poly_stats.poly_id = tmp.poly_id AND poly_stats.product_file_id = tmp.product_file_id AND poly_stats.product_file_variable_id = tmp.product_file_variable_id";
-
+    std::cout << query << "\n";
     cn->executeQuery(query);
 }
 

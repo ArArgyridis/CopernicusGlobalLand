@@ -36,6 +36,11 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::setProduct(ProductInfo::Point
 }
 
 template <class TInputImage, class TOutputImage>
+void otb::WMSCogFilter<TInputImage, TOutputImage>::BeforeThreadedGenerateData() {
+
+}
+
+template <class TInputImage, class TOutputImage>
 void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
     Superclass::GenerateOutputInformation();
     std::vector<bool> tmpNoDataFlags;
@@ -59,10 +64,10 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::ThreadedGenerateData(const In
     OutputIterator          outIt(out, outputRegionForThread);
 
     typename TOutputImage::PixelType nullPxl(nOutputBands);
-    nullPxl.Fill(65535);
+    nullPxl.Fill(255);
 
     for(outIt.GoToBegin(), inIt.GoToBegin(); !outIt.IsAtEnd(); ++outIt, ++inIt){
-        if (inIt.Get() == 255) {
+        if (inIt.Get() == variable->getNoData()) {
             outIt.Set(nullPxl);
             continue;
         }

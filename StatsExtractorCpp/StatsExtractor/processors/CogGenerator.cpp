@@ -26,6 +26,37 @@
 #include "../lib/Filters/Visualization/WMSCogFilter.hxx"
 #include "../lib/Filters/RasterReprojection/RasterReprojectionFilter.hxx"
 
+template <class TInput>
+void createTmpFile(std::filesystem::path &inFile, std::filesystem::path &tmpFile, ProductInfo::Pointer product, ProductVariable::Pointer variable, Configuration::SharedPtr config){
+    using TInputImage           = otb::Image<TInput, 2>;
+    using TOutputImage          = otb::VectorImage<unsigned char, 2>;
+    using TInputImageReader     = otb::ImageFileReader<TInputImage>;
+    using TOutputImageWriter    = otb::ImageFileWriter<TOutputImage>;
+    using WMSCogFilter          = otb::WMSCogFilter<TInputImage, TOutputImage>;
+    using ReprojectionFilter    = otb::RasterReprojectionFilter<TOutputImage>;
+    typename TInputImageReader::Pointer reader = TInputImageReader::New();
+
+    reader->SetFileName(inFile.string());
+    reader->UpdateOutputInformation();
+
+    typename WMSCogFilter::Pointer wmsFltr = WMSCogFilter::New();
+    wmsFltr->SetInput(reader->GetOutput());
+    wmsFltr->setProduct(product, variable);
+    wmsFltr->UpdateOutputInformation();
+
+    typename ReprojectionFilter::Pointer reproject = ReprojectionFilter::New();
+    reproject->SetInput(wmsFltr->GetOutput());
+    reproject->SetInputProjection(4326);
+    reproject->SetOutputProjection(3857);
+    reproject->UpdateOutputInformation();
+
+    typename TOutputImageWriter::Pointer writer = TOutputImageWriter::New();
+    writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=IF_NEEDED&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512");
+    writer->SetInput(reproject->GetOutput());
+    writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
+    writer->Update();
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cout <<"Usage: CogGenerator json_config_file";
@@ -33,13 +64,7 @@ int main(int argc, char *argv[]) {
     }
 
     GDALAllRegister();
-    using UCharImage                = otb::Image<unsigned char, 2>;
-    using UShortVectorImage         = otb::VectorImage<unsigned short, 2>;
-    using UCharImageReader          = otb::ImageFileReader<UCharImage>;
-    using UShortVectorImageWriter   = otb::ImageFileWriter<UShortVectorImage>;
-    using WMSCogFilter              = otb::WMSCogFilter<UCharImage, UShortVectorImage>;
-    using ReprojectionFilter        = otb::RasterReprojectionFilter<UShortVectorImage>;
-    size_t noData                   = 65535;
+
 
     std::string cfgFile(argv[1]);
     
@@ -62,6 +87,12 @@ int main(int argc, char *argv[]) {
 
     for (auto& product:Constants::productInfo)
         for (auto& variable:product.second->variables) {
+            //getting image datatype
+            otb::ImageIOBase::IOComponentType inImageType;
+            otb::ImageIOBase::Pointer imageIO = otb::ImageIOFactory::CreateImageIO(variable.second->firstProductVariablePath->c_str(), otb::ImageIOFactory::ReadMode);
+            imageIO->ReadImageInformation();
+            std::cout << imageIO->GetComponentTypeAsString(imageIO->GetComponentType())<< std::endl;
+
             std::string query = fmt::format(R"""(
                 SELECT pf.id, pf.rel_file_path
                 FROM product_file pf
@@ -76,7 +107,6 @@ int main(int argc, char *argv[]) {
                 //create output paths
                 std::filesystem::path filePath = res[rowId][1].as<std::string>();
                 std::filesystem::path inFile      = variable.second->productAbsPath(filePath).string();
-
 
                 //tmp output file
                 std::filesystem::path tmpFile = config->filesystem.tmpPath/filePath;
@@ -108,27 +138,10 @@ int main(int argc, char *argv[]) {
                 //std::cout << tmpFile << "\n" << tmpCog <<"\n" << outCog <<"\n\n";
 
                 std::cout << "Building COG File for: " << inFile << "\n";
-
-                UCharImageReader::Pointer reader = UCharImageReader::New();
-                reader->SetFileName(inFile.string());
-                reader->UpdateOutputInformation();
-
-                WMSCogFilter::Pointer wmsFltr = WMSCogFilter::New();
-                wmsFltr->SetInput(reader->GetOutput());
-                wmsFltr->setProduct(product.second, variable.second);
-                wmsFltr->UpdateOutputInformation();
-
-                ReprojectionFilter::Pointer reproject = ReprojectionFilter::New();
-                reproject->SetInput(wmsFltr->GetOutput());
-                reproject->SetInputProjection(4326);
-                reproject->SetOutputProjection(3857);
-                reproject->UpdateOutputInformation();
-
-                UShortVectorImageWriter::Pointer writer = UShortVectorImageWriter::New();
-                writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=YES&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512");
-                writer->SetInput(reproject->GetOutput());
-                writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
-                writer->Update();
+                if (imageIO->GetComponentType() == otb::ImageIOBase::UCHAR)
+                    createTmpFile<unsigned char>(inFile, tmpFile, product.second, variable.second, config);
+                else if (imageIO->GetComponentType() == otb::ImageIOBase::SHORT)
+                    createTmpFile<short>(inFile, tmpFile, product.second, variable.second, config);
 
                 std::cout << "Transforming to tmp cog\n";
 
@@ -137,7 +150,6 @@ int main(int argc, char *argv[]) {
                 inData  = GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(tmpFile.c_str(), GA_ReadOnly)));
                 GDALDriver *poDriver;
                 poDriver = GetGDALDriverManager()->GetDriverByName("COG");
-
 
                 tmpCogData = GDALDatasetUniquePtr(poDriver->CreateCopy(tmpCog.c_str(), inData.get(),
                                                                        FALSE, tmpToCOGWarpOptions, nullptr, nullptr));
@@ -156,8 +168,8 @@ int main(int argc, char *argv[]) {
                 VALUES({0},{1},'{2}') ON CONFLICT(product_file_id,product_file_variable_id) DO UPDATE SET rel_file_path=EXCLUDED.rel_file_path;
                 )""", res[rowId][0].as<size_t>(), variable.second->id, (std::filesystem::relative(outCog, config->filesystem.mapserverPath)).string());
                 cn->executeQuery(updateQuery);
-
             }
+
         }
 
     CSLDestroy(tmpToCOGWarpOptions);

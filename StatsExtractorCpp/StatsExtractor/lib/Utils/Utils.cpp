@@ -146,8 +146,7 @@ std::string rgbToArrayString(RGBVal &array) {
     std::stringstream k;
     k <<"[";
     for(auto& it:array)
-        k << it <<",";
-
+        k << static_cast<unsigned int>(it) <<",";
     k.seekp(-1, std::ios_base::end);
     k <<"]";
     return k.str();
