@@ -19,7 +19,8 @@
 #include "WMSCogFilter.h"
 
 template <class TInputImage, class TOutputImage>
-otb::WMSCogFilter<TInputImage, TOutputImage>::WMSCogFilter(): itk::ImageToImageFilter<TInputImage, TOutputImage>(),nOutputBands(3) {
+otb::WMSCogFilter<TInputImage, TOutputImage>::WMSCogFilter(): itk::ImageToImageFilter<TInputImage, TOutputImage>(),nOutputBands(4), noDataFlags({false, false, false, true}),
+    noDataValues({0, 0, 0, 0}) {
     this->SetNumberOfRequiredInputs(1);
     this->SetNumberOfRequiredOutputs(1);
 }
@@ -28,34 +29,23 @@ template <class TInputImage, class TOutputImage>
 void otb::WMSCogFilter<TInputImage, TOutputImage>::setProduct(ProductInfo::Pointer product, ProductVariable::Pointer variable) {
     this->product = product;
     this->variable = variable;
-    noDataFlags.resize(nOutputBands);
-    noDataFlags.reserve(nOutputBands);
-
-    noDataValues.resize(nOutputBands);
-    noDataValues.reserve(nOutputBands);
 }
 
 template <class TInputImage, class TOutputImage>
 void otb::WMSCogFilter<TInputImage, TOutputImage>::BeforeThreadedGenerateData() {
-/*
+    /*
     typename TOutputImage::PixelType nullPxl(nOutputBands);
-    nullPxl.Fill(255);
+    nullPxl.Fill(0);
     this->GetOutput()->FillBuffer(nullPxl);
-*/
+    */
+
 }
 
 template <class TInputImage, class TOutputImage>
 void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
     Superclass::GenerateOutputInformation();
-    std::vector<bool> tmpNoDataFlags;
-    std::vector<double> tmpNoDataValues;
-
-    otb::ReadNoDataFlags(this->GetInput()->GetImageMetadata(), tmpNoDataFlags, tmpNoDataValues);
     this->GetOutput()->SetNumberOfComponentsPerPixel(nOutputBands);
-    std::fill(noDataFlags.begin(), noDataFlags.end(), tmpNoDataFlags[0]);
-    std::fill(noDataValues.begin(), noDataValues.end(), 255);
-
-    otb::WriteNoDataFlags(noDataFlags, noDataValues, this->GetOutput()->GetImageMetadata());
+    //otb::WriteNoDataFlags(noDataFlags, noDataValues, this->GetOutput()->GetImageMetadata());
     this->GetOutput()->SetProjectionRef(this->GetInput()->GetProjectionRef());
 }
 
@@ -68,9 +58,10 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::ThreadedGenerateData(const In
     OutputIterator          outIt(out, outputRegionForThread);
 
     typename TOutputImage::PixelType nullPxl(nOutputBands);
-    nullPxl.Fill(255);
+    nullPxl.Fill(0);
 
-    typename TOutputImage::PixelType pxl(3);
+    typename TOutputImage::PixelType pxl(nOutputBands);
+    pxl.Fill(255);
     for(outIt.GoToBegin(), inIt.GoToBegin(); !outIt.IsAtEnd(); ++outIt, ++inIt){
         if (inIt.Get() == variable->getNoData()) {
             outIt.Set(nullPxl);
@@ -79,6 +70,7 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::ThreadedGenerateData(const In
 
         pxl.SetData(variable->styleColors[inIt.Get()].data());
         outIt.Set(pxl);
+
     }
 }
 

@@ -62,12 +62,9 @@ int main(int argc, char *argv[]) {
         std::cout <<"Usage: CogGenerator json_config_file";
         return 1;
     }
-
+    std::string cfgFile(argv[1]);
     GDALAllRegister();
 
-
-    std::string cfgFile(argv[1]);
-    
     Configuration::SharedPtr config = Configuration::New(cfgFile);
     if (config->parse() != 0)
         return 1;
@@ -98,7 +95,7 @@ int main(int argc, char *argv[]) {
                 FROM product_file pf
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                 LEFT JOIN wms_file wf ON wf.product_file_id = pf.id AND wf.product_file_variable_id  = {0}
-                WHERE wf.rel_file_path IS NULL AND pfd.id = {1} ORDER BY date --LIMIT 1)""", variable.second->id, product.second->id);
+                WHERE wf.rel_file_path IS NULL AND pfd.id = {1} ORDER BY date LIMIT 1)""", variable.second->id, product.second->id);
 
             PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
             PGPool::PGConn::PGRes res   = cn->fetchQueryResult(query);
@@ -171,9 +168,9 @@ int main(int argc, char *argv[]) {
                 VALUES({0},{1},'{2}') ON CONFLICT(product_file_id,product_file_variable_id) DO UPDATE SET rel_file_path=EXCLUDED.rel_file_path;
                 )""", res[rowId][0].as<size_t>(), variable.second->id, (std::filesystem::relative(outCog, config->filesystem.mapserverPath)).string());
                 cn->executeQuery(updateQuery);
+
             }
         }
-
     CSLDestroy(tmpToCOGWarpOptions);
     return 0;
 }
