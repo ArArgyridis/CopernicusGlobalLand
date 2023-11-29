@@ -27,10 +27,8 @@ public:
     using Pointer = std::shared_ptr<ProductVariable>;
     StringPtr productType;
     PathSharedPtr rootPath, firstProductPath, firstProductVariablePath;
-
     std::vector<RGBVal> styleColors;
     rapidjson::Document novalColorRamp, sparsevalColorRamp, midvalColorRamp, highvalColorRamp;
-
     size_t id;
     std::string variable, style, description;
 

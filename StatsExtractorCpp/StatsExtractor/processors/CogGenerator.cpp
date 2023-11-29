@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
                 FROM product_file pf
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                 LEFT JOIN wms_file wf ON wf.product_file_id = pf.id AND wf.product_file_variable_id  = {0}
-                WHERE wf.rel_file_path IS NULL AND pfd.id = {1})""", variable.second->id, product.second->id);
+                WHERE wf.rel_file_path IS NULL AND pfd.id = {1} ORDER BY date LIMIT 1)""", variable.second->id, product.second->id);
 
             PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
             PGPool::PGConn::PGRes res   = cn->fetchQueryResult(query);
@@ -142,6 +142,9 @@ int main(int argc, char *argv[]) {
                     createTmpFile<unsigned char>(inFile, tmpFile, product.second, variable.second, config);
                 else if (imageIO->GetComponentType() == otb::ImageIOBase::SHORT)
                     createTmpFile<short>(inFile, tmpFile, product.second, variable.second, config);
+                else if (imageIO->GetComponentType() == otb::ImageIOBase::USHORT)
+                    createTmpFile<unsigned short>(inFile, tmpFile, product.second, variable.second, config);
+
 
                 std::cout << "Transforming to tmp cog\n";
 
@@ -169,7 +172,6 @@ int main(int argc, char *argv[]) {
                 )""", res[rowId][0].as<size_t>(), variable.second->id, (std::filesystem::relative(outCog, config->filesystem.mapserverPath)).string());
                 cn->executeQuery(updateQuery);
             }
-
         }
 
     CSLDestroy(tmpToCOGWarpOptions);

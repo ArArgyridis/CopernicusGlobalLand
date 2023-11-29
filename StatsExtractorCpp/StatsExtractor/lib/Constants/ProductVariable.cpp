@@ -3,7 +3,7 @@
 ProductVariable::ProductVariable() {}
 
 ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathSharedPtr rootPath, PathSharedPtr firstProductPath):productType(prdType), rootPath(rootPath),
-firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), addOffset(0) {
+    firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), addOffset(0) {
 
     id              = params["id"].GetInt64();
     variable        = params["variable"].GetString();

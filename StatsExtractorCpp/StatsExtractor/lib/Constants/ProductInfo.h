@@ -1,8 +1,13 @@
 #ifndef PRODUCTINFO_H
 #define PRODUCTINFO_H
 
-#include "../ConfigurationParser/ConfigurationParser.h"
+#include <string>
+
 #include "ProductVariable.h"
+#include "../ConfigurationParser/ConfigurationParser.h"
+#include "../PostgreSQL/PostgreSQL.h"
+#include "../Utils/Utils.hxx"
+
 
 class ProductInfo {
     Configuration::SharedPtr config;

@@ -33,6 +33,9 @@ void RasterReprojectionFilter<TInputImage>::BeforeThreadedGenerateData() {
     // Setup warp options.
     GDALWarpOptionsPtr warpOptions(GDALCreateWarpOptions(),&GDALDestroyWarpOptions);
 
+    warpOptions->papszWarpOptions = nullptr;
+    warpOptions->papszWarpOptions = CSLSetNameValue(warpOptions->papszWarpOptions, "NUM_THREADS", "ALL_CPUS");
+
     warpOptions->hSrcDS = inMemDt.get();
     warpOptions->hDstDS = outMemDt.get();
     warpOptions->nBandCount = nBands;
@@ -52,12 +55,10 @@ void RasterReprojectionFilter<TInputImage>::BeforeThreadedGenerateData() {
                                         GDALGetProjectionRef(warpOptions->hDstDS),
                                         FALSE, 0.0, 1 );
     warpOptions->pfnTransformer = GDALGenImgProjTransform;
-
     // Initialize warp operation and perform warp
     GDALWarpOperation oWarper;
     oWarper.Initialize(warpOptions.get());
     oWarper.ChunkAndWarpImage(0, 0, outMemDt->GetRasterXSize(), outMemDt->GetRasterYSize());
-
 }
 
 
