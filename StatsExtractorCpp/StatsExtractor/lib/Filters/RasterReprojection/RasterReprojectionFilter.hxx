@@ -22,13 +22,10 @@ RasterReprojectionFilter<TInputImage>::RasterReprojectionFilter():inEPSG(0),dstE
 }
 
 template <class TInputImage>
-void RasterReprojectionFilter<TInputImage>::BeforeThreadedGenerateData() {
-    //this->GetOutput()->FillBuffer(nullPxl);
-
-    auto inMemDt    = createGDALMemoryDatasetFromOTBImageRegion<TInputImage>(const_cast<TInputImage*>(this->GetInput()));
-    auto outMemDt   = createGDALMemoryDatasetFromOTBImageRegion<TInputImage>(const_cast<TInputImage*>(this->GetOutput()));
-
-    size_t nBands = this->GetInput()->GetNumberOfComponentsPerPixel();
+void RasterReprojectionFilter<TInputImage>::ThreadedGenerateData(const OutputRegionType &outputRegionForThread, itk::ThreadIdType threadId) {
+    auto inRegionForThread = computeInputRegionFromOutput(outputRegionForThread);
+    auto inMemDt    = createGDALMemoryDatasetFromOTBImageRegion<TInputImage>(const_cast<TInputImage*>(this->GetInput()), inRegionForThread);
+    auto outMemDt   = createGDALMemoryDatasetFromOTBImageRegion<TInputImage>(const_cast<TInputImage*>(this->GetOutput()), outputRegionForThread);
 
     // Setup warp options.
     GDALWarpOptionsPtr warpOptions(GDALCreateWarpOptions(),&GDALDestroyWarpOptions);
@@ -38,14 +35,13 @@ void RasterReprojectionFilter<TInputImage>::BeforeThreadedGenerateData() {
 
     warpOptions->hSrcDS = inMemDt.get();
     warpOptions->hDstDS = outMemDt.get();
-    warpOptions->nBandCount = nBands;
+    warpOptions->nBandCount = this->GetInput()->GetNumberOfComponentsPerPixel();
     warpOptions->panSrcBands =(int *)CPLMalloc(sizeof(int) * warpOptions->nBandCount);
     warpOptions->panDstBands =(int *)CPLMalloc(sizeof(int) * warpOptions->nBandCount);
-    for (size_t i = 0; i < nBands; ++i) {
+    for (size_t i = 0; i < warpOptions->nBandCount; ++i) {
         warpOptions->panSrcBands[i] = i + 1;  // Assuming band indices start from 1
         warpOptions->panDstBands[i] = i + 1;
     }
-
 
     warpOptions->pfnProgress = GDALTermProgress;
     warpOptions->pTransformerArg =
@@ -65,50 +61,8 @@ void RasterReprojectionFilter<TInputImage>::BeforeThreadedGenerateData() {
 template <class TInputImage>
 void RasterReprojectionFilter<TInputImage>::GenerateInputRequestedRegion() {
     Superclass::GenerateInputRequestedRegion();
-    typename TInputImage::Pointer output    = this->GetOutput();
     auto input = const_cast<TInputImage*>(this->GetInput());
-
-    InputRegionType requestedOutputRegion = output->GetRequestedRegion();
-
-    typename TInputImage::IndexType startIndex = requestedOutputRegion.GetIndex();
-    typename InputRegionType::SizeType size = requestedOutputRegion.GetSize();
-
-    OGRGeometryCollection inImgBoundary;
-    std::vector<OGRPoint> inCorners(4);
-    for (size_t i = 0; i < 2; i++)
-        for (size_t j = 0; j < 2; j++) {
-            typename TInputImage::IndexType idx;
-            idx[0] = startIndex[0] + i*size[0];
-            idx[1] = startIndex[1] + j*size[1];
-
-            PointType2f tmpPnt;
-            output->TransformIndexToPhysicalPoint(idx, tmpPnt);
-
-            OGRPoint dstPnt(tmpPnt[0], tmpPnt[1]);
-            dstPnt.transform(inverseTransform.get());
-            tmpPnt[0] = dstPnt.getX();
-            tmpPnt[1] = dstPnt.getY();
-
-            input->TransformPhysicalPointToIndex(tmpPnt, idx);
-
-            OGRPoint ogrIdx(idx[0], idx[1]);
-            inImgBoundary.addGeometry(&ogrIdx);
-        }
-    OGREnvelope inEnvelope;
-    inImgBoundary.getEnvelope(&inEnvelope);
-
-    typename TInputImage::IndexType inIdx;
-    inIdx[0] = inEnvelope.MinX;
-    inIdx[1] = inEnvelope.MinY;
-
-    typename InputRegionType::SizeType inSize;
-    inSize[0] = static_cast<size_t>(inEnvelope.MaxX - inEnvelope.MinX);
-    inSize[1] = static_cast<size_t>(inEnvelope.MaxY - inEnvelope.MinY);
-
-    InputRegionType inImgRegion;
-    inImgRegion.SetIndex(inIdx);
-    inImgRegion.SetSize(inSize);
-    input->SetRequestedRegion(inImgRegion);
+    input->SetRequestedRegion(computeInputRegionFromOutput(this->GetOutput()->GetRequestedRegion()));
 }
 
 template <class TInputImage>
@@ -230,6 +184,51 @@ template <class TInputImage>
 void RasterReprojectionFilter<TInputImage>::SetOutputProjection(size_t epsg) {
     dstEPSG = epsg;
     dstSRS.importFromEPSG(epsg);
+}
+
+template <class TInputImage>
+typename RasterReprojectionFilter<TInputImage>::InputRegionType RasterReprojectionFilter<TInputImage>::computeInputRegionFromOutput(const OutputRegionType& requestedOutputRegion) {
+    //InputRegionType requestedOutputRegion = output->GetRequestedRegion();
+
+    typename TInputImage::IndexType startIndex = requestedOutputRegion.GetIndex();
+    typename InputRegionType::SizeType size = requestedOutputRegion.GetSize();
+
+    OGRGeometryCollection inImgBoundary;
+    std::vector<OGRPoint> inCorners(4);
+    for (size_t i = 0; i < 2; i++)
+        for (size_t j = 0; j < 2; j++) {
+            typename TInputImage::IndexType idx;
+            idx[0] = startIndex[0] + i*size[0];
+            idx[1] = startIndex[1] + j*size[1];
+
+            PointType2f tmpPnt;
+            this->GetOutput()->TransformIndexToPhysicalPoint(idx, tmpPnt);
+
+            OGRPoint dstPnt(tmpPnt[0], tmpPnt[1]);
+            dstPnt.transform(inverseTransform.get());
+            tmpPnt[0] = dstPnt.getX();
+            tmpPnt[1] = dstPnt.getY();
+
+            this->GetInput()->TransformPhysicalPointToIndex(tmpPnt, idx);
+
+            OGRPoint ogrIdx(idx[0], idx[1]);
+            inImgBoundary.addGeometry(&ogrIdx);
+        }
+    OGREnvelope inEnvelope;
+    inImgBoundary.getEnvelope(&inEnvelope);
+
+    typename TInputImage::IndexType inIdx;
+    inIdx[0] = inEnvelope.MinX;
+    inIdx[1] = inEnvelope.MinY;
+
+    typename InputRegionType::SizeType inSize;
+    inSize[0] = static_cast<size_t>(inEnvelope.MaxX - inEnvelope.MinX);
+    inSize[1] = static_cast<size_t>(inEnvelope.MaxY - inEnvelope.MinY);
+
+    InputRegionType inImgRegion;
+    inImgRegion.SetIndex(inIdx);
+    inImgRegion.SetSize(inSize);
+    return inImgRegion;
 }
 
 }

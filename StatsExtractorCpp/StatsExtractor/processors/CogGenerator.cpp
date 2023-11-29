@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     std::filesystem::create_directories(config->filesystem.tmpPath);
 
     char **tmpToCOGWarpOptions = nullptr;
-    tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "BIGTIFF", "IF_NEEDED");
+    tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "BIGTIFF", "YES");
     tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "NUM_THREADS", "ALL_CPUS");
 
     for (auto& product:Constants::productInfo)

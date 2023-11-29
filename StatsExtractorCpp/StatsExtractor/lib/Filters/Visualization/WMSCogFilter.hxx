@@ -53,7 +53,7 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
     otb::ReadNoDataFlags(this->GetInput()->GetImageMetadata(), tmpNoDataFlags, tmpNoDataValues);
     this->GetOutput()->SetNumberOfComponentsPerPixel(nOutputBands);
     std::fill(noDataFlags.begin(), noDataFlags.end(), tmpNoDataFlags[0]);
-    std::fill(noDataValues.begin(), noDataValues.end(), 65535);
+    std::fill(noDataValues.begin(), noDataValues.end(), 255);
 
     otb::WriteNoDataFlags(noDataFlags, noDataValues, this->GetOutput()->GetImageMetadata());
     this->GetOutput()->SetProjectionRef(this->GetInput()->GetProjectionRef());

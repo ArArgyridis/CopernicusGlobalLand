@@ -130,22 +130,23 @@ std::string stringstreamToString(std::stringstream &stream);
 std::vector<RGBVal> styleColorParser(std::string& style);
 
 template <class TImage>
-GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image) {
+GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image, typename TImage::RegionType region) {
     std::stringstream stream;
     size_t nBands = image->GetNumberOfComponentsPerPixel();
-    typename TImage::RegionType bufferedRegion = image->GetBufferedRegion();
     typename TImage::PointType origin = image->GetOrigin();
     typename TImage::SpacingType spacing = image->GetSignedSpacing();
-    typename TImage::RegionType::IndexType originIdx = bufferedRegion.GetIndex();
+    typename TImage::RegionType::IndexType originIdx = region.GetIndex();
+    typename TImage::RegionType::IndexType bufferedRegionIndex = image->GetBufferedRegion().GetIndex();
 
+    auto dif = originIdx - bufferedRegionIndex;
     stream << "MEM:::"
-           << "DATAPOINTER=" << (uintptr_t)(image->GetBufferPointer()) << ","
-           << "PIXELS=" << bufferedRegion.GetSize()[0] << ","
-           << "LINES=" << bufferedRegion.GetSize()[1] << ","
+           << "DATAPOINTER=" << (uintptr_t)(image->GetBufferPointer()+(dif[0]+image->GetBufferedRegion().GetSize()[0]*dif[1])*nBands) << ","
+           << "PIXELS=" << region.GetSize()[0] << ","
+           << "LINES=" << region.GetSize()[1] << ","
            << "BANDS=" << nBands << ","
            << "DATATYPE=" << GDALGetDataTypeName(otb::GdalDataTypeBridge::GetGDALDataType<typename TImage::InternalPixelType>()) << ","
            << "PIXELOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands << ","
-           << "LINEOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands * bufferedRegion.GetSize()[0] << ","
+           << "LINEOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands * region.GetSize()[0] << ","
            << "BANDOFFSET=" << sizeof(typename TImage::InternalPixelType);
 
     GDALDatasetUniquePtr memRasterDataset;
