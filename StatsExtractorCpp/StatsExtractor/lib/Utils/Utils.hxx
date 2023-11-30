@@ -87,7 +87,7 @@ long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize)
 float noScalerFunc(float x, float& scale, float& offset);
 
 std::string randomString(size_t len);
-std::string rgbToArrayString(RGBVal& array);
+std::string rgbToArrayString(RGBVal& array, size_t keep=4);
 
 size_t reverseNoScalerFunc(float x, float &scale, float &offset);
 size_t reverseScalerFunc(float x, float& scale, float& offset);
@@ -181,7 +181,6 @@ OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer in
     lowerRight[0]   = aoi.MaxX;
     lowerRight[1]   = aoi.MinY;
 
-
     //anchoring to indexes
     //TInputImagePointer inputImage = this->GetReferenceImage();
 
@@ -212,16 +211,5 @@ OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer in
 
     return aoi;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 #endif // UTILS_HXX

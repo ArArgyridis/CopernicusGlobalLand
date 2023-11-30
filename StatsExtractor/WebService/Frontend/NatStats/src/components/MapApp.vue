@@ -202,7 +202,7 @@ export default {
 					Object.keys(data.data.data[rt]).forEach(date => {
 						dt[rt][date] = {
 							layerId: null, 
-							url: options.s3CogURL + data.data.data[rt][date][0],
+							url: "https://s3.waw3-1.cloudferro.com/swift/v1/CGLSWMS/projects/natstats/mapserver/Vegetation/Dry_Matter_Productivity/BioPar_DMP300_V1_Global/DMP300-RT5_201402100000_GLOBE_PROBAV_V1.0.1/DMP/DMP300-RT5_201402100000_GLOBE_PROBAV_V1.0.1.tif",//options.s3CogURL + data.data.data[rt][date][0],
 							raw: options.fetchRawDataURL + "/" + data.data.data[rt][date][1]
 						}
 					});
@@ -335,7 +335,7 @@ export default {
 						let rec = response.data.data[idx];
 						let id = rec.id;
 						Object.keys(styles).forEach(colorCol => {
-							let color = rec[colorCol];							
+							let color = rec[colorCol];
 							if (color != null) {
 								let joinedColor = color.join();
 								styles[colorCol][id] = new Style({
