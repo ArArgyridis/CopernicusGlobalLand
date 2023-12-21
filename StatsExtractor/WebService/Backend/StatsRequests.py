@@ -149,14 +149,14 @@ class StatsRequests(GenericRequest):
 
     def __fetchStratificationDataByProductAndDate(self):
         query = """
-        SELECT ARRAY_TO_JSON(ARRAY_AGG(res) ) FROM(
+       SELECT ARRAY_TO_JSON(ARRAY_AGG(res) ) FROM(
             SELECT jsonb_build_object(
-		'id', ps.poly_id,
-                'meanval_color', ps.meanval_color::jsonb,
-		'noval_color', ps.noval_color::jsonb,
-		'sparseval_color', ps.sparseval_color::jsonb,
-		'midval_color', ps.midval_color::jsonb,
-		'highval_color', ps.highval_color::jsonb
+		'id', sg.id,
+                'meanval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.meanval_color::jsonb ELSE NULL END,
+		'noval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.noval_color::jsonb ELSE NULL END,
+		'sparseval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.sparseval_color::jsonb ELSE NULL END,
+		'midval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.midval_color::jsonb ELSE NULL END,
+		'highval_color',CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN  ps.highval_color::jsonb ELSE NULL END
         ) res
         FROM  poly_stats ps
         JOIN  product_file pf ON ps.product_file_id = pf.id
@@ -165,7 +165,7 @@ class StatsRequests(GenericRequest):
         JOIN  product p ON pfd.product_id = p.id
         JOIN  stratification_geom sg ON sg.id = ps.poly_id
         JOIN  stratification s ON s.id = sg.stratification_id
-        WHERE pf.date = '{0}' AND s.id = {1} AND pfv.id = {2} AND ps.valid_pixels > 0 AND ps.valid_pixels*1.0/ps.total_pixels > 0.7 """.format(self._requestData["options"]["date"],
+        WHERE pf.date = '{0}' AND s.id = {1} AND pfv.id = {2} AND ps.valid_pixels > 0""".format(self._requestData["options"]["date"],
                       self._requestData["options"]["stratification_id"], self._requestData["options"]["product_variable_id"])
 
         if  self._requestData["options"]["rt_flag"] >= 0:
