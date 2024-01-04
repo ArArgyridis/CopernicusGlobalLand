@@ -387,13 +387,13 @@ class StatsRequests(GenericRequest):
                 WITH tmp  AS NOT MATERIALIZED (
             SELECT pf.date,  CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END, wf.rel_file_path, pf.rel_file_path raw_file_path
             FROM product_file pf
-            JOIN wms_file wf ON pf.id = wf.product_file_id AND pf.product_file_description_id = {0} AND wf.product_file_variable_id  = {1}
-            WHERE pf.date between '{2}' AND '{3}'
+            JOIN wms_file wf ON pf.id = wf.product_file_id AND wf.product_file_variable_id  = {0}
+            WHERE pf.date between '{1}' AND '{2}'
         ),tmp2 AS NOT MATERIALIZED (
             SELECT tmp.rt_flag, JSON_OBJECT_AGG(tmp.date, ARRAY_TO_JSON(array[tmp.rel_file_path, tmp.raw_file_path]) ) AS info
             FROM tmp
             GROUP BY tmp.rt_flag
-        )SELECT JSON_OBJECT_AGG(rt_flag, info) FROM tmp2""".format(self._requestData["options"]["product_id"], self._requestData["options"]["product_variable_id"],
+        )SELECT JSON_OBJECT_AGG(rt_flag, info) FROM tmp2""".format(self._requestData["options"]["product_variable_id"],
                     self._requestData["options"]["date_start"], self._requestData["options"]["date_end"])
         return self.__getResponseFromDB(query)
 
