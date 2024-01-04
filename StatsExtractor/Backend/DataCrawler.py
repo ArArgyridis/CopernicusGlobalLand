@@ -15,9 +15,14 @@ import os,paramiko,re,socks,sys
 sys.path.extend(['../../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Constants import Constants
-from osgeo import gdal
+from multiprocessing import Pool
 
-gdal.DontUseExceptions()
+class FileValidateOptions:
+    def __init__(self, fl,storageDir, prodInfo, cn):
+        self.fl = fl
+        self.storageDir = storageDir
+        self.prodInfo = prodInfo
+        self.cn = cn
 
 def scanDir(dirList, product, found=False):
     #examineList = []
@@ -38,6 +43,53 @@ def scanDir(dirList, product, found=False):
 
     #if not found:
     #    return scanDir(examineList, product)
+
+def validateFile(validateOptions):
+    from osgeo import gdal
+    gdal.DontUseExceptions()
+    pattern = re.compile(validateOptions.prodInfo.pattern)
+    chk = os.path.split(validateOptions.fl)[1]
+
+    match = pattern.search(chk)
+    if not match:
+        return None
+
+    subStr = chk[match.start()::]
+    if not pattern.fullmatch(subStr):
+        return None
+
+    if len(validateOptions.prodInfo.variables) > 0:  # try to open file with gdal
+        tmpDt = gdal.Open(validateOptions.fl)
+        if tmpDt is None:
+            return None
+
+        del tmpDt
+        tmpDt = None
+
+    relFilePath = os.path.relpath(validateOptions.fl, validateOptions.storageDir)
+
+    # check if product exists in DB
+    checkQuery = """SELECT EXISTS (
+                    SELECT *
+                    FROM product_file pf 
+                    JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
+                    JOIN product p ON p.id = pfd.product_id 
+                    WHERE pf.rel_file_path LIKE '%{0}'
+                    AND pfd.id = {1});""".format(relFilePath, validateOptions.prodInfo.id)
+
+    res = validateOptions.cn.pgConnections[validateOptions.cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
+    if res[0][0]:
+        return None
+
+    productParams = pattern.findall(subStr)[0]
+    rtFlag = 'NULL'
+    if validateOptions.prodInfo.rtFlag is not None:
+        rtFlag = validateOptions.prodInfo.rtFlag.format(*productParams)
+
+    return "({0})".format(",".join([str(validateOptions.prodInfo.id), "'{0}'".format(relFilePath),
+                                           "'{0}'".format(validateOptions.prodInfo._dateptr.format(*productParams)),
+                                           rtFlag]))
+
 
 
 class DataCrawler:
@@ -144,7 +196,7 @@ class DataCrawler:
 
                     rtFlag = 'NULL'
                     if self._prodInfo.rtFlag is not None:
-                        rtFlag = self._prodInfo.rtFlag.format(productParams)
+                        rtFlag = self._prodInfo.rtFlag.format(*productParams)
 
                     self._store(["({0})".format(",".join([str(self._prodInfo.id),
                                                       "'{0}'".format(os.path.relpath(outFilePath, storageDir)),
@@ -177,55 +229,21 @@ class DataCrawler:
 
         if inDir is None:
             return
+        #fl, storageDir, prodInfo, cn
+        files = [
+            FileValidateOptions(
+                os.path.join(dp, f),
+                storageDir,
+                self._prodInfo,
+                self._cn
+            ) for dp, dn, filenames in os.walk(inDir) for f in filenames]
 
-        files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(inDir) for f in filenames]
-        files.sort()
         dbData = []
-        for fl in files:
-            pattern = re.compile(self._prodInfo.pattern)
-            chk = os.path.split(fl)[1]
-
-            match = pattern.search(chk)
-            if not match:
-                continue
-
-            subStr = chk[match.start()::]
-            if not pattern.fullmatch(subStr):
-                continue
-
-            if len(self._prodInfo.variables) > 0: #try to open file with gdal
-                tmpDt = gdal.Open(fl)
-                if tmpDt is None:
-                    continue
-
-                del tmpDt
-                tmpDt = None
-
-            relFilePath = os.path.relpath(fl, storageDir)
-
-            # check if product exists in DB
-            checkQuery = """SELECT EXISTS (
-                SELECT *
-                FROM product_file pf 
-                JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
-                JOIN product p ON p.id = pfd.product_id 
-                WHERE pf.rel_file_path LIKE '%{0}'
-                AND pfd.id = {1});""".format(relFilePath, self._prodInfo.id)
-
-            res = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
-            if res[0][0]:
-                continue
-
-
-            productParams = pattern.findall(subStr)[0]
-            rtFlag = 'NULL'
-            if self._prodInfo.rtFlag is not None:
-                rtFlag = self._prodInfo.rtFlag.format(*productParams)
-
-            dbData.append("({0})".format(",".join([str(self._prodInfo.id), "'{0}'".format(relFilePath),
-                                                   "'{0}'".format(self._prodInfo._dateptr.format(*productParams)),
-                                                   rtFlag ])))
-            execute = True
+        with Pool() as pool:
+            for result in pool.map(validateFile, files):
+                if result is not None:
+                    dbData.append(result)
+                    execute = True
 
 
         if execute:

@@ -2,8 +2,8 @@
 
 ProductVariable::ProductVariable() {}
 
-ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathSharedPtr rootPath, PathSharedPtr firstProductPath):productType(prdType), rootPath(rootPath),
-firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), addOffset(0) {
+ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathSharedPtr rootPath, PathSharedPtr firstProductPath, ProductInfoPointer product):productType(prdType), rootPath(rootPath),
+    firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), addOffset(0), product(product) {
 
     id              = params["id"].GetInt64();
     variable        = params["variable"].GetString();
@@ -34,8 +34,8 @@ firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), 
     }
 }
 
-ProductVariable::Pointer ProductVariable::New(JsonValue &params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath) {
-    return std::shared_ptr<ProductVariable>(new ProductVariable(params, prdType, rootPath, firstProductPath));
+ProductVariable::Pointer ProductVariable::New(JsonValue &params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath, ProductInfoPointer product) {
+    return std::shared_ptr<ProductVariable>(new ProductVariable(params, prdType, rootPath, firstProductPath, product));
 }
 
 

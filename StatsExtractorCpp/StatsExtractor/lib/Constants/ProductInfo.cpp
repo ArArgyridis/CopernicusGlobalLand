@@ -2,9 +2,9 @@
 #include <memory>
 
 
-ProductInfo::ProductInfo(){}
+ProductInfo::ProductInfo():std::enable_shared_from_this<ProductInfo>(){}
 
-ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg) {
+ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg):std::enable_shared_from_this<ProductInfo>() {
 
     auto productNamesArr = row[0].as_array();
     PGPool::pgArrayToVector<std::string>(productNamesArr, productNames);
@@ -31,7 +31,7 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg
 
         for (auto& ptrn: tmpVars->GetArray()) {
             std::string variable = ptrn["variable"].GetString();
-            variables[variable] = ProductVariable::New(ptrn, productType, rootPath, firstProductPath);
+            variables[variable] = ProductVariable::New(ptrn, productType, rootPath, firstProductPath, shared_from_this());
         }
     }
 }

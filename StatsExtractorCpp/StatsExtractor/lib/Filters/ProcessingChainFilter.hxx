@@ -80,7 +80,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
         data <<"(" << row[0].as<std::string>() <<"," << row[1].as<std::string>() <<"," << row[2].as<std::string>() <<",";
         for (size_t i = 0; i< variable->colorInterpolation.size(); i++) {
             RGBVal color = variable->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
-            data << "'" << rgbToArrayString(color) << "',";
+            data << "'" << rgbToArrayString(color, 3) << "',";
         }
 
         if (row.back().is_null()) {
@@ -104,7 +104,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     ", meanval_color = tmp.meanval_color "
     "FROM tmp "
     "WHERE poly_stats.poly_id = tmp.poly_id AND poly_stats.product_file_id = tmp.product_file_id AND poly_stats.product_file_variable_id = tmp.product_file_variable_id";
-
     cn->executeQuery(query);
 }
 
@@ -140,7 +139,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::GenerateOutputInforma
     typename TInputImage::IndexType originIdx;
     originPnt[0] = aoi.MinX + spacing[0]/2;
     originPnt[1] = aoi.MaxY - abs(spacing[1])/2;
-    //inputImage->TransformPhysicalPointToIndex(originPnt, originIdx);
 
     typename TInputImage::SizeType outSize;
     outSize[0] = (aoi.MaxX-aoi.MinX)/spacing[0];

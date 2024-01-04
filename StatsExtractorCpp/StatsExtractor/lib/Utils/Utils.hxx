@@ -87,7 +87,7 @@ long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize)
 float noScalerFunc(float x, float& scale, float& offset);
 
 std::string randomString(size_t len);
-std::string rgbToArrayString(RGBVal& array);
+std::string rgbToArrayString(RGBVal& array, size_t keep=4);
 
 size_t reverseNoScalerFunc(float x, float &scale, float &offset);
 size_t reverseScalerFunc(float x, float& scale, float& offset);
@@ -130,22 +130,23 @@ std::string stringstreamToString(std::stringstream &stream);
 std::vector<RGBVal> styleColorParser(std::string& style);
 
 template <class TImage>
-GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image) {
+GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image, typename TImage::RegionType region) {
     std::stringstream stream;
     size_t nBands = image->GetNumberOfComponentsPerPixel();
-    typename TImage::RegionType bufferedRegion = image->GetBufferedRegion();
     typename TImage::PointType origin = image->GetOrigin();
     typename TImage::SpacingType spacing = image->GetSignedSpacing();
-    typename TImage::RegionType::IndexType originIdx = bufferedRegion.GetIndex();
+    typename TImage::RegionType::IndexType originIdx = region.GetIndex();
+    typename TImage::RegionType::IndexType bufferedRegionIndex = image->GetBufferedRegion().GetIndex();
 
+    auto dif = originIdx - bufferedRegionIndex;
     stream << "MEM:::"
-           << "DATAPOINTER=" << (uintptr_t)(image->GetBufferPointer()) << ","
-           << "PIXELS=" << bufferedRegion.GetSize()[0] << ","
-           << "LINES=" << bufferedRegion.GetSize()[1] << ","
+           << "DATAPOINTER=" << (uintptr_t)(image->GetBufferPointer()+(dif[0]+image->GetBufferedRegion().GetSize()[0]*dif[1])*nBands) << ","
+           << "PIXELS=" << region.GetSize()[0] << ","
+           << "LINES=" << region.GetSize()[1] << ","
            << "BANDS=" << nBands << ","
            << "DATATYPE=" << GDALGetDataTypeName(otb::GdalDataTypeBridge::GetGDALDataType<typename TImage::InternalPixelType>()) << ","
            << "PIXELOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands << ","
-           << "LINEOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands * bufferedRegion.GetSize()[0] << ","
+           << "LINEOFFSET=" << sizeof(typename TImage::InternalPixelType) * nBands * region.GetSize()[0] << ","
            << "BANDOFFSET=" << sizeof(typename TImage::InternalPixelType);
 
     GDALDatasetUniquePtr memRasterDataset;
@@ -180,7 +181,6 @@ OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer in
     lowerRight[0]   = aoi.MaxX;
     lowerRight[1]   = aoi.MinY;
 
-
     //anchoring to indexes
     //TInputImagePointer inputImage = this->GetReferenceImage();
 
@@ -211,16 +211,5 @@ OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer in
 
     return aoi;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 #endif // UTILS_HXX

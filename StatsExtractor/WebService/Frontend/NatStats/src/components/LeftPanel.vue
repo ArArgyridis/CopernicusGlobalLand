@@ -23,16 +23,15 @@
 			<button v-for="nav in categories" v-bind:key="nav.id" class="col-sm nav-link text-muted text-center" v-bind:class="{active: nav.active}" v-on:click="switchActiveCategory(nav)" v-bind:id="'chart_'+nav.id">{{nav.title}}</button>
 		</div>
 		
-		<div class="border border-2 rounded">
-			<div class="container mt-3">
+		<div class="row">
+			<div class="container mt-1 ml-2 mr-2">
 				<h5>Time Range for Timeseries Analysis</h5>
 				<div class=row>
 					<div class="col">From Date</div>
 					<div class="col">To Date</div>
-					<div class="col">Currently Displayed</div>
+					<div class="col">Displayed</div>
 					<div class="col-1"></div>
 				</div>
-					
 				<div class="row mb-3 align-items-center">
 					<div class ="col d-flex text-justify"><Datepicker class="dp__theme_dark" v-model="dateStart" :format="dateFormat" autoApply :enableTimePicker="false" v-bind:clearable="false" dark/></div>
 					<div class ="col d-flex text-justify"><Datepicker v-model="dateEnd" :format="dateFormat" autoApply :enableTimePicker="false" class="dp__theme_dark"  dark v-bind:clearable="false"/></div>

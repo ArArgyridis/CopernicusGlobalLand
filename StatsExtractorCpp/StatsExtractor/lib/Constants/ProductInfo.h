@@ -1,10 +1,15 @@
 #ifndef PRODUCTINFO_H
 #define PRODUCTINFO_H
 
-#include "../ConfigurationParser/ConfigurationParser.h"
-#include "ProductVariable.h"
+#include <string>
 
-class ProductInfo {
+#include "ProductVariable.h"
+#include "../ConfigurationParser/ConfigurationParser.h"
+#include "../PostgreSQL/PostgreSQL.h"
+#include "../Utils/Utils.hxx"
+
+
+class ProductInfo: public std::enable_shared_from_this<ProductInfo> {
     Configuration::SharedPtr config;
 
 public:

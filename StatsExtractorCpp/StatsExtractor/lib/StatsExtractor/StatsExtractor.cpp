@@ -84,7 +84,7 @@ void StatsExtractor::process() {
                             SELECT (ROW_NUMBER() OVER(ORDER BY image[1]))/5 grpid, image
                             FROM(
                                 SELECT DISTINCT image --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
-                                FROM info
+                                FROM info --LIMIT 1
                             )a
                         )b
                         GROUP BY grpid

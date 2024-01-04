@@ -21,7 +21,7 @@
 #include <vector>
 #include <rapidjson/document.h>
 
-using RGBVal = std::array<unsigned short, 3>;
+using RGBVal = std::array<unsigned char, 4>;
 
 class ColorInterpolation {
     std::vector<size_t> keys;

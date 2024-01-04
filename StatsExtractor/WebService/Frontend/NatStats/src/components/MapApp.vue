@@ -335,7 +335,7 @@ export default {
 						let rec = response.data.data[idx];
 						let id = rec.id;
 						Object.keys(styles).forEach(colorCol => {
-							let color = rec[colorCol];							
+							let color = rec[colorCol];
 							if (color != null) {
 								let joinedColor = color.join();
 								styles[colorCol][id] = new Style({

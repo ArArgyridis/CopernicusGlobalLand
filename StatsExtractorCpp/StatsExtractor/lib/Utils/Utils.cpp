@@ -142,12 +142,11 @@ std::string randomString(size_t len) {
 }
 
 
-std::string rgbToArrayString(RGBVal &array) {
+std::string rgbToArrayString(RGBVal &array, size_t keep) {
     std::stringstream k;
     k <<"[";
-    for(auto& it:array)
-        k << it <<",";
-
+    for(size_t i = 0; i < keep; i++)
+        k << static_cast<unsigned int>(array[i]) <<",";
     k.seekp(-1, std::ios_base::end);
     k <<"]";
     return k.str();
@@ -200,7 +199,8 @@ std::vector<RGBVal> styleColorParser(std::string &style) {
         for (size_t i = 0; i < res->nodesetval->nodeNr; i++) {
             if(res->nodesetval->nodeTab[i]->type == XML_ELEMENT_NODE) {
                 xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
-                sscanf(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))), "#%2hx%2hx%2hx", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
+                sscanf(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))), "#%2x%2x%2x", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
+                styleColors[i][3] = 255;
             }
         }
     }

@@ -24,6 +24,7 @@ public:
     using OutputIterator            = itk::ImageRegionIterator<TInputImage>;
     using TInputImagePointer        = typename TInputImage::Pointer;
     using InputRegionType           = typename TInputImage::RegionType;
+    using OutputRegionType          = typename Superclass::OutputImageRegionType;
     using OGRTransform              = std::unique_ptr<OGRCoordinateTransformation, void(*)(OGRCoordinateTransformation*)>;
     using GDALWarpOptionsPtr        = std::unique_ptr<GDALWarpOptions, void(*)(GDALWarpOptions*)>;
     using PointType2f               = itk::Point<double, 2>;
@@ -42,12 +43,12 @@ protected:
     RasterReprojectionFilter();
     ~RasterReprojectionFilter(){};
 
-    void BeforeThreadedGenerateData() override;
+    //void BeforeThreadedGenerateData() override;
 
     void GenerateInputRequestedRegion() override;
     void GenerateOutputInformation() override;
 
-    virtual void ThreadedGenerateData(const typename Superclass::OutputImageRegionType& outputRegionForThread, itk::ThreadIdType threadId) override{};
+    virtual void ThreadedGenerateData(const OutputRegionType& outputRegionForThread, itk::ThreadIdType threadId) override;
 
     /** overiding to avoid bound checking **/
     virtual void VerifyInputInformation() override{}
@@ -63,6 +64,8 @@ private:
     OGRSpatialReference inSRS, dstSRS;
     std::mutex mtx;
     typename TInputImage::PixelType nullPxl;
+
+    InputRegionType computeInputRegionFromOutput(const OutputRegionType& outputRegion);
 
 };
 

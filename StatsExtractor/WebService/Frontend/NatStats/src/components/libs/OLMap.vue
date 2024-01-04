@@ -337,6 +337,7 @@ export default {
 					},
 				],
 			});
+			source.tileOptions.interpolate=interpolate;
 			return this.createTileLayer(source, extent, zIndex, WebGLTileLayer);
 		},
 		createPointLabel(layerId, featureId, color, showLabel) {
