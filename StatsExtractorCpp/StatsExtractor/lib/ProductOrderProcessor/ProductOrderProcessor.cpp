@@ -17,7 +17,7 @@ std::string ProductOrderProcessor::createRawDataQuery(rapidjson::GenericMember<r
                 FROM product_file pf
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                 JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-                WHERE pfv.id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.name.GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
+                WHERE pfv.id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.value["variable"].GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
 
     if(dataReq.value["rtFlag"].GetInt() > -1)
         query += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
@@ -149,11 +149,6 @@ void ProductOrderProcessor::process() {
                     if (flId < processFiles.size()) //an anomaly has been found
                         maskInfo["anomaly"] = rasterizeAOI<FloatImageType>(Constants::productInfo[processFiles[flId][1].as<size_t>()]->variables[processFiles[flId][2].as<std::string>()]->firstProductVariablePath, aoi);
                 }
-
-
-
-
-
                 //based on product's first file create a raster representation for the aoi
                 //AOINfo maskInfo = rasterizeAOI<FloatImageType>(Constants::productInfo[processFiles[0][1].as<size_t>()]->variables[processFiles[0][2].as<std::string>()]->firstProductVariablePath, aoi);
                 size_t fl = 0;

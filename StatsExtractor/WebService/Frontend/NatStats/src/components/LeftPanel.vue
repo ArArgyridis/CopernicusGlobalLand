@@ -485,7 +485,7 @@ export default {
 .base {
 	background-color: rgba(234, 234, 218, 0.7);
 	height: 100vh;
-	color: black;
+	color: rgba(234, 234, 218, 0.7);
 }
 
 .btn-circle {

@@ -109,7 +109,7 @@ export function VariableProperties(product, dateStart, dateEnd) {
 export function createVariableInfo(variable) {
 	let ret = new Object();
 	
-	ret.cog					= new CogProps();
+	ret.cog						= new CogProps();
 	ret.valueRanges 			= [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
 	ret.density 				= new areaDensityOptions()[2];
 	
