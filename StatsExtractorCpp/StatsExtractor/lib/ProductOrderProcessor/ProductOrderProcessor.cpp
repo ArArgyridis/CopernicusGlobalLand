@@ -31,7 +31,7 @@ std::string ProductOrderProcessor::createAnomaliesDataQuery(rapidjson::GenericMe
                 FROM long_term_anomaly_info ltai
                 JOIN product_file_variable pfv  ON pfv.id = ltai.anomaly_product_variable_id
                 JOIN product_file pf  ON pf.product_file_description_id = pfv.product_file_description_id
-                WHERE ltai.raw_product_variable_id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.name.GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
+                WHERE ltai.raw_product_variable_id = {0} AND pf.date BETWEEN '{1}' AND '{2}')""", dataReq.value["variable"].GetString(), dataReq.value["dateStart"].GetString(), dataReq.value["dateEnd"].GetString());
 
     if(dataReq.value["rtFlag"].GetInt() > -1)
         query += fmt::format(" AND pf.rt_flag = {0}", dataReq.value["rtFlag"].GetInt());
