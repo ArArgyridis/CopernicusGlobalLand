@@ -9,7 +9,7 @@
 #include "../Utils/Utils.hxx"
 
 
-class ProductInfo: public std::enable_shared_from_this<ProductInfo> {
+class ProductInfo {
     Configuration::SharedPtr config;
 
 public:
