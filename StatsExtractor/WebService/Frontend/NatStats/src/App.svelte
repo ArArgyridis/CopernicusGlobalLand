@@ -38,6 +38,7 @@
       <div class="px-0 position-absolute"><MapApp /></div>
       <Legend class="legend hide transition is-open position-absolute" bind:this={refs.legend} analysisMode = {$currentProduct.currentVariable.analysisMode}/>
       <LeftPanel class="leftPanel" shown={true} />
+      <img class="logo" src="assets/copernicus_land_monitoring.png" alt="Copernicus GLMS"/>
     </div>
   </div>
 
@@ -51,9 +52,14 @@
     }
     .myApp :global(.legend) {
         width: 500px;
-        left: 750px;
-        top: 150px;
+        bottom: 280px;
         z-index: 1;
+    }
+
+    .logo {
+        position:absolute;
+        bottom:10px;
+        width:100%;
     }
   }
 
@@ -65,8 +71,14 @@
         width: 500px;
         margin: auto;
         bottom: 10px;
-        right: 5px;
+        right: 300px;
         z-index: 1;
+    }
+    .logo {
+        position:absolute;
+        bottom:10px;
+        right:5px;
+        width:290px;
     }
   }
 

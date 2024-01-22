@@ -14,12 +14,12 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
     import html2canvas from "html2canvas";
-    import { Fill, Stroke, Style, Icon } from "ol/style";
+    import { Fill, Icon, Stroke, Style } from "ol/style";
+    import Legend from "../../base/Legend.svelte";
     import AreaDensityPieChart from "./AreaDensityPieChart.svelte";
     import PointTimeSeries from "./PointTimeSeries.svelte";
     import PolygonHistogramData from "./PolygonHistogramData.svelte";
     import PolygonTimeSeries from "./PolygonTimeSeries.svelte";
-    import Legend from "../../base/Legend.svelte";
 
     import { onMount } from "svelte";
     import {
@@ -29,7 +29,6 @@
     } from "../../../store/ProductParameters";
     import OlMap from "../../base/OLMap.svelte";
     import options from "../../base/options.js";
-    import { click } from "ol/events/condition";
     import utils from "../../base/utils";
     
     export let regionInfo;
