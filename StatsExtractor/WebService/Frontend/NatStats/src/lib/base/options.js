@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2023  Argyros Argyridis arargyridis at gmail dot com
+   Copyright (C) 2024  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
@@ -12,13 +12,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-import "@fontsource/ubuntu";
-
-import './app.css'
-import App from './App.svelte';
-
-const app = new App({
-  target: document.getElementById('app'),
-})
-
-export default app
+export default {
+	endpointURL: "https://natstat.cgls.dev/endpoint",
+	fetchRawDataURL: "https://natstat.cgls.dev/eodata",
+	fetchAnomaliesDataURL: "https://natstat.cgls.dev/eodataanomalies",
+	s3CogURL: "https://s3.waw3-1.cloudferro.com/swift/v1/CGLSWMS/projects/natstats/mapserver/",
+	bingKey: "Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl",
+	maxAOIBounds3857URL: "assets/bounds3857.geojson",
+	cogZIndex: 1,
+	vectorTileZIndex: 2,
+   markerIcon: "assets/marker.png"
+}

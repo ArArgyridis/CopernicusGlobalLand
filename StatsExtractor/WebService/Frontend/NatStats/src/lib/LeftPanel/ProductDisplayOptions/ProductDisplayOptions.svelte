@@ -1,4 +1,4 @@
-/*
+<!---
    Copyright (C) 2023  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -10,15 +10,20 @@
    GNU General Public License for more details.
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+--->
 
-import "@fontsource/ubuntu";
+<script>
+    import "bootstrap/dist/css/bootstrap.min.css";
+    import StratifiedOrRawViewMode from "./StratifiedOrRawViewMode.svelte";
+    import AnalysisMode from "./AnalysisMode.svelte";
 
-import './app.css'
-import App from './App.svelte';
+    let accordionId = "displayOptions";
+</script>
 
-const app = new App({
-  target: document.getElementById('app'),
-})
-
-export default app
+<div class="mt-2 row d-flex align-items-center text-center">
+    <h5>Product Display Options</h5>
+    <div class="accordion accordion-flush overflow-auto mb-2" id={accordionId}>
+        <StratifiedOrRawViewMode bindToId={accordionId} propIdx="1" />
+        <AnalysisMode bindToId={accordionId} propIdx="2" />
+    </div>
+</div>

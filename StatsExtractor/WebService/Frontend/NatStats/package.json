@@ -1,40 +1,30 @@
 {
   "name": "natstats",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
-    "format": "prettier --write src/"
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.0.1",
+    "svelte": "^4.2.8",
+    "vite": "^5.0.8"
   },
   "dependencies": {
     "@fontsource/ubuntu": "^5.0.8",
-    "@fortawesome/fontawesome-svg-core": "^6.4.2",
-    "@fortawesome/free-solid-svg-icons": "^6.4.2",
-    "@fortawesome/vue-fontawesome": "^3.0.3",
-    "@popperjs/core": "^2.11.8",
-    "@vuepic/vue-datepicker": "^6.1.0",
-    "axios": "^1.5.0",
+    "@fortawesome/free-solid-svg-icons": "^6.5.1",
+    "axios": "^1.6.2",
     "bootstrap": "^5.3.2",
-    "highcharts-vue": "^1.4.3",
-    "ol": "^8.1.0",
-    "ol-ext": "^4.0.11",
-    "proj4": "^2.9.0",
-    "vue": "^3.3.4",
-    "vue-fontawesome": "^0.0.2",
-    "vue-html2canvas": "^0.0.4",
-    "vue-router": "^4.2.4",
-    "vuex": "^4.1.0"
-  },
-  "devDependencies": {
-    "@rushstack/eslint-patch": "^1.4.0",
-    "@vitejs/plugin-vue": "^4.3.4",
-    "@vue/eslint-config-prettier": "^8.0.0",
-    "eslint": "^8.49.0",
-    "eslint-plugin-vue": "^9.17.0",
-    "prettier": "^3.0.3",
-    "vite": "^4.4.9"
+    "date-picker-svelte": "^2.10.1",
+    "highcharts": "^11.2.0",
+    "html2canvas": "^1.4.1",
+    "mc-datepicker": "^0.6.5",
+    "ol": "^8.2.0",
+    "ol-ext": "^4.0.13",
+    "proj4": "^2.9.2",
+    "svelte-fa": "^3.0.4"
   }
 }

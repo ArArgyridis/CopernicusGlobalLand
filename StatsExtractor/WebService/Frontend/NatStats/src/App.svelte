@@ -1,0 +1,74 @@
+<!---
+   Copyright (C) 2023  Argyros Argyridis arargyridis at gmail dot com
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--->
+
+<script>
+  import "bootstrap/dist/css/bootstrap.min.css";
+  import { onMount } from "svelte";
+  import LeftPanel from "./lib/LeftPanel/LeftPanel.svelte";
+  import MapApp from "./lib/MapApp/MapApp.svelte";
+  import Legend from "./lib/base/Legend.svelte";
+  import ArchiveDownloader from "./lib/LeftPanel/DataDownload/ArchiveDownloader/ArchiveDownloader.svelte";
+  import {showProductDownloadPanel} from "./store/ProductParameters.js";
+  import {currentProduct} from "./store/ProductParameters.js";
+
+  let refs = {};
+/*
+  onMount(() =>{
+    $showProductDownloadPanel = true;
+  })
+*/
+
+</script>
+
+<main>
+  <div class="container-fluid myApp">
+    <div class="row position-relative">
+      <ArchiveDownloader />
+      <div class="px-0 position-absolute"><MapApp /></div>
+      <Legend class="legend hide transition is-open position-absolute" bind:this={refs.legend} analysisMode = {$currentProduct.currentVariable.analysisMode}/>
+      <LeftPanel class="leftPanel" shown={true} />
+    </div>
+  </div>
+
+
+</main>
+
+<style>
+  @media (max-width: 900px) {
+    .myApp :global(.leftPanel) {
+      width: 100%;
+    }
+    .myApp :global(.legend) {
+        width: 500px;
+        left: 750px;
+        top: 150px;
+        z-index: 1;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .myApp :global(.leftPanel) {
+      width: 600px;
+    }
+    .myApp :global(.legend) {
+        width: 500px;
+        margin: auto;
+        bottom: 10px;
+        right: 5px;
+        z-index: 1;
+    }
+  }
+
+
+</style>
