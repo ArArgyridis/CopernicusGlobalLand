@@ -43,13 +43,12 @@
             }}
             type="button">Download Current Data</a
         >
-        <a
+        <button
             class="dropdown-item"
-            href="#"
             on:click={() => {
                 console.log("hereee");
                 $showProductDownloadPanel = true;
-            }}>Retrieve from Archive...</a
+            }}>Retrieve from Archive...</button
         >
     </div>
 </div>

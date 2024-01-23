@@ -152,15 +152,14 @@
                 <ul class="nav nav-tabs text-muted text-center">
                     {#each diagramKeys as key, idx}
                         <li class="nav-item">
-                            <a
+                            <button
                                 class="nav-link"
                                 class:active={idx == activeDiagramId}
                                 class:d-none={!displayDiagrams[key]}
                                 aria-current="page"
-                                href={"#"}
                                 on:click={() => {
                                     activeDiagramId = idx;
-                                }}>{refs.diagrams[key].title()}</a
+                                }}>{refs.diagrams[key].title()}</button
                             >
                         </li>
                     {/each}
