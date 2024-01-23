@@ -318,13 +318,6 @@
         margin-top: 2000px;
     }
 
-    .halfMap {
-        width: 50%;
-    }
-    .fullMap {
-        width:100%;
-    }
-
     .dashboardPrintInnerArea {
         margin: 31px;
         box-sizing: border-box;
@@ -332,6 +325,7 @@
         border: 1px solid black;
         height: 1692px;
     }
+
     .reportMaps :global(.reportMap) {
         width: 100%;
         height: 260px;
@@ -340,10 +334,12 @@
     .container {
         max-width: 100%;
     }
+
     .row {
         width: 1112px;
         /*flex-wrap: nowrap*/
     }
+    
     .col-sm {
         width: 100%;
         flex: 1 0 0%;
