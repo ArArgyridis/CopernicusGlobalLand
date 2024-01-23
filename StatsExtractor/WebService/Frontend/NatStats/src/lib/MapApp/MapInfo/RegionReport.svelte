@@ -32,9 +32,7 @@
     import utils from "../../base/utils";
     
     export let regionInfo;
-    export let diagramKeys;
     export let diagramData;
-    export let displayDiagrams;
     export let clickedCoordinates;
     export let parentId = "report";
 
