@@ -270,6 +270,8 @@ def main():
                 inDir = cfg.filesystem.imageryPath
                 if Constants.PRODUCT_INFO[pid].productType == "anomaly":
                     inDir = cfg.filesystem.anomalyProductsPath
+                elif Constants.PRODUCT_INFO[pid].productType == "lts":
+                    inDir = cfg.filesystem.ltsPath
                 obj.importProductFromLocalStorage(inDir)
             else:
                 if Constants.PRODUCT_INFO[pid].productType == "anomaly":
