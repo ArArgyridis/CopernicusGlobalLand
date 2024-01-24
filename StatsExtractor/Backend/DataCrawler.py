@@ -222,7 +222,6 @@ class DataCrawler:
 
     def importProductFromLocalStorage(self, storageDir):
 
-        execute = False
         inDir = None
         while inDir is None:
             inDir = scanDir([storageDir, ], self._prodInfo.productNames)
@@ -243,10 +242,9 @@ class DataCrawler:
             for result in pool.map(validateFile, files):
                 if result is not None:
                     dbData.append(result)
-                    execute = True
 
-
-        if execute:
+        print(dbData)
+        if len(dbData) > 0:
             self._store(dbData)
 
 def main():

@@ -68,22 +68,20 @@ def main():
 
 			#fetching stratifications and compute stats for each strata
 
-			#don't extract statistics for lts
-			if Constants.PRODUCT_INFO[pid].productType != "lts":
-				query = "select description from stratification s "
-				print("Extracting statistics")
+			query = "select description from stratification s "
+			print("Extracting statistics")
 			
-				res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
-				if res != 1:
-					for row in res:
-						statsCmd = """StatsExtractor "{0}" "{1}" """.format(config, row[0])
-						os.system(statsCmd)
+			res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
+			if res != 1:
+				for row in res:
+					statsCmd = """StatsExtractor "{0}" "{1}" """.format(config, row[0])
+					os.system(statsCmd)
 
-						"""
-						obj = ZonalStatsExtractor(row[0], config)
-						obj.process(productIds=[ Constants.PRODUCT_INFO[pid].id for pid in Constants.PRODUCT_INFO])
-						"""
-				print("process completed! Waiting....")
+					"""
+					obj = ZonalStatsExtractor(row[0], config)
+					obj.process(productIds=[ Constants.PRODUCT_INFO[pid].id for pid in Constants.PRODUCT_INFO])
+					"""
+			print("process completed! Waiting....")
 			sleep(43200)
 
 	return 0
