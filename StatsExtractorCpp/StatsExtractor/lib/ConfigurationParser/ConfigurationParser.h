@@ -36,7 +36,7 @@ struct SMTPOptions {
 };
 
 struct FileSystem {
-    std::filesystem::path imageryPath, anomalyProductsPath, tmpPath, tmpZipPath, serverZipPath, mapserverPath, mapFilePath;
+    std::filesystem::path imageryPath, ltsPath, anomalyProductsPath, tmpPath, tmpZipPath, serverZipPath, mapserverPath, mapFilePath;
 };
 
 

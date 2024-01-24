@@ -80,7 +80,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
         data <<"(" << row[0].as<std::string>() <<"," << row[1].as<std::string>() <<"," << row[2].as<std::string>() <<",";
         for (size_t i = 0; i< variable->colorInterpolation.size(); i++) {
             RGBVal color = variable->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
-            data << "'" << rgbToArrayString(color, 3) << "',";
+            data << "'" << rgbToArrayString(color) << "',";
         }
 
         if (row.back().is_null()) {
@@ -90,7 +90,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
 
         float dt =row.back().as<float>();
         RGBVal meanColor = variable->styleColors[variable->reverseValue(dt)];
-        //std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
         data <<"'" << rgbToArrayString(meanColor) <<"'),";
     }
 

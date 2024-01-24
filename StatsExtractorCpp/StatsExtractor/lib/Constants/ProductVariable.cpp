@@ -27,7 +27,7 @@ ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathShar
         colorInterpolation[i] = ColorInterpolation(params[colorRamps[i].c_str()]);
 
     if (firstProductPath != nullptr) {
-        if(*productType == "raw" && firstProductPath->extension() == ".nc")
+        if((*productType == "raw" || *productType == "lts") && firstProductPath->extension() == ".nc")
             firstProductVariablePath = std::make_shared<std::filesystem::path>(std::string("NETCDF:") + firstProductPath->string() + ":" + variable);
 
         loadMetadata();

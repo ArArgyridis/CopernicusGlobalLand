@@ -13,6 +13,8 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg
     rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.imageryPath);
     if (*productType == "anomaly")
         rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.anomalyProductsPath);
+    else if (*productType == "lts")
+        rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.ltsPath);
 
     id          = row[2].as<size_t>();
     pattern     = row[3].as<std::string>();

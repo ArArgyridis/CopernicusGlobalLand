@@ -55,7 +55,7 @@ unsigned long long getFolderSizeOnDisk(std::filesystem::path &dataPath) {
     return size;
 }
 
-MetadataDictPtr getMetadata(std::filesystem::__cxx11::path &dataPath) {
+MetadataDictPtr getMetadata(std::filesystem::__cxx11::path &dataPath, int forcedEPSG) {
     GDALDatasetUniquePtr tmpDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( dataPath.c_str(), GA_ReadOnly)));
     char **meta = tmpDataset->GetMetadata();
 
@@ -79,13 +79,17 @@ MetadataDictPtr getMetadata(std::filesystem::__cxx11::path &dataPath) {
     //adding projection type info
     const char* proj =tmpDataset->GetProjectionRef();
     OGRSpatialReference sr;
-    sr.importFromWkt(proj);
+    if (strlen(proj) > 0)
+        sr.importFromWkt(proj);
+    else
+        sr.importFromEPSG(forcedEPSG);
     (*bandMetadata)["MY_UNIT"] = sr.GetAttrValue("UNIT");
 
     //adding pixel size
     double gt[6];
     tmpDataset->GetGeoTransform(gt);
     (*bandMetadata)["MY_PIXEL_SIZE"] = std::to_string(gt[1]);
+
     (*bandMetadata)["MY_NO_DATA_VALUE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetNoDataValue());
     (*bandMetadata)["GDAL_RASTER_TYPE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetRasterDataType());
     meta = nullptr;
@@ -142,10 +146,10 @@ std::string randomString(size_t len) {
 }
 
 
-std::string rgbToArrayString(RGBVal &array, size_t keep) {
+std::string rgbToArrayString(RGBVal &array) {
     std::stringstream k;
     k <<"[";
-    for(size_t i = 0; i < keep; i++)
+    for(size_t i = 0; i < array.size(); i++)
         k << static_cast<unsigned int>(array[i]) <<",";
     k.seekp(-1, std::ios_base::end);
     k <<"]";
@@ -200,7 +204,6 @@ std::vector<RGBVal> styleColorParser(std::string &style) {
             if(res->nodesetval->nodeTab[i]->type == XML_ELEMENT_NODE) {
                 xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
                 sscanf(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))), "#%2x%2x%2x", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
-                styleColors[i][3] = 255;
             }
         }
     }
