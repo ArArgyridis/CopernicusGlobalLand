@@ -81,14 +81,16 @@ int main(int argc, char *argv[]) {
     char **tmpToCOGWarpOptions = nullptr;
     tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "BIGTIFF", "YES");
     tmpToCOGWarpOptions = CSLSetNameValue(tmpToCOGWarpOptions, "NUM_THREADS", "ALL_CPUS");
-
-    for (auto& product:Constants::productInfo)
+    std::vector<std::string> validProductTypes = {"raw", "anomaly"};
+    for (auto& product:Constants::productInfo) {
+        if(std::find(validProductTypes.begin(), validProductTypes.end(), *product.second->productType) == validProductTypes.end() ) //skipping products for which there is no need to create a cog
+            continue;
         for (auto& variable:product.second->variables) {
             //getting image datatype
             otb::ImageIOBase::IOComponentType inImageType;
             otb::ImageIOBase::Pointer imageIO = otb::ImageIOFactory::CreateImageIO(variable.second->firstProductVariablePath->c_str(), otb::ImageIOFactory::ReadMode);
             imageIO->ReadImageInformation();
-            std::cout << imageIO->GetComponentTypeAsString(imageIO->GetComponentType())<< std::endl;
+            //std::cout << imageIO->GetComponentTypeAsString(imageIO->GetComponentType())<< std::endl;
 
             std::string query = fmt::format(R"""(
                 SELECT pf.id, pf.rel_file_path
@@ -171,6 +173,7 @@ int main(int argc, char *argv[]) {
 
             }
         }
+    }
     CSLDestroy(tmpToCOGWarpOptions);
     return 0;
 }

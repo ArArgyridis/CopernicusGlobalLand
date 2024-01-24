@@ -33,7 +33,7 @@ class DBExporter:
         os.system(cmd)
         print("exporting needed data")
         cmd = """export PGPASSWORD='{0}' && pg_dump -d {1} -U {2} -h {3} \\
-        --data-only -t category -t product -t product_file_description -t product_file_variable -Fc > {4}""".format(
+        --data-only -t category -t product -t product_file_description -t product_file_variable -t long_term_anomaly_info -Fc > {4}""".format(
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].password,
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].db,
             self._cfg.pgConnections[self._cfg.statsInfo.connectionId].user,
