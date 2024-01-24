@@ -243,7 +243,6 @@ class DataCrawler:
                 if result is not None:
                     dbData.append(result)
 
-        print(dbData)
         if len(dbData) > 0:
             self._store(dbData)
 
