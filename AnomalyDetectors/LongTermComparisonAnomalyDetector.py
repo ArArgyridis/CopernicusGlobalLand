@@ -265,12 +265,13 @@ class LongTermComparisonAnomalyDetector:
 
             if result == 1 or len(result) == 0:
                 return
-            print("Starting computing anomalies")
 
             for batch in result:
 
                 if batch[0] is not None:
                     continue
+
+                print("Starting computing anomalies")
 
                 #try:
                 ltsmedian, ltsStd = self._computeLongTermMedianStd(batch[1])
@@ -385,7 +386,7 @@ class LongTermComparisonAnomalyDetector:
 
                 self._cfg.pgConnections[self._cfg.statsInfo.connectionId].executeQueries([query,])
 
-            print("anomalies computation finished!")
+                print("anomalies computation finished!")
 
             #except:
             #    print("An error has occured. Exiting")
