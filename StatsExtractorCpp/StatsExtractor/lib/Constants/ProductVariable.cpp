@@ -7,7 +7,8 @@ ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathShar
 
     id              = params["id"].GetInt64();
     variable        = params["variable"].GetString();
-    style           = params["style"].GetString();
+    if(!params["style"].IsNull())
+        style       = params["style"].GetString();
     styleColors     = styleColorParser(style);
     description     = params["description"].GetString();
     histogramBins   = params["histogram_bins"].GetInt64();
