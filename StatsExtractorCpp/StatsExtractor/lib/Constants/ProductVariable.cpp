@@ -10,7 +10,8 @@ ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathShar
     if(!params["style"].IsNull())
         style       = params["style"].GetString();
     styleColors     = styleColorParser(style);
-    description     = params["description"].GetString();
+    if(!params["description"].IsNull())
+        description = params["description"].GetString();
     histogramBins   = params["histogram_bins"].GetInt64();
 
     valueRange.low  = params["low_value"].GetDouble();
