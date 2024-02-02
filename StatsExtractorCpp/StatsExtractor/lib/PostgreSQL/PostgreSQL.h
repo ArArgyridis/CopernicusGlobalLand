@@ -84,6 +84,8 @@ public:
     static Pointer New(size_t id =0);
     static void printConnectionStatus(size_t& id);
 };
+
+std::vector<std::string> arrayToVector(const PGConn::PGField &field);
 }
 
 

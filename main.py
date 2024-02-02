@@ -61,7 +61,8 @@ def main():
 
 				if Constants.PRODUCT_INFO[pid].productType == "anomaly":
 					print("Computing anomalies!")
-					runLongTermComparisonAnomalyDetector(pid, config)
+					#runLongTermComparisonAnomalyDetector(pid, config)
+					cmd = """AnomalyExtractor "{0}" "{1}" """.format(config, pid)
 
 			cmd = "CogGenerator {0}".format(config)
 			os.system(cmd)

@@ -387,6 +387,7 @@ class LongTermComparisonAnomalyDetector:
                 self._cfg.pgConnections[self._cfg.statsInfo.connectionId].executeQueries([query,])
 
                 print("anomalies computation finished!")
+                return 0
 
             #except:
             #    print("An error has occured. Exiting")
@@ -420,12 +421,13 @@ def run(anomalyProductId, cfg):
     WHERE pfd.id = {0};""".format(anomalyProductId)
 
     result = tmpParser.pgConnections[tmpParser.statsInfo.connectionId].fetchQueryResult(query)
-    if len(result) == 0:
+    if len(result) == 0 or result[0][0] is None:
         print("Anomalies cannot be computed!")
         return 1
     curTime = result[0][0]
 
     relDelta = relativedelta(days=5)
+
     while curTime < result[0][1] + relDelta:
         dekads = [1,11,21]
         for i in range(len(dekads)):
@@ -444,8 +446,11 @@ def run(anomalyProductId, cfg):
             for variable in Constants.PRODUCT_INFO[anomalyProductId].variables:
                 id = Constants.PRODUCT_INFO[anomalyProductId].variables[variable].id
                 obj = LongTermComparisonAnomalyDetector(d1, d2, tmpParser, anomalyProductId, id)
-                obj.process
+                obj.process()
+
+
         curTime += relDelta
+
 
 
 

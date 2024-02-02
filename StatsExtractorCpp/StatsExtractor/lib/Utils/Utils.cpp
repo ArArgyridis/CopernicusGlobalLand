@@ -13,6 +13,10 @@
 */
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
+#include <boost/date_time/local_time/local_time.hpp>
+
 #include <boost/filesystem/operations.hpp>
 #include <iostream>
 #include <libxml/xpathInternals.h>
@@ -195,7 +199,7 @@ std::vector<RGBVal> styleColorParser(std::string &style) {
     xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("gml"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/gml"));
 
     XmlXpathObjectPtr res = XmlXpathObjectPtr(xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>("//sld:ColorMapEntry"), ctx.get()), xmlXPathFreeObject);
-    if (res != nullptr) {
+    if (res->nodesetval) {
 
         styleColors.resize(res->nodesetval->nodeNr);
         styleColors.reserve(res->nodesetval->nodeNr);
@@ -210,4 +214,10 @@ std::vector<RGBVal> styleColorParser(std::string &style) {
     return styleColors;
 }
 
+boost::posix_time::ptime iso8601ToUTCTimestamp(std::string date) {
+    boost::posix_time::ptime dateTime = boost::posix_time::time_from_string(date);
+    boost::local_time::time_zone_ptr timeZone(new boost::local_time::posix_time_zone("UTC"));
+    boost::local_time::local_date_time localDateTime(dateTime, timeZone);
+    return localDateTime.utc_time();
+}
 

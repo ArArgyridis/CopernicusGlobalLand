@@ -3,17 +3,12 @@
 
 template <class TInput, class TOutput>
 class LinearScaler {
-    double a, b;
+    double a, b, ignoreVal;
 public:
-    LinearScaler(double a, double b): a(a), b(b){}
-    /*
-    void setParams(double a, double b) {
-        this->a = a;
-        this->b = b;
-    }
-    */
+    LinearScaler(double a, double b, double ignoreVal=255): a(a), b(b), ignoreVal(ignoreVal){}
+
     TOutput operator()(const TInput& in) {
-        return a*in+b;
+        return (in==ignoreVal)*in + (in!= ignoreVal)*(a*in+b);
     }
 };
 

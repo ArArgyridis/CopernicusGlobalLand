@@ -35,15 +35,14 @@ public:
     /** Creation through object factory macro */
     itkTypeMacro(TInputImage, itk::ImageToImageFilter);
 
-
+    void SetExtent(double minX, double minY, double maxX, double maxY);
     void SetInputProjection(size_t epsg);
     void SetOutputProjection(size_t epsg);
+    void SetOutputSpacing(typename TInputImage::SpacingType spacing);
 
 protected:
     RasterReprojectionFilter();
     ~RasterReprojectionFilter(){};
-
-    //void BeforeThreadedGenerateData() override;
 
     void GenerateInputRequestedRegion() override;
     void GenerateOutputInformation() override;
@@ -63,17 +62,19 @@ private:
     OGRTransform directTransform, inverseTransform;
     OGRSpatialReference inSRS, dstSRS;
     std::mutex mtx;
-    typename TInputImage::PixelType nullPxl;
+    OGREnvelope dstEnvelope;
+    typename TInputImage::SpacingType dstSpacing;
 
     InputRegionType computeInputRegionFromOutput(const OutputRegionType& outputRegion);
 
 };
-
-
-
-
-
 }
+
+#ifndef OTB_MANUAL_INSTANTIATION
+#include "RasterReprojectionFilter.hxx"
+#endif
+
+
 #endif // RASTERREPROJECTFILTER_H
 
 

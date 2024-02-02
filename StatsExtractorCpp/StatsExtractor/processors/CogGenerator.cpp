@@ -90,7 +90,6 @@ int main(int argc, char *argv[]) {
             otb::ImageIOBase::IOComponentType inImageType;
             otb::ImageIOBase::Pointer imageIO = otb::ImageIOFactory::CreateImageIO(variable.second->firstProductVariablePath->c_str(), otb::ImageIOFactory::ReadMode);
             imageIO->ReadImageInformation();
-            //std::cout << imageIO->GetComponentTypeAsString(imageIO->GetComponentType())<< std::endl;
 
             std::string query = fmt::format(R"""(
                 SELECT pf.id, pf.rel_file_path

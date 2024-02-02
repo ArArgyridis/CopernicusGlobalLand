@@ -15,6 +15,8 @@
 #ifndef UTILS_HXX
 #define UTILS_HXX
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/filesystem/path.hpp>
 #include <filesystem>
 #include <gdal_priv.h>
@@ -211,5 +213,7 @@ OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer in
 
     return aoi;
 }
+
+boost::posix_time::ptime iso8601ToUTCTimestamp(std::string date);
 
 #endif // UTILS_HXX

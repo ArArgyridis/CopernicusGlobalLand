@@ -39,7 +39,7 @@ ProductVariable::Pointer ProductVariable::New(JsonValue &params, StringPtr prdTy
 }
 
 
-std::filesystem::path ProductVariable::productAbsPath(std::filesystem::path &relPath) {
+std::filesystem::path ProductVariable::productAbsPath(std::filesystem::path relPath) {
     std::filesystem::path retPath;
 
     if(relPath.extension() == ".nc")
@@ -49,9 +49,27 @@ std::filesystem::path ProductVariable::productAbsPath(std::filesystem::path &rel
     return retPath;
 }
 
+float ProductVariable::getScaleFactor() {
+    return scaleFactor;
+}
+
+float ProductVariable::getOffset() {
+    return addOffset;
+}
+
+std::shared_ptr<ProductInfo> ProductVariable::getProductInfo() {
+    if(!product.expired())
+        return std::shared_ptr<ProductInfo>(product);
+    return nullptr;
+}
 
 size_t ProductVariable::reverseValue(float value) {
     return reverseScaler(value, scaleFactor, addOffset);
+}
+
+void ProductVariable::setProductRef(std::weak_ptr<ProductInfo> prd) {
+    if(product.expired())
+        product = prd;
 }
 
 float ProductVariable::scaleValue(float value) {

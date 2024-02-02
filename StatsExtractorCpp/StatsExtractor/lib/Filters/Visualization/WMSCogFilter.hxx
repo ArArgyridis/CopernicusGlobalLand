@@ -19,8 +19,8 @@
 #include "WMSCogFilter.h"
 
 template <class TInputImage, class TOutputImage>
-otb::WMSCogFilter<TInputImage, TOutputImage>::WMSCogFilter(): itk::ImageToImageFilter<TInputImage, TOutputImage>(),nOutputBands(4), noDataFlags({false, false, false, true}),
-    noDataValues({0, 0, 0, 0}) {
+otb::WMSCogFilter<TInputImage, TOutputImage>::WMSCogFilter(): itk::ImageToImageFilter<TInputImage, TOutputImage>(),nOutputBands(3), noDataFlags({true}),
+    noDataValues({0, 0, 0}) {
     this->SetNumberOfRequiredInputs(1);
     this->SetNumberOfRequiredOutputs(1);
 }
@@ -45,7 +45,7 @@ template <class TInputImage, class TOutputImage>
 void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
     Superclass::GenerateOutputInformation();
     this->GetOutput()->SetNumberOfComponentsPerPixel(nOutputBands);
-    //otb::WriteNoDataFlags(noDataFlags, noDataValues, this->GetOutput()->GetImageMetadata());
+    otb::WriteNoDataFlags(noDataFlags, noDataValues, this->GetOutput()->GetImageMetadata());
     this->GetOutput()->SetProjectionRef(this->GetInput()->GetProjectionRef());
 }
 

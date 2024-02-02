@@ -188,3 +188,15 @@ void PGConn::releaseConnection(PGPoolConnectionPtr cn) {
     cn->first = false;
     //std::cout <<"count: " << cn->second->getCount() <<"\n";
 }
+
+std::vector<std::string> PGPool::arrayToVector(const PGConn::PGField &field) {
+    std::vector<std::string> ret;
+    auto arrayInfo = field.as_array();
+    for (auto stInfo = arrayInfo.get_next(); stInfo.first != pqxx::array_parser::juncture::done; stInfo = arrayInfo.get_next()) {
+        if(stInfo.first == pqxx::array_parser::juncture::row_start)
+            std::cout << "@@@@@: " << field.as<std::string>() <<"\n";
+        else if(stInfo.first == pqxx::array_parser::juncture::string_value)
+            ret.emplace_back(stInfo.second);
+    }
+    return ret;
+}

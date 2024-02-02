@@ -11,8 +11,9 @@ struct ValueRange {
     float low, mid, high;
 };
 
+class ProductInfo;
 class ProductVariable {
-
+    std::weak_ptr<ProductInfo> product;
     long double (*pixelsToArea)(long double&, long double);
     float scaleFactor, addOffset, pixelSize, noData;
     float (*scaler)(float, float&, float&);
@@ -40,11 +41,14 @@ public:
 
     long double convertPixelsToArea(long double pixels);
     float getNoData();
-    std::filesystem::path productAbsPath(std::filesystem::path &relPath);
+    float getOffset();
+    float getScaleFactor();
+    std::filesystem::path productAbsPath(std::filesystem::path relPath);
     size_t reverseValue(float value);
+    void setProductRef(std::weak_ptr<ProductInfo> prd);
     float scaleValue(float value);
-
     static Pointer New(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath);
+    std::shared_ptr<ProductInfo> getProductInfo();
 
 protected:
     ProductVariable();

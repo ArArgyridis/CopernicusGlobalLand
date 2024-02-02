@@ -17,6 +17,7 @@
 
 #include "Constants.h"
 std::map<std::size_t, ProductInfo::Pointer> Constants::productInfo;
+std::map<std::size_t, ProductVariable::Pointer> Constants::variableInfo;
 
 Constants::Constants() {}
 
@@ -54,9 +55,13 @@ unsigned short Constants::load(Configuration::SharedPtr cfg) {
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query, "");
 
-    for (size_t i = 0; i < res.size(); i++)
+    for (size_t i = 0; i < res.size(); i++) {
         Constants::productInfo.insert(std::make_pair<size_t, ProductInfo::Pointer>(res[i][2].as<size_t>(),
                                       ProductInfo::New(PGPool::PGConn::PGRow(res[i]), cfg)));
+        for(auto& variable: Constants::productInfo[res[i][2].as<size_t>()]->variables) {
+           Constants::variableInfo[variable.second->id] = variable.second;
+        }
+    }
 
     return 0;
 }

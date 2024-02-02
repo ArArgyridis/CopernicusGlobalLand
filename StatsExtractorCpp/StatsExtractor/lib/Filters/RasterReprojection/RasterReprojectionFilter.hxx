@@ -1,6 +1,7 @@
 #ifndef RASTERREPROJECTIONFILTER_HXX
 #define RASTERREPROJECTIONFILTER_HXX
 
+#include <limits>
 #include <otbNoDataHelper.h>
 #include <otbGeometriesProjectionFilter.h>
 #include <otbGeometriesSet.h>
@@ -19,6 +20,9 @@ RasterReprojectionFilter<TInputImage>::RasterReprojectionFilter():inEPSG(0),dstE
     this->SetNumberOfRequiredOutputs(1);
     inSRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
     dstSRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+
+    dstEnvelope.MinX = dstEnvelope.MaxX = dstEnvelope.MinY = dstEnvelope.MaxY = std::numeric_limits<double>::max();
+    dstSpacing[0] = dstSpacing[1] = std::numeric_limits<float>::max();
 }
 
 template <class TInputImage>
@@ -77,12 +81,6 @@ void RasterReprojectionFilter<TInputImage>::GenerateOutputInformation(){
     ReadNoDataFlags(input->GetImageMetadata(), noDataFlags, noDataValues);
     WriteNoDataFlags(noDataFlags, noDataValues, output->GetImageMetadata());
 
-    //setting no data pixel
-    nullPxl.SetSize(this->GetInput()->GetNumberOfComponentsPerPixel());
-    for(size_t i = 0; i < noDataValues.size(); i++)
-        nullPxl[i] = static_cast<typename TInputImage::PixelType::ValueType>(noDataValues[i]);
-
-
     //getting input epsg if it is not set
     if(inEPSG == 0) {
         inSRS.importFromWkt(input->GetProjectionRef().c_str());
@@ -105,42 +103,44 @@ void RasterReprojectionFilter<TInputImage>::GenerateOutputInformation(){
     OGRGeometryCollection dstImgBoundary;
     std::vector<OGRPoint> dstCorners(4);
 
-    //valid CRS bounds
-    OGREnvelope wgs84ValidEnvelope;
-    dstSRS.GetAreaOfUse(&wgs84ValidEnvelope.MinX, &wgs84ValidEnvelope.MinY, &wgs84ValidEnvelope.MaxX, &wgs84ValidEnvelope.MaxY, nullptr);
-    OGRSpatialReference wgs84;
-    wgs84.importFromEPSG(4326);
-    wgs84.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+    //if a bounding box is not spacified, then the dataset should be cropped to the maximum possible extent of the provided CRS
+    if (dstEnvelope.MinX == std::numeric_limits<double>::max() && dstEnvelope.MinX == dstEnvelope.MaxX) {
+        //valid CRS bounds
+        OGREnvelope wgs84ValidEnvelope;
+        dstSRS.GetAreaOfUse(&wgs84ValidEnvelope.MinX, &wgs84ValidEnvelope.MinY, &wgs84ValidEnvelope.MaxX, &wgs84ValidEnvelope.MaxY, nullptr);
+        OGRSpatialReference wgs84;
+        wgs84.importFromEPSG(4326);
+        wgs84.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
 
-    OGRTransform wgs84Transform = OGRTransform(OGRCreateCoordinateTransformation(&inSRS, &wgs84), &OGRCoordinateTransformation::DestroyCT);
-    //product bounds are cropped to the maximum extent of the destination crs
-    for (size_t i = 0; i < 2; i++)
-        for (size_t j = 0; j < 2; j++) {
-            typename TInputImage::IndexType idx;
-            idx[0] = i*size[0];
-            idx[1] = j*size[1];
+        OGRTransform wgs84Transform = OGRTransform(OGRCreateCoordinateTransformation(&inSRS, &wgs84), &OGRCoordinateTransformation::DestroyCT);
+        OGRTransform wgsToDstTransform = OGRTransform(OGRCreateCoordinateTransformation(&wgs84, &dstSRS), &OGRCoordinateTransformation::DestroyCT);
+        //product bounds are cropped to the maximum extent of the destination crs
+        for (size_t i = 0; i < 2; i++)
+            for (size_t j = 0; j < 2; j++) {
+                typename TInputImage::IndexType idx;
+                idx[0] = i*size[0];
+                idx[1] = j*size[1];
 
-            PointType2f tmpPnt;
-            input->TransformIndexToPhysicalPoint(idx, tmpPnt);
+                PointType2f tmpPnt;
+                input->TransformIndexToPhysicalPoint(idx, tmpPnt);
 
-            OGRPoint wgs84Pnt(tmpPnt[0], tmpPnt[1]);
-            wgs84Pnt.transform(wgs84Transform.get());
+                OGRPoint wgs84Pnt(tmpPnt[0], tmpPnt[1]);
+                wgs84Pnt.transform(wgs84Transform.get());
 
-            wgs84Pnt.setX(fmin(fmax(wgs84Pnt.getX(), wgs84ValidEnvelope.MinX),wgs84ValidEnvelope.MaxX));
-            wgs84Pnt.setY(fmin(fmax(wgs84Pnt.getY(), wgs84ValidEnvelope.MinY),wgs84ValidEnvelope.MaxY));
+                wgs84Pnt.setX(fmin(fmax(wgs84Pnt.getX(), wgs84ValidEnvelope.MinX),wgs84ValidEnvelope.MaxX));
+                wgs84Pnt.setY(fmin(fmax(wgs84Pnt.getY(), wgs84ValidEnvelope.MinY),wgs84ValidEnvelope.MaxY));
 
-            dstCorners[2*i+j] = wgs84Pnt;
-            dstCorners[2*i+j].transform(directTransform.get());
-            dstImgBoundary.addGeometry(&dstCorners[2*i+j]);
-        }
-
-    OGREnvelope dstEnvelope;
-    dstImgBoundary.getEnvelope(&dstEnvelope);
-
-    //setting output spacing
-    typename TInputImage::SpacingType dstSpacing;
-    dstSpacing[0] = (dstCorners[2].getX()-dstCorners[0].getX())/size[0];
-    dstSpacing[1] = (dstCorners[1].getY()-dstCorners[0].getY())/size[1];
+                dstCorners[2*i+j] = wgs84Pnt;
+                dstCorners[2*i+j].transform(wgsToDstTransform.get());
+                dstImgBoundary.addGeometry(&dstCorners[2*i+j]);
+            }
+        dstImgBoundary.getEnvelope(&dstEnvelope);
+    }
+    //setting output spacing if it is not specified
+    if (dstSpacing[0] == std::numeric_limits<float>::max()) { //estimate it
+        dstSpacing[0] = (dstEnvelope.MaxX - dstEnvelope.MinX)/size[0];
+        dstSpacing[1] = (dstEnvelope.MinY - dstEnvelope.MaxY)/size[1];
+    }
 
     //output origin
     PointType2f dstOrigin;
@@ -170,9 +170,15 @@ void RasterReprojectionFilter<TInputImage>::GenerateOutputInformation(){
     std::string tmpRef(wkt);
     output->SetProjectionRef(tmpRef);
     CPLFree(wkt);
-
 }
 
+template <class TInputImage>
+void RasterReprojectionFilter<TInputImage>::SetExtent(double minX, double minY, double maxX, double maxY){
+    dstEnvelope.MinX = minX;
+    dstEnvelope.MinY = minY;
+    dstEnvelope.MaxX = maxX;
+    dstEnvelope.MaxY = maxY;
+}
 
 template <class TInputImage>
 void RasterReprojectionFilter<TInputImage>::SetInputProjection(size_t epsg) {
@@ -184,6 +190,11 @@ template <class TInputImage>
 void RasterReprojectionFilter<TInputImage>::SetOutputProjection(size_t epsg) {
     dstEPSG = epsg;
     dstSRS.importFromEPSG(epsg);
+}
+
+template <class TInputImage>
+void RasterReprojectionFilter<TInputImage>::SetOutputSpacing(typename TInputImage::SpacingType spacing) {
+    dstSpacing = spacing;
 }
 
 template <class TInputImage>
@@ -221,13 +232,16 @@ typename RasterReprojectionFilter<TInputImage>::InputRegionType RasterReprojecti
     inIdx[0] = inEnvelope.MinX;
     inIdx[1] = inEnvelope.MinY;
 
+    //working in pixels, so no need to divide with spacing...
     typename InputRegionType::SizeType inSize;
-    inSize[0] = static_cast<size_t>(inEnvelope.MaxX - inEnvelope.MinX);
-    inSize[1] = static_cast<size_t>(inEnvelope.MaxY - inEnvelope.MinY);
+    inSize[0] = static_cast<size_t>((inEnvelope.MaxX - inEnvelope.MinX));
+    inSize[1] = static_cast<size_t>((inEnvelope.MaxY - inEnvelope.MinY));
 
     InputRegionType inImgRegion;
     inImgRegion.SetIndex(inIdx);
     inImgRegion.SetSize(inSize);
+
+    inImgRegion.Crop(this->GetInput()->GetLargestPossibleRegion());
     return inImgRegion;
 }
 
