@@ -14,8 +14,6 @@
 
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
-    import { onMount } from "svelte";
-    import requests from "../base/requests.js";
     import {
         categories,
         currentCategory,
@@ -30,16 +28,6 @@
         $categories[id].active = true;
         $currentCategory = $categories[id];
     }
-
-    onMount(() => {
-        requests.categories().then((response) => {
-            response.data.data.forEach((category) => {
-                if (category.active) $currentCategory = category;
-                $products[category.id] = [Product(null, $dateStart, $dateEnd)];
-            });
-            $categories = response.data.data;
-        });
-    });
 </script>
 
 <ul class="nav nav-tabs text-muted text-center">

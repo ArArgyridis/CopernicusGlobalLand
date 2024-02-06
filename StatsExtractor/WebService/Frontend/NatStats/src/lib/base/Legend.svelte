@@ -1,5 +1,5 @@
 <script>
-	/*
+/*
    Copyright (C) 2024  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@
 		update() {
 			this.style = "linear-gradient(to right, ";
 			let variable = $currentProduct.currentVariable;
-
 			//check if anomalies are displayed
 			if (analysisMode == analysisModes[1])
 				variable =

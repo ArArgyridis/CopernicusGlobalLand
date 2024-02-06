@@ -19,25 +19,51 @@
 
     export let bindToId;
     export let propIdx;
+    export let refs = {};
+
+    function lock() {
+        $currentProduct.currentVariable.mapViewOptions.analysisMode = analysisModes[0];
+        refs.headerButton.classList.add("collapsed");
+        refs.panelBody.classList.remove(...refs.panelBody.classList);
+        refs.panelBody.classList.add("accordion-collapse");
+        refs.panelBody.classList.add("collapse");
+    }
+    $: if (
+        ($currentProduct.currentVariable.currentAnomaly.variable == null || !($currentProduct.currentVariable.rtFlag.id.toString() in $currentProduct.currentVariable.currentAnomaly.variable.cog.layers))
+        && "panelBody" in refs) lock();
+
 </script>
 
 <div class="accordion-item">
     <h2 class="accordion-header">
         <button
             class="accordion-button collapsed"
-            class:disabledAccordion={$currentProduct.currentVariable.currentAnomaly.variable == null}
+            bind:this={refs.headerButton}
+            class:disabledAccordion={$currentProduct.currentVariable
+                .currentAnomaly.variable == null ||
+                !(
+                    $currentProduct.currentVariable.rtFlag.id in
+                    $currentProduct.currentVariable.currentAnomaly.variable.cog
+                        .layers
+                )}
             type="button"
             data-bs-toggle="collapse"
             data-bs-target={"#collapse_" + bindToId + "_" + propIdx}
             aria-expanded="false"
             aria-controls={"collapse_" + bindToId + "_" + propIdx}
-            disabled={$currentProduct.currentVariable.currentAnomaly.variable == null}
+            disabled={$currentProduct.currentVariable.currentAnomaly.variable ==
+                null ||
+                !(
+                    $currentProduct.currentVariable.rtFlag.id in
+                    $currentProduct.currentVariable.currentAnomaly.variable.cog.layers
+                )}
         >
             <b>Analysis Mode:&nbsp;</b>{$currentProduct.currentVariable.mapViewOptions.analysisMode}
         </button>
     </h2>
     <div
         id={"collapse_" + bindToId + "_" + propIdx}
+        bind:this={refs.panelBody}
         class="accordion-collapse collapse"
         data-bs-parent={"#" + bindToId}
     >

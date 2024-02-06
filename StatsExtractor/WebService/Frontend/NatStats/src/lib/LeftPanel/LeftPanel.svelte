@@ -31,23 +31,24 @@
     class:is-open={shown}
 >
     <Header />
-    <div class="panelBody">
-        <ProductCategories />
-        <DateRangePicker />
-        <Boundaries accordionId="boundaries" />
+    <div class="panelBody">     
+        <ProductCategories />     
+        <DateRangePicker />                 
+        <Boundaries accordionId="boundaries" />      
         <ProductConfiguration />
         <VariableDisplayOptions />
     </div>
 </div>
 <div class="col">
     <button
-        class="btn btn-sm leftPanelBtn transition hide"
+        class="btn btn-sm transition hide"
         class:is-open={shown}
         on:click={() => {
             shown = !shown;
         }}><Fa icon={faBars} color="#eaeada" size="3x" /></button
     >
 </div>
+
 
 <style>
     @media (max-width: 900px) {
@@ -83,4 +84,5 @@
     .hide.is-open {
         transform: translateX(0px);
     }
+    
 </style>

@@ -19,26 +19,23 @@
     export let bindToId;
     export let propIdx;
 
-    let variable = $currentProduct.currentVariable;
+    let variable, variables;
 
-    function updateVariable() {
-        variable = $currentProduct.currentVariable;
-    }
+    $: if($currentProduct != null && $currentProduct.currentVariable != variable) variable = $currentProduct.currentVariable;
+    $: if($currentProduct != null && $currentProduct.variables != variables) variables = $currentProduct.variables;
 
-    $: $currentProduct, updateVariable();
 </script>
-
 <div class="accordion-item">
     <h2 class="accordion-header">
         <button
             class="accordion-button collapsed"
-            class:disabledAccordion={$currentProduct.variables.length == 1}
+            class:disabledAccordion={variables.length == 1}
             type="button"
             data-bs-toggle="collapse"
             data-bs-target={"#collapse_" + bindToId + "_" + propIdx}
             aria-expanded="false"
             aria-controls={"collapse_" + bindToId + "_" + propIdx}
-            disabled={$currentProduct.variables.length == 1}
+            disabled={variables.length == 1}
         >
             <b>Variable: &nbsp;</b>
             {variable.description}
@@ -56,15 +53,15 @@
                 size="4"
                 aria-label="size 3 select example"
             >
-                {#each Object.keys($currentProduct.variables) as vrbl, vrblIdx}
+                {#each Object.keys(variables) as vrbl, vrblIdx}
                     <option
                         on:click={() => {
                             $currentProduct.currentVariable =
                                 $currentProduct.variables[vrbl];
                         }}
                         selected={variable.id ==
-                            $currentProduct.variables[vrbl].id}
-                        >{$currentProduct.variables[vrbl].description}</option
+                            variables[vrbl].id}
+                        >{variables[vrbl].description}</option
                     >
                 {/each}
             </select>

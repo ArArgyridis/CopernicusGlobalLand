@@ -27,19 +27,23 @@
 
     let dateFormat = "yyyy-MM-dd";
     let displayDates;
+    let activeProduct;
 
     function setCurrentDate(idx) {
-        $currentProduct.currentDate = utils.dateFromUTCDateString(
-            displayDates[idx],
-        );
+        $currentProduct.currentVariable.rtFlag.currentDate = utils.dateFromUTCDateString(displayDates[idx]);
     }
 
     function updateDates() {
-        displayDates = $currentProduct.dates[$currentProduct.rtFlag.id];
+        displayDates = $currentProduct.currentVariable.rtFlag.dates;
     }
 
-    $: $currentProduct, updateDates();
+    $: if ($currentProduct != null) activeProduct = $currentProduct;
+    $: if($currentProduct != null && displayDates != $currentProduct.currentVariable.rtFlag.dates) updateDates();
 </script>
+
+
+
+
 <div class="row align-items-center text-center">
     <div class="col">
         <h5>Time Range for Timeseries Analysis</h5>
@@ -77,9 +81,8 @@
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
                 >{utils
-                    .localDateAsUTCString($currentProduct.currentDate)
-                    .substring(0, 10)}</button
-            >
+                    .localDateAsUTCString(activeProduct.currentVariable.rtFlag.currentDate)
+                    .substring(0, 10)}</button>
             <ul
                 class="dropdown-menu scrollable"
                 aria-labelledby="availableDates"

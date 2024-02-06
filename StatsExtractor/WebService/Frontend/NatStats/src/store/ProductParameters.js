@@ -15,20 +15,17 @@
 import { readonly, writable } from 'svelte/store';
 import { Product } from "../lib/base/CGLSDataConstructors.js";
 
-//if a category or product has this id, code should not do a thing
+//initializing objects with dummy values
 let tmpNullId = 10000000;
 export let nullId = readonly(writable(tmpNullId));
 
 //category info
-let tmpCategories=[{ id: tmpNullId, title: "Dummy", active: false }]
-export const categories = writable(tmpCategories);
-export const currentCategory = writable(tmpCategories[0]);
+export const categories = writable([]);
+export const currentCategory = writable(null);
 
 //product info
-let tmpProducts = {};
-tmpProducts[tmpNullId] = [Product(null, new Date(), new Date()),];
-export const products = writable(tmpProducts);
-export const currentProduct = writable(tmpProducts[tmpNullId][0]);
+export const products = writable({});
+export const currentProduct = writable(null);
 
 //date info
 let tmpDate = new Date();

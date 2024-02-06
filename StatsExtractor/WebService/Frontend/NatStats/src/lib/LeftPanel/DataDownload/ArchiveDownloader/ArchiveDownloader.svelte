@@ -27,7 +27,7 @@
     import { onMount } from "svelte";
     import {
         Product,
-        consolidationPeriods,
+        ConsolidationPeriods,
     } from "../../../base/CGLSDataConstructors.js";
     import requests from "../../../base/requests.js";
     import { DateInput } from "date-picker-svelte";
@@ -58,21 +58,18 @@
     let downloadModal = null;
     let refs = {};
     refs["submitVerification"] = { checked: false };
-
     let dnCategories = null;
     let dnProducts = null;
     let dnDateEnd = null;
     let dnDateStart = null;
-    let dnRTs = null;
-
+    
     let selectedCategory = null;
     let selectedProduct = null;
+    let statisticsGetMode = statisticsGetModeOptions[0];
+    let myDnRTs = null; 
     let selectedRT = null;
-    let statisticsGetMode = null;
 
     let dateFormat = "yyyy-MM-dd";
-
-    init();
 
     function appendToDownloadList() {
         let key =
@@ -105,9 +102,11 @@
     }
 
     function displayDownloadModal() {
-        if (dnCategories.length == 0) return;
-
-        if (!$showProductDownloadPanel || !downloadModal) return;
+        if(!downloadModal) {
+            let modalEl = document.getElementById(downloadPanelId);
+            downloadModal = new bootstrap.Modal(modalEl);
+            modalEl.addEventListener("hidden.bs.modal", reset);
+        }
 
         //initializing variables
         init();
@@ -116,12 +115,14 @@
 
     function init() {
         dnCategories = structuredClone($categories);
-        selectedCategory = structuredClone($currentCategory);
         dnProducts = structuredClone($products);
-        selectedProduct = structuredClone($currentProduct);
         dnDateEnd = structuredClone($dateEnd);
         dnDateStart = structuredClone($dateStart);
+
+        selectedCategory = structuredClone($currentCategory);
+        selectedProduct = structuredClone($currentProduct);
         statisticsGetMode = statisticsGetModeOptions[0];
+        updateRT();
     }
 
     function reset() {
@@ -160,12 +161,12 @@
                 .then((response) => {
                     if (response.data.data != null) {
                         response.data.data.forEach((prd) => {
-                            prd = Product(prd, dtStart, dtEnd);
+                            prd = new Product(prd);
                         });
                         dnProducts[selectedCategory.id] = response.data.data;
                     } else
                         dnProducts[selectedCategory.id] = [
-                            Product(null, dtStart, dtEnd),
+                            new Product(null),
                         ];
                     selectedProduct = dnProducts[selectedCategory.id][0];
                 });
@@ -173,8 +174,8 @@
     }
 
     function updateRT() {
-        dnRTs = consolidationPeriods(selectedProduct.rt);
-        selectedRT = dnRTs[0];
+        myDnRTs = selectedProduct.currentVariable.rts;
+        selectedRT = myDnRTs[Object.keys(myDnRTs)[0]];
     }
 
     function validateEmail() {
@@ -186,18 +187,19 @@
     }
 
     onMount(() => {
+        init();
         //setting up modal
-        let modalEl = document.getElementById(downloadPanelId);
-        downloadModal = new bootstrap.Modal(modalEl);
-        modalEl.addEventListener("hidden.bs.modal", reset);
+
     });
 
     //reactivity
     $: if ($showProductDownloadPanel && $products) displayDownloadModal();
-    $: selectedProduct, updateRT();
+    $: if(selectedProduct && selectedProduct.currentVariable) updateRT();
     $: validEmail, downloadOptions, aoiSet, dataVerification();
 </script>
 
+
+{#if selectedRT != null} 
 <div
     class="modal fade"
     id={downloadPanelId}
@@ -275,9 +277,10 @@
                                         <h6>Select Product Data to Download</h6>
                                     </div>
                                 </div>
-                                <div class="row mt-1">
+                                <div class="row mt-1">                                     
                                     {#each statisticsGetModeOptions as mode, idx}
                                         <div class="form-check">
+                                           
                                             <input
                                                 class="form-check-input"
                                                 type="radio"
@@ -287,7 +290,7 @@
                                                 on:click={() => {
                                                     statisticsGetMode = mode;
                                                 }}
-                                            />
+                                            />                                         
                                             <label
                                                 class="form-check-label"
                                                 for="rawDataFetch"
@@ -295,6 +298,7 @@
                                             >
                                         </div>
                                     {/each}
+                                    
                                 </div>
                                 <div class="row mt-2">
                                     <div
@@ -342,6 +346,8 @@
                                         }}>{cat.title}</option
                                     >
                                 {/each}
+ 
+                                
                             </select>
                         </div>
                         <div class="col-5">
@@ -349,8 +355,8 @@
                             <select
                                 class="form-select"
                                 size="4"
-                                aria-label="size 3 select example"
-                            >
+                                aria-label="size 3 select example">
+                                
                                 {#each Object.keys(dnProducts[selectedCategory.id]) as prdId, idx}
                                     <option
                                         value={dnProducts[selectedCategory.id][
@@ -371,7 +377,7 @@
                                         >{dnProducts[selectedCategory.id][prdId]
                                             .description}</option
                                     >
-                                {/each}
+                                {/each}                                
                             </select>
                         </div>
                         <div class="col-2">
@@ -381,14 +387,14 @@
                                 size="4"
                                 aria-label="size 3 select example"
                             >
-                                {#each dnRTs as rt, idx}
+                                {#each Object.keys(myDnRTs) as rtId, idx}
                                     <option
-                                        value={rt.id}
-                                        selected={rt.id == selectedRT.id}
-                                        title={rt.description}
+                                        value={myDnRTs[rtId].id}
+                                        selected={myDnRTs[rtId].id == selectedRT.id}
+                                        title={myDnRTs[rtId].description}
                                         on:click={() => {
-                                            selectedRT = rt;
-                                        }}>{rt.description}</option
+                                            selectedRT = myDnRTs[rtId];
+                                        }}>{myDnRTs[rtId].description}</option
                                     >
                                 {/each}
                             </select>
@@ -399,7 +405,7 @@
                                 class="form-select"
                                 size="4"
                                 aria-label="size 3 select example"
-                            >
+                            >                           
                                 {#each selectedProduct.variables as variable, idx}
                                     <option
                                         value={variable.id}
@@ -473,7 +479,7 @@
         </div>
     </div>
 </div>
-
+{/if}
 <style>
     .myMap :global(.map) {
         height: 100%;

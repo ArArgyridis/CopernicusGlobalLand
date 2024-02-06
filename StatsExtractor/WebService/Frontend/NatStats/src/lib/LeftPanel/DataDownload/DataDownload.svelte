@@ -46,7 +46,6 @@
         <button
             class="dropdown-item"
             on:click={() => {
-                console.log("hereee");
                 $showProductDownloadPanel = true;
             }}>Retrieve from Archive...</button
         >

@@ -16,6 +16,5 @@ import { readonly, writable } from 'svelte/store';
 import { Boundary } from "../lib/base/CGLSDataConstructors.js";
 
 //boundaries info
-let tmpBoundaries = { 10000000: new Boundary({ id: 10000000, description: "No Boundary", url: null }) }
-export const boundaries = writable(tmpBoundaries);
-export const currentBoundary = writable(tmpBoundaries[10000000]);
+export const boundaries = writable(null);
+export const currentBoundary = writable(null);

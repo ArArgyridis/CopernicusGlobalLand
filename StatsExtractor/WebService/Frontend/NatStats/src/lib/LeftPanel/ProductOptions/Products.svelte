@@ -14,107 +14,30 @@
 
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
-    import requests from "../../base/requests.js";
     import {
         currentCategory,
         currentProduct,
-        dateEnd,
-        dateStart,
-        nullId,
         products,
     } from "../../../store/ProductParameters.js";
-    import {
-        analysisModes,
-        Product,
-        ProductFile,
-    } from "../../base/CGLSDataConstructors.js";
 
     export let bindToId;
     export let propIdx;
 
-    let dtStart = null;
-    let dtEnd = null;
+    let refs = {};
+    refs.dataInitializer={}
+
     let prods = $products[$currentCategory.id];
 
     let activeCategoryProduct = {}
-    activeCategoryProduct[$currentCategory.id] = prods[0];
+    activeCategoryProduct[$currentCategory.id] = $currentProduct;
 
-    function updateProductFiles() {
-        let variables = [
-            $currentProduct.currentVariable,
-            $currentProduct.currentVariable.currentAnomaly.variable,
-        ];
-
-        variables.forEach((variable) => {
-            if (variable == null) return;
-
-            if (Object.keys(variable.cog.layers).length > 0)
-                //data have been fetched
-                return;
-
-            requests
-                .productFiles(
-                    variable.id,
-                    $dateStart.toISOString(),
-                    $dateEnd.toISOString(),
-                )
-                .then((response) => {
-                    if (response.data.data == null) return;
-
-                    Object.keys(response.data.data).forEach((rt) => {
-                        variable.cog.layers[rt] = {};
-                        Object.keys(response.data.data[rt]).forEach((date) => {
-                            variable.cog.layers[rt][date] = new ProductFile(
-                                response.data.data[rt][date],
-                            );
-                        });
-                    });
-
-                    let date = $currentProduct.currentDate.toISOString().substr(0,19);
-                    //setting current Variable and current anomaly cog layers
-                    variable.cog.current = variable.cog.layers[$currentProduct.rtFlag.id][date];
-                });
-        });
+    function updateLocals() {
+        prods = $products[$currentCategory.id];
+        activeCategoryProduct[$currentCategory.id] = $currentProduct;
     }
 
-    function updateProducts() {
-        // no data have been fetched
-        if ($currentCategory.id == $nullId) return;
+    $: if($products && prods != $products[$currentCategory.id]) updateLocals();    
 
-        if (
-            dtStart == $dateStart.toISOString() &&
-            dtEnd == $dateEnd.toISOString() &&
-            $currentCategory.id in $products
-        ) {
-            prods = $products[$currentCategory.id];
-            if (activeCategoryProduct[$currentCategory.id]) //use last
-                $currentProduct = activeCategoryProduct[$currentCategory.id];
-            else {//use first and cache it
-                $currentProduct = $products[$currentCategory.id][0];
-                activeCategoryProduct[$currentCategory.id] = $currentProduct;
-            }
-            return 0;
-        }
-
-        dtStart = $dateStart.toISOString();
-        dtEnd = $dateEnd.toISOString();
-        requests
-            .fetchProductInfo(dtStart, dtEnd, $currentCategory.id)
-            .then((response) => {
-                if (response.data.data != null) {
-                    response.data.data.forEach((prd) => {
-                        prd = Product(prd, dtStart, dtEnd);
-                    });
-                    $products[$currentCategory.id] = response.data.data;
-                } else $products[$currentCategory.id] = [Product(null, dtStart, dtEnd)];
-                prods = $products[$currentCategory.id];
-                $currentProduct = $products[$currentCategory.id][0];
-                activeCategoryProduct[$currentCategory.id] = $products[$currentCategory.id][0];
-            });        
-    }
-
-    $: $currentCategory, $dateStart, $dateEnd, updateProducts();
-    $: $currentProduct, updateProductFiles();
 </script>
 
 <div class="accordion-item">
@@ -127,7 +50,9 @@
             aria-expanded="true"
             aria-controls={"collapse_" + bindToId + "_" + propIdx}
         >
-            <b>Product:&nbsp;</b>{$currentProduct.description}
+            
+            <b>Product:&nbsp;</b>{activeCategoryProduct[$currentCategory.id].description}
+           
         </button>
     </h2>
     <div
@@ -147,7 +72,7 @@
                             $currentProduct = prd;
                             activeCategoryProduct[$currentCategory.id] = prd;
                         }}
-                        selected={$currentProduct.id == prd.id}
+                        selected={activeCategoryProduct[$currentCategory.id].id == prd.id}
                         >{prd.description}</option
                     >
                 {/each}

@@ -55,7 +55,7 @@
                 },
             },
             subtitle: {
-                text: $currentProduct.currentDate.toDateString(),
+                text: $currentProduct.currentVariable.rtFlag.currentDate.toDateString(),
             },
             tooltip: {
                 headerFormat: null,
@@ -99,8 +99,8 @@
         requests
             .getPieDataByDateAndPolygon(
                 $currentProduct.currentVariable.id,
-                $currentProduct.rtFlag.id,
-                $currentProduct.currentDate,
+                $currentProduct.currentVariable.rtFlag.id,
+                $currentProduct.currentVariable.rtFlag.currentDate,
                 polygonId,
             )
             .then((response) => {                

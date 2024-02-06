@@ -51,7 +51,7 @@
                 $dateStart.toISOString(),
                 $dateEnd.toISOString(),
                 variable.id,
-                $currentProduct.rtFlag.id,
+                $currentProduct.currentVariable.rtFlag.id,
             )
             .then((response) => {
                 diagramData = [
@@ -176,10 +176,10 @@
                         // mark the weekend
                         color: "rgba(255,145,71,0.9)",
                         from:
-                            Date.parse($currentProduct.currentDate) -
+                            Date.parse($currentProduct.currentVariable.rtFlag.currentDate) -
                             86400 * 34,
                         to:
-                            Date.parse($currentProduct.currentDate) +
+                            Date.parse($currentProduct.currentVariable.rtFlag.currentDate) +
                             86400 * 34,
                         id: "pltbnd1",
                     },
@@ -200,7 +200,8 @@
         if (mode == "raw") ret = $currentProduct.currentVariable != null;
         else if (mode == "anomalies")
             ret =
-                $currentProduct.currentVariable.currentAnomaly.variable != null;
+                $currentProduct.currentVariable.currentAnomaly.variable != null  && 
+            $currentProduct.currentVariable.rtFlag.id in $currentProduct.currentVariable.currentAnomaly.variable.cog.layers;
         return ret;
     }
 

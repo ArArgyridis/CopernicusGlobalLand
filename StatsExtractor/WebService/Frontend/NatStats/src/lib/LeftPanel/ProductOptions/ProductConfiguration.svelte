@@ -22,7 +22,8 @@
 <div class="mt-2 row d-flex align-items-center text-center">
     <h5>Product Configuration</h5>
     <div class="accordion accordion-flush overflow-auto mb-2" id={accordionId}>
-        <Products bindToId={accordionId} propIdx="0" />
+          
+        <Products bindToId={accordionId} propIdx="0" />     
         <ProductVariables bindToId={accordionId} propIdx="1" />
         <ConsolidationPeriod bindToId={accordionId} propIdx="2" />
     </div>

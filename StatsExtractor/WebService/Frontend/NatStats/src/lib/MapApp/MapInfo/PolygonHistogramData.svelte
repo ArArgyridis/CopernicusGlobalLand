@@ -47,9 +47,9 @@
         requests
             .fetchHistogramByPolygonAndDate(
                 polygonId,
-                $currentProduct.currentDate,
+                $currentProduct.currentVariable.rtFlag.currentDate,
                 $currentProduct.currentVariable.id,
-                $currentProduct.rtFlag.id,
+                $currentProduct.currentVariable.rtFlag.id,
             )
             .then((response) => {
                 let xAxisCategories = [];
@@ -88,7 +88,7 @@
                 },
             },
             subtitle: {
-                text: $currentProduct.currentDate.toDateString(),
+                text: $currentProduct.currentVariable.rtFlag.currentDate.toDateString(),
             },
             plotOptions: {
                 column: {

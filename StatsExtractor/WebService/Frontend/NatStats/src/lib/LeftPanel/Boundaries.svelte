@@ -14,29 +14,13 @@
 
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
-    import { onMount } from "svelte";
-    import requests from "../base/requests.js";
-    import { Boundary } from "../base/CGLSDataConstructors.js";
     import { currentBoundary, boundaries } from "../../store/Boundaries.js";
 
     export let accordionId = "boundaries";
     export let bindToId = accordionId;
     export let propIdx = 0;
 
-    onMount(() => {
-        requests.fetchBoundaryInfo().then((response) => {
-            let keys = Object.keys(response.data.data);
-            keys.sort();
 
-            keys.forEach((stratificationId) => {
-                response.data.data[stratificationId] = new Boundary(
-                    response.data.data[stratificationId],
-                );
-            });
-            $boundaries = response.data.data;
-            $currentBoundary = $boundaries[keys[0]];
-        });
-    });
 </script>
 
 <div class="row mt-2 text-center">

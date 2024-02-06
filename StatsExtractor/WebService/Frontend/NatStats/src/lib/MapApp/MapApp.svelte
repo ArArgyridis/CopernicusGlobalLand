@@ -71,8 +71,6 @@
     }
 
     function refreshBoundaries() {
-        if (!("map" in refs)) return;
-
         let keys = Object.keys($boundaries);
         keys.sort();
         keys.forEach((key) => {
@@ -116,16 +114,15 @@
             variable = $currentProduct.currentVariable.currentAnomaly.variable;
 
         let varId = variable.id;
-        let rt = $currentProduct.rtFlag.id;
+        let rt = $currentProduct.currentVariable.rtFlag.id;
         let tmpLayer = refs.map.getLayerObject(
             $boundaries[visibleBoundary].layerId,
         );
-        let date = $currentProduct.currentDate.toISOString().substr(0, 19);
+        let date = $currentProduct.currentVariable.rtFlag.currentDate.toISOString().substr(0, 19);
         let strata = $currentBoundary;
 
-        if (Object.keys(variable.cog.layers).length > 0) //cog layers have been fetched
+        if (Object.keys(variable.cog.layers).length > 0 && rt in variable.cog.layers && date in variable.cog.layers[rt]) //cog layers have been fetched
             variable.cog.current = variable.cog.layers[rt][date];
-
         if (visibleCogLayer != null)
             refs.map.setVisibility(visibleCogLayer.layerId, false);
 
@@ -214,11 +211,12 @@
             }
         } else if (dataView == stratifiedOrRawModes[1]) {
 
-            if (Object.keys(variable.cog.layers).length == 0) return;
-
             tmpLayer.setStyle(outlineboundariestyle);
             if (visibleCogLayer != null)
                 refs.map.setVisibility(visibleCogLayer.layerId, false);
+
+            if(variable.cog.current.url == null)
+                return;
             
             if (variable.cog.current.layerId == null)
                 variable.cog.current.layerId = refs.map.createGeoTIFFLayer(
@@ -257,11 +255,11 @@
     }
 
     //reactivity
-    $: $boundaries, refreshBoundaries();
+    $: if($boundaries && "map" in refs) refreshBoundaries();
     $: $currentBoundary, changeVisibleBoundary();
-    $: $currentBoundary, $currentProduct, setViewOptions();
+    $: if($currentBoundary && $currentProduct && "map" in refs) setViewOptions();
     $: mapInfoLoading, toggleSpinner();
-    $:clickedCoordinates, refreshMarker();
+    $: clickedCoordinates, refreshMarker();
 
     onMount(() => {
         let layerId = refs.map.addBingLayerToMap("aerial", options.bingKey);

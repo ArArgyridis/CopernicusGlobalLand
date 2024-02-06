@@ -15,7 +15,7 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
     import { currentProduct } from "../../../store/ProductParameters.js";
-    import { consolidationPeriods } from "../../base/CGLSDataConstructors.js";
+    import { ConsolidationPeriods } from "../../base/CGLSDataConstructors.js";
 
     export let bindToId;
     export let propIdx;
@@ -23,7 +23,7 @@
     let currentRT;
 
     function updateConsolidationPeriods() {
-        currentRT = $currentProduct.rtFlag;
+        currentRT = $currentProduct.currentVariable.rtFlag;
     }
 
     $: $currentProduct, updateConsolidationPeriods();
@@ -56,14 +56,13 @@
                 size="4"
                 aria-label="size 3 select example"
             >
-                {#each consolidationPeriods($currentProduct.rt) as rt, rtIdx}
+                {#each Object.keys($currentProduct.currentVariable.rts) as rt, rtIdx}
                     <option
                         on:click={() => {
-                            $currentProduct.rtFlag = rt;
+                            $currentProduct.currentVariable.rtFlag = $currentProduct.currentVariable.rts[rt];
                         }}
-                        selected={rt.id == currentRT.id}
-                        >{rt.description}</option
-                    >
+                        selected={$currentProduct.currentVariable.rts[rt].id == currentRT.id}
+                        >{$currentProduct.currentVariable.rts[rt].description}</option>
                 {/each}
             </select>
         </div>

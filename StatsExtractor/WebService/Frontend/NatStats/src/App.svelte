@@ -19,36 +19,42 @@
   import MapApp from "./lib/MapApp/MapApp.svelte";
   import Legend from "./lib/base/Legend.svelte";
   import ArchiveDownloader from "./lib/LeftPanel/DataDownload/ArchiveDownloader/ArchiveDownloader.svelte";
-  import {showProductDownloadPanel} from "./store/ProductParameters.js";
   import {currentProduct} from "./store/ProductParameters.js";
-
+  import {currentBoundary} from "./store/Boundaries.js";
+  import DataInitializer from "./lib/base/DataInitializer.svelte";
+  
+  let finishedDataLoading = false;
   let refs = {};
-/*
-  onMount(() =>{
-    $showProductDownloadPanel = true;
-  })
-*/
+
+  
+
 
 </script>
 
 <main>
+  <DataInitializer bind:finishedLoading={finishedDataLoading} />
+  {#if finishedDataLoading}
   <div class="container-fluid myApp">
     <div class="row position-relative">
+
       <ArchiveDownloader />
+
       <div class="px-0 position-absolute"><MapApp /></div>
-      <Legend class="legend hide transition is-open position-absolute" bind:this={refs.legend} analysisMode = {$currentProduct.currentVariable.analysisMode}/>
       <LeftPanel class="leftPanel" shown={true} />
+
+      <Legend class="legend hide transition is-open position-absolute" bind:this={refs.legend} analysisMode = {$currentProduct.currentVariable.analysisMode}/>
       <img class="logo" src="assets/copernicus_land_monitoring.png" alt="Copernicus GLMS"/>
+
     </div>
   </div>
-
-
+  {/if}
 </main>
 
 <style>
   @media (max-width: 900px) {
     .myApp :global(.leftPanel) {
       width: 100%;
+      z-index: 1;
     }
     .myApp :global(.legend) {
         width: 500px;

@@ -180,7 +180,7 @@
     });
 
 </script>
-<!--    -->
+
 <div
     class="dashboardPrintArea"
     bind:this={refs.printArea}
@@ -213,7 +213,7 @@
                 >
                     <h6>
                         Examination Period: {$dateStart.toDateString()} / {$dateEnd.toDateString()},
-                        Selected Date: {$currentProduct.currentDate.toDateString()}
+                        Selected Date: {$currentProduct.currentVariable.rtFlag.currentDate.toDateString()}
                     </h6>
                 </div>
             </div>
@@ -232,8 +232,8 @@
                 </div>
                 <div
                     class="col-sm reportMaps d-flex align-items-center flex-column justify-content-center"
-                    class:d-none={$currentProduct.currentVariable.currentAnomaly
-                        .variable == null}
+                    class:d-none={$currentProduct.currentVariable.currentAnomaly.variable == null || 
+                    !($currentProduct.currentVariable.rtFlag.id in $currentProduct.currentVariable.currentAnomaly.variable.cog.layers)}
                 >                   
                         <h6>Anomalies</h6>
                         <OlMap
@@ -284,7 +284,7 @@
         <div
             class="container"
             hidden={$currentProduct.currentVariable.currentAnomaly.variable ==
-                null}
+                null || !($currentProduct.currentVariable.rtFlag.id in $currentProduct.currentVariable.currentAnomaly.variable.cog.layers)}
         >
             <div class="row">
                 <div class="col-sm">

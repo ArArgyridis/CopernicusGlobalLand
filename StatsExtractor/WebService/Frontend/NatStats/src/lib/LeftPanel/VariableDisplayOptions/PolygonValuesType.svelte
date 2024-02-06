@@ -35,10 +35,7 @@
         <button
             class="accordion-button collapsed"
             class:disabledAccordion={!(
-                $currentProduct.currentVariable.mapViewOptions.analysisMode ==
-                    analysisModes[0] &&
-                $currentProduct.currentVariable.mapViewOptions.dataView ==
-                    stratifiedOrRawModes[0]
+                $currentProduct.currentVariable.mapViewOptions.analysisMode == analysisModes[0] && $currentProduct.currentVariable.mapViewOptions.dataView == stratifiedOrRawModes[0]
             )}
             type="button"
             data-bs-toggle="collapse"
@@ -46,14 +43,11 @@
             aria-expanded="false"
             aria-controls={"collapse_" + bindToId + "_" + propIdx}
             disabled={!(
-                $currentProduct.currentVariable.mapViewOptions.analysisMode ==
-                    analysisModes[0] &&
-                $currentProduct.currentVariable.mapViewOptions.dataView ==
-                    stratifiedOrRawModes[0]
+                $currentProduct.currentVariable.mapViewOptions.analysisMode ==analysisModes[0] &&
+                $currentProduct.currentVariable.mapViewOptions.dataView == stratifiedOrRawModes[0]
             )}
         >
-            <b>Displayed Boundary Statistics:&nbsp;</b>{variable.mapViewOptions
-                .displayPolygonValue.title}
+            <b>Displayed Boundary Statistics:&nbsp;</b>{variable.mapViewOptions.displayPolygonValue.title}
         </button>
     </h2>
 

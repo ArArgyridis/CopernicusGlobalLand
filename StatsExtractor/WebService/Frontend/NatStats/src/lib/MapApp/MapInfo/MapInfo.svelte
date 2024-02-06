@@ -16,7 +16,6 @@
     import bootstrap from "bootstrap/dist/js/bootstrap.min.js";
     import requests from "../../base/requests";
     import {
-        categories,
         currentProduct,
         dateEnd,
         dateStart,
@@ -114,13 +113,12 @@
         modalEl.addEventListener("hidden.bs.modal", resetActiveDiagram);
         //loading diagram names
         diagramKeys = Object.keys(refs.diagrams);
+        updateDiagramsVisibility();
     });
 </script>
 
 <RegionReport
     {diagramData}
-    {displayDiagrams}
-    {diagramKeys}
     {clickedCoordinates}
     regionInfo={selectedRegion}
     bind:this={refs.regionReport}
