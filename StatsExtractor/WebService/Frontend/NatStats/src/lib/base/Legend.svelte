@@ -77,7 +77,6 @@
 
 	let style = "linear-gradient(to right, ";
 	let settings = new LegendSettings();
-
 	$: $currentProduct, settings.update();
 </script>
 
