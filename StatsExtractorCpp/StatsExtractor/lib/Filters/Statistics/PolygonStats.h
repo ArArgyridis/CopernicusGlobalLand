@@ -76,14 +76,9 @@ public:
         auto val = variable->lutProductValues[pixelData-variable->minMaxValues[0]];
         mean += val;
         sd   += pow(val,2);
-
-        if (min > val)
-            min = val;
-
+        min = (min > val)*val + (min <= val)*min;
+        max = (max < val)*val + (max >= val)*max;
         //std::cout << max <<"\t" << val <<"\t" << (max < val) <<"\n";
-
-        if (max < val)
-            max = val;
 
         size_t idx = (val <= variable->valueRange.low)*0 +
                 (variable->valueRange.low <= val && val < variable->valueRange.mid)*1 +
