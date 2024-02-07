@@ -87,6 +87,10 @@ export class ConsolidationPeriods {
 			id: 2,
 			description: "2 - Dekads (RT-2)"
 		},
+		5: {
+			id: 5,
+			description: "5 - Dekads (RT-5)"
+		},
 		6: {
 			id: 6,
 			description: "6 - Dekads (RT-6)"

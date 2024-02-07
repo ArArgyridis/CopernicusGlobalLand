@@ -41,7 +41,6 @@
 
     function fetchProducts() {
         console.log("getting products");
-        $currentProduct = null;
         fetchedProductData = new Set();
         dtStart = $dateStart;
         dtEnd = $dateEnd;
