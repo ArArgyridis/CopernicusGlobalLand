@@ -220,20 +220,22 @@
 		overviews = null,
 		min = 0,
 		max = 255,
-		noData = 65535,
+		noData = null,
 		interpolate = false,
 	) {
+		let sourceObj =  {
+			url: url,
+			min: min,
+			max: max
+		}
+
+		if(noData != null)
+			sourceObj.nodata = noData;
+
 		const source = new GeoTIFF({
-			sources: [
-				{
-					url: url,
-					min: min,
-					max: max,
-					nodata: noData
-				},
-			],
+			sources: [sourceObj],
 		});
-		//console.log(source.getTile().interpolate = false);
+		//need to see how to update the
 		source.tileOptions.interpolate = interpolate; //hack to disable interpollation
 		return createTileLayer(source, zIndex, "WebGLTileLayer");
 	}
