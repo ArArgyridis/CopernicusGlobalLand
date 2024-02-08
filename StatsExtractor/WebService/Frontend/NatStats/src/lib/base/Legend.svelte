@@ -21,6 +21,11 @@
 	} from "../base/CGLSDataConstructors.js";
 
 	export let analysisMode;
+	export let product = null;
+
+	let currentProductId = null;
+	let currentDisplayMode = null;
+
 
 	class LegendSettings {
 		constructor() {
@@ -29,6 +34,7 @@
 			this.style = "linear-gradient(to right, ";
 		}
 		update() {
+			currentProductId = $currentProduct.id;
 			this.style = "linear-gradient(to right, ";
 			let variable = $currentProduct.currentVariable;
 			//check if anomalies are displayed
@@ -37,9 +43,8 @@
 					$currentProduct.currentVariable.currentAnomaly.variable;
 			
 			if (!variable) return;
-
 			let valueRange = variable.valueRanges;
-			let style = variable.style;
+			let style = structuredClone(variable.style);
 
 			//if pixel view or mean polygon values are not displayed...
 			if (!($currentProduct.currentVariable.mapViewOptions.dataView == stratifiedOrRawModes[1] || $currentProduct.currentVariable.mapViewOptions.displayPolygonValue.id == 0)) {
@@ -47,7 +52,9 @@
 				let paletteCol = variable.mapViewOptions.displayPolygonValue.paletteCol;
 				let tmpStyle = [];
 				let keys = Array();
-				Object.keys(variable[paletteCol]).forEach(key=>{keys.push(parseInt(key))});
+				Object.keys(variable[paletteCol]).forEach(key=>{
+					keys.push(parseInt(key))
+				});
 				keys = keys.sort(function(a,b){return a-b;});
 
 				keys.forEach(key =>{
@@ -75,9 +82,8 @@
 		}
 	}
 
-	let style = "linear-gradient(to right, ";
 	let settings = new LegendSettings();
-	$: $currentProduct, settings.update();
+	$: if($currentProduct) settings.update();
 </script>
 
 <div class={$$restProps.class +" container legendBackground"}>

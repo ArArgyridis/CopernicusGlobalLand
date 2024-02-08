@@ -69,7 +69,7 @@ void StatsExtractor::process() {
                     JOIN product p ON TRUE
                     JOIN product_file_description pfd ON p.id = pfd.product_id
                     JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-                    JOIN product_file pf ON pfd.id = pf.product_file_description_id -- AND pf.id = 71 --AND sg.id = 171
+                    JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 1 --AND pf.id = 71 --AND sg.id = 171
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
                     WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
                 ),extent AS(
@@ -106,6 +106,7 @@ void StatsExtractor::process() {
             //Creating stats partition table if not exists
             query = fmt::format(R"""(CREATE TABLE IF NOT EXISTS poly_stats_{0}_{1}_{2} PARTITION OF poly_stats FOR VALUES FROM ({0},{1}) TO ({0},{2});)""",
                                 variable.second->id, processInfo[0][7].as<size_t>(), processInfo[0][8].as<size_t>());
+            //std::cout << query <<"\n";
             cn->executeQuery(query);
 
             JsonDocumentUniquePtr  imageGroups = std::make_unique<JsonDocument>();

@@ -36,12 +36,9 @@
   {#if finishedDataLoading}
   <div class="container-fluid myApp">
     <div class="row position-relative">
-
-      <ArchiveDownloader />
-
       <div class="px-0 position-absolute"><MapApp /></div>
       <LeftPanel class="leftPanel" shown={true} />
-
+      <ArchiveDownloader />
       <Legend class="legend hide transition is-open position-absolute" bind:this={refs.legend} analysisMode = {$currentProduct.currentVariable.mapViewOptions.analysisMode}/>
       <img class="logo" src="assets/copernicus_land_monitoring.png" alt="Copernicus GLMS"/>
 

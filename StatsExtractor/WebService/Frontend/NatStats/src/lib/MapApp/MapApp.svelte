@@ -31,10 +31,9 @@
     import MapInfo from "./MapInfo/MapInfo.svelte";
     import utils from "../base/utils.js";
 
-
     let refs = {};
     let visibleBoundary = null;
-    let visibleCogLayer = null;
+    let visibleCogLayerId = null;
     let selectedFeatureId = null;
     let clickedCoordinates = null;
     let mapInfoLoading = false;
@@ -91,9 +90,13 @@
 
         refs.map.clearVectorLayer(markerLayer);
         console.log();
-        refs.map.addPointToLayer(markerLayer, 1, clickedCoordinates.obj.coordinate[0], clickedCoordinates.obj.coordinate[1], {icon: new Icon(utils.markerProperties())});
-
-         
+        refs.map.addPointToLayer(
+            markerLayer,
+            1,
+            clickedCoordinates.obj.coordinate[0],
+            clickedCoordinates.obj.coordinate[1],
+            { icon: new Icon(utils.markerProperties()) },
+        );
     }
 
     function setBoundaryStyle(tmpLayer, style) {
@@ -118,13 +121,20 @@
         let tmpLayer = refs.map.getLayerObject(
             $boundaries[visibleBoundary].layerId,
         );
-        let date = $currentProduct.currentVariable.rtFlag.currentDate.toISOString().substr(0, 19);
+        let date = $currentProduct.currentVariable.rtFlag.currentDate
+            .toISOString()
+            .substr(0, 19);
         let strata = $currentBoundary;
 
-        if (Object.keys(variable.cog.layers).length > 0 && rt in variable.cog.layers && date in variable.cog.layers[rt]) //cog layers have been fetched
+        if (
+            Object.keys(variable.cog.layers).length > 0 &&
+            rt in variable.cog.layers &&
+            date in variable.cog.layers[rt]
+        )
+            //cog layers have been fetched
             variable.cog.current = variable.cog.layers[rt][date];
-        if (visibleCogLayer != null)
-            refs.map.setVisibility(visibleCogLayer.layerId, false);
+        if (visibleCogLayerId != null)
+            refs.map.setVisibility(visibleCogLayerId, false);
 
         if (dataView == stratifiedOrRawModes[0]) {
             //checking if color in cache
@@ -210,22 +220,20 @@
                 //console.log("spinner deactivated 3");
             }
         } else if (dataView == stratifiedOrRawModes[1]) {
-
             tmpLayer.setStyle(outlineboundariestyle);
-            if (visibleCogLayer != null)
-                refs.map.setVisibility(visibleCogLayer.layerId, false);
+            if (visibleCogLayerId != null)
+                refs.map.setVisibility(visibleCogLayerId, false);
 
-            if(variable.cog.current.url == null)
-                return;
-            
-            if (variable.cog.current.layerId == null)
+            if (!variable.cog.current.url) return;
+
+            if (!variable.cog.current.layerId)
                 variable.cog.current.layerId = refs.map.createGeoTIFFLayer(
                     variable.cog.current.url,
                     options.cogZIndex,
                 );
 
             refs.map.setVisibility(variable.cog.current.layerId, true);
-            visibleCogLayer = variable.cog.current;
+            visibleCogLayerId = variable.cog.current.id;
         }
     }
 
@@ -255,9 +263,14 @@
     }
 
     //reactivity
-    $: if($boundaries && "map" in refs) refreshBoundaries();
+    $: if ($boundaries && "map" in refs) refreshBoundaries();
     $: $currentBoundary, changeVisibleBoundary();
-    $: if($currentBoundary && $currentProduct && "map" in refs) setViewOptions();
+    $: if (
+        $currentBoundary &&
+        $currentProduct  &&
+        "map" in refs
+    )
+        setViewOptions();
     $: mapInfoLoading, toggleSpinner();
     $: clickedCoordinates, refreshMarker();
 
@@ -265,7 +278,7 @@
         let layerId = refs.map.addBingLayerToMap("aerial", options.bingKey);
         refs.map.setVisibility(layerId, true);
         refs.map.toggleGetMapCoordinates();
-        
+
         markerLayer = refs.map.createEmptyVectorLayer(6);
         refs.map.setVisibility(markerLayer, true);
     });

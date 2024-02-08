@@ -176,7 +176,6 @@ typename TInputImage::Pointer ProcessingChainFilter<TInputImage, TPolygonDataTyp
     return static_cast<TInputImage*>(this->ProcessObject::GetInput(0));
 }
 
-
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(const RegionType& outputRegionForThread, itk::ThreadIdType threadId) {
     RegionData regionData = this->rasterizer(outputRegionForThread, threadId);
@@ -280,8 +279,6 @@ typename ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData Proces
     return ret;
 }
 
-
-
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonValue &images) {
     for (auto &image:images.GetArray()) {
@@ -292,7 +289,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(Json
     }
     imageIdsStr = imageIdsStr.substr(0, imageIdsStr.length()-1);
 }
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImages(JsonDocumentSharedPtr &polyIds, JsonValue &images) {
@@ -308,11 +304,4 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImag
     this->prepareImageInfo(images);
 }
 }
-
-
-
-
-
-
-
 #endif // PROCESSINGCHAINFILTER_HXX

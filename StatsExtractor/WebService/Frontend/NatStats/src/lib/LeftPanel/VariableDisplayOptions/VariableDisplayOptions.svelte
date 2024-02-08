@@ -25,7 +25,8 @@
     <h5>Variable Display Options</h5>
     <div class="accordion accordion-flush overflow-auto mb-2" id={accordionId}>
         <AnalysisMode bindToId={accordionId} propIdx="1" />
-        <StratifiedOrRawViewMode bindToId={accordionId} propIdx="2" />
+        <StratifiedOrRawViewMode bindToId={accordionId} propIdx="2" />        
         <PolygonValuesType bindToId={accordionId} propIdx="3" />
+        
     </div>
 </div>

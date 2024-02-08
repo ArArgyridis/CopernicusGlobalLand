@@ -14,6 +14,7 @@
     let dtEnd = $dateEnd;
 
     function fetchCategories() {
+        console.log("fetching categories");
         requests.categories().then((response) => {
             response.data.data.forEach((category) => {
                 if (category.active) $currentCategory = category;
@@ -40,13 +41,16 @@
     }
 
     function fetchProducts() {
-        console.log("getting products");
-        fetchedProductData = new Set();
+        console.log("fetching products");        
         dtStart = $dateStart;
         dtEnd = $dateEnd;
 
         requests.fetchProductInfo($dateStart.toISOString(), $dateEnd.toISOString(), $currentCategory.id)
             .then((response) => {
+                $products = {};
+                $currentProduct = null;
+                fetchedProductData = new Set();
+
                 if (response.data.data != null) {
                     let tmpProducts = new Array(response.data.data.length);
                     for (let prdId =0; prdId < response.data.data.length; prdId++) 
@@ -55,6 +59,7 @@
                     $products[$currentCategory.id] = tmpProducts;
                 }
                 $currentProduct = $products[$currentCategory.id][0];
+                
             });   
     }
 
@@ -68,10 +73,12 @@
 
         variables.forEach((variable) => {
             if (variable == null) return;
+            variable.updated = false;
 
-            if (Object.keys(variable.cog.layers).length > 0)
-                //data have been fetched
+            if (Object.keys(variable.cog.layers).length > 0) { //data have been fetched
+                variable.updated = true;
                 return;
+            }
 
             requests.productFiles(
                     variable.id,
@@ -96,6 +103,7 @@
                         variable.cog.current = variable.cog.layers[$currentProduct.currentVariable.rtFlag.id][date];
                         $currentProduct = $currentProduct; //enforce reactivity
                     }
+                    variable.updated = true;
                 });
         });
     }

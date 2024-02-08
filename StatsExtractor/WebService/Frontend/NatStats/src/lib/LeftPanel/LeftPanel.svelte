@@ -31,10 +31,10 @@
     class:is-open={shown}
 >
     <Header />
-    <div class="panelBody">     
-        <ProductCategories />     
-        <DateRangePicker />                 
-        <Boundaries accordionId="boundaries" />      
+    <div class="panelBody">
+        <ProductCategories />
+        <DateRangePicker />
+        <Boundaries accordionId="boundaries" />
         <ProductConfiguration />
         <VariableDisplayOptions />
     </div>
