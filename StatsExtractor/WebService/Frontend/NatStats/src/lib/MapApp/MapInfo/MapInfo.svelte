@@ -49,9 +49,7 @@
     let loadingDiagrams = {};
 
     let showExportReportSpinner = false;
-
     let allowExportRegionReport = false;
-
     let activeDiagramId = 0;
 
     function displayDiagramModal() {

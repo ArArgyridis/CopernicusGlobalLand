@@ -285,6 +285,7 @@
 </script>
 
 <div class="col px-0 mainMap">
+    
     <MapInfo
         mapInfoId="mapInfoId"
         {selectedFeatureId}

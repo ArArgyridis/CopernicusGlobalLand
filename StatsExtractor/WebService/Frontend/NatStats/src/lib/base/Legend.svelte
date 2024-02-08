@@ -21,11 +21,6 @@
 	} from "../base/CGLSDataConstructors.js";
 
 	export let analysisMode;
-	export let product = null;
-
-	let currentProductId = null;
-	let currentDisplayMode = null;
-
 
 	class LegendSettings {
 		constructor() {
@@ -34,7 +29,6 @@
 			this.style = "linear-gradient(to right, ";
 		}
 		update() {
-			currentProductId = $currentProduct.id;
 			this.style = "linear-gradient(to right, ";
 			let variable = $currentProduct.currentVariable;
 			//check if anomalies are displayed
@@ -50,6 +44,9 @@
 			if (!($currentProduct.currentVariable.mapViewOptions.dataView == stratifiedOrRawModes[1] || $currentProduct.currentVariable.mapViewOptions.displayPolygonValue.id == 0)) {
 				this.values = ["0%", "25%", "50%", "75%", "100%"];
 				let paletteCol = variable.mapViewOptions.displayPolygonValue.paletteCol;
+				if (!(paletteCol in variable))
+					return;
+
 				let tmpStyle = [];
 				let keys = Array();
 				Object.keys(variable[paletteCol]).forEach(key=>{
