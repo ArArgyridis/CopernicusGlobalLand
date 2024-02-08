@@ -133,6 +133,7 @@
         )
             //cog layers have been fetched
             variable.cog.current = variable.cog.layers[rt][date];
+        
         if (visibleCogLayerId != null)
             refs.map.setVisibility(visibleCogLayerId, false);
 
@@ -226,14 +227,16 @@
 
             if (!variable.cog.current.url) return;
 
-            if (!variable.cog.current.layerId)
+            if (!variable.cog.current.layerId) {
                 variable.cog.current.layerId = refs.map.createGeoTIFFLayer(
                     variable.cog.current.url,
                     options.cogZIndex,
                 );
+                console.log(variable.cog.current.layerId);
+            }
 
             refs.map.setVisibility(variable.cog.current.layerId, true);
-            visibleCogLayerId = variable.cog.current.id;
+            visibleCogLayerId = variable.cog.current.layerId;
         }
     }
 
