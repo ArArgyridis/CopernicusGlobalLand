@@ -89,7 +89,6 @@
         if (!("map" in refs)) return;
 
         refs.map.clearVectorLayer(markerLayer);
-        console.log();
         refs.map.addPointToLayer(
             markerLayer,
             1,
@@ -232,7 +231,6 @@
                     variable.cog.current.url,
                     options.cogZIndex,
                 );
-                console.log(variable.cog.current.layerId);
             }
 
             refs.map.setVisibility(variable.cog.current.layerId, true);
