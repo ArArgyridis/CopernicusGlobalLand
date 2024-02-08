@@ -203,15 +203,20 @@ export class CogProps {
 }
 
 export class ProductFile {
-	constructor(pathArray) {
+	constructor(pathArray, productType="raw") {
 		this.layerId = null;
 		this.url = null;
-		if (pathArray[0] != null)
+		if (pathArray[0] != null) 
 			this.url = options.s3CogURL + pathArray[0];
 
 		this.raw = null;
-		if (pathArray[1] != null)
-			this.raw = options.fetchRawDataURL + "/" + pathArray[1];
+		
+		if (pathArray[1] != null) {
+			let fetchURL = options.fetchRawDataURL;
+			if (productType == "anomaly")
+				fetchURL = options.fetchAnomaliesDataURL;
+			this.raw = fetchURL + "/" + pathArray[1];
+		}
 	}
 }
 

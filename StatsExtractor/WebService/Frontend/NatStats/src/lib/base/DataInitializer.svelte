@@ -90,9 +90,12 @@
 
                     Object.keys(response.data.data).forEach((rt) => {
                         variable.cog.layers[rt] = {};
+                        let type = "raw"
+                        if (!("anomaly_info" in variable))
+                            type = "anomaly";
                         Object.keys(response.data.data[rt]).forEach((date) => {
                             variable.cog.layers[rt][date] = new ProductFile(
-                                response.data.data[rt][date],
+                                response.data.data[rt][date], type
                             );
                         });
                     });
