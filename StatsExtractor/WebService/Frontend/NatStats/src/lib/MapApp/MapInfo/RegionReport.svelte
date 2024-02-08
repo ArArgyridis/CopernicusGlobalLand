@@ -30,6 +30,7 @@
     import OlMap from "../../base/OLMap.svelte";
     import options from "../../base/options.js";
     import utils from "../../base/utils";
+    import { ProductFile } from "../../base/CGLSDataConstructors.js";
     
     export let regionInfo;
     export let diagramData;
@@ -59,8 +60,12 @@
                 return $currentProduct.currentVariable.currentAnomaly.variable;
             },
             layer: () => {
+                let date = $currentProduct.currentVariable.rtFlag.currentDate.toISOString().substr(0,19);                
+                if(!$currentProduct.currentVariable.currentAnomaly.variable || !($currentProduct.currentVariable.rtFlag.id in $currentProduct.currentVariable.currentAnomaly.variable
+                    .cog.layers))
+                    return new ProductFile([null,null]);
                 return $currentProduct.currentVariable.currentAnomaly.variable
-                    .cog.current;
+                    .cog.layers[$currentProduct.currentVariable.rtFlag.id][date]
             },
             key: "anomalyMap",
         },
@@ -80,7 +85,7 @@
         let renderHandlers = [];
         mapIterator.forEach((pair) => {
             let map = refs.maps[pair.key];
-            if (pair.variable()) {
+            if (pair.variable() && pair.layer().url) {
                 //adding cog layer
                 if (pair.key in cogLayerIDs)
                     map.removeLayer(cogLayerIDs[pair.key]);
@@ -138,7 +143,7 @@
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 mapIterator.forEach((pair) => {
-                    if (pair.variable())
+                    if (pair.variable() && pair.key in cogLayerIDs)
                         refs.maps[pair.key].fitToLayerExtent(
                             polygonLayerIDs[pair.key],
                         );

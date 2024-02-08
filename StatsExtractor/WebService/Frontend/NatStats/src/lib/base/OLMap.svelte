@@ -228,7 +228,7 @@
 			min: min,
 			max: max
 		}
-
+		console.log(url);
 		if(noData != null)
 			sourceObj.nodata = noData;
 
