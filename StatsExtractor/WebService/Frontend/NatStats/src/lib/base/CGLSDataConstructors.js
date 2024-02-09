@@ -128,21 +128,29 @@ export class VariableInfo {
 	constructor(variable, dates = null) {
 		Object.assign(this, variable);
 		this.cog = new CogProps();
-		this.valueRanges = [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
-		this.style = this.#styleBuilder(variable.style, variable.max_prod_value);
-		this.mapViewOptions = new MapViewOptions(DisplayPolygonValues(this.valueRanges)[0]);
-		this.updated = false;
-		if (dates) { //this is not an anomaly
-			this.rts = new ConsolidationPeriods(dates);
+		if(!variable) { //create a null variable just to initialize the values
+			this.valueRanges = [0, 1, 2, 3, 4];
+			this.style = null;
+			this.rts = new ConsolidationPeriods({0:['2000-01-01T00:00:00']})
 			this.rtFlag = this.rts[Object.keys(this.rts)[0]];
 			this.#anomaliesProps(variable);
 		}
-
+		else {
+			this.valueRanges = [variable.min_value, variable.low_value, variable.mid_value, variable.high_value, variable.max_value];
+			this.style = this.#styleBuilder(variable.style, variable.max_prod_value);
+			this.updated = false;
+			if (dates) { //this is not an anomaly
+				this.rts = new ConsolidationPeriods(dates);
+				this.rtFlag = this.rts[Object.keys(this.rts)[0]];
+				this.#anomaliesProps(variable);
+			}
+		}
+		this.mapViewOptions = new MapViewOptions(DisplayPolygonValues(this.valueRanges)[0]);
 	}
 	#anomaliesProps(variable) {
 		this.previousAnomaly = null;
 		this.nextAnomaly = null;
-		if (variable.anomaly_info == null) {
+		if (!variable || variable.anomaly_info == null) {
 			this.currentAnomaly = { variable: null };
 			return;
 		}
@@ -222,10 +230,13 @@ export class ProductFile {
 
 export class Boundary {
 	constructor(boundary, maxZoom = 14, layerId = null, selectedPolygonId = null) {
-		this.id = undefined;
-		this.description = undefined;
-		this.url = undefined;
-		Object.assign(this, boundary);
+		if (!boundary) {
+			this.id = undefined;
+			this.description = undefined;
+			this.url = undefined;
+		}
+		else 
+			Object.assign(this, boundary);
 		this.maxZoom = maxZoom;
 		this.layerId = layerId;
 		this.selectedPolygonId = selectedPolygonId;
@@ -249,7 +260,7 @@ export class Product {
 			this.name = "No Product";
 			this.description = "No Description"
 			this.rt = false;
-			this.variables = [{ id: -1, description: "No Variable", rts: new ConsolidationPeriods({ "-1": [null] }), updated: false }]
+			this.variables = [new VariableInfo(null)]
 
 		}
 		else {
@@ -262,7 +273,6 @@ export class Product {
 			for (let vrbl = 0; vrbl < product.variables.length; vrbl++)
 				this.variables[vrbl] = new VariableInfo(product.variables[vrbl], product.dates);
 		}
-
 		this.currentVariable = this.variables[0];
 	}
 

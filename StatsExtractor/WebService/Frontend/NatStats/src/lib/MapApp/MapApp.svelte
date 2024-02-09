@@ -22,7 +22,9 @@
     } from "../../store/ProductParameters.js";
     import {
         analysisModes,
+        Boundary,
         DisplayPolygonValues,
+        Product,
         stratifiedOrRawModes,
     } from "../base/CGLSDataConstructors.js";
     import { Fill, Stroke, Style, Icon } from "ol/style";
@@ -31,6 +33,29 @@
     import MapInfo from "./MapInfo/MapInfo.svelte";
     import utils from "../base/utils.js";
 
+    class ViewOptions {
+        constructor(product, boundary) {
+            this.product = product;
+            this.analysisMode = product.currentVariable.mapViewOptions.analysisMode;
+            this.dataView = product.currentVariable.mapViewOptions.dataView;
+            this.variable = product.currentVariable;
+            this.rt = product.currentVariable.rtFlag
+            this.displayPolygonValue = this.variable.mapViewOptions.displayPolygonValue;
+            this.boundary = boundary;
+            if (this.analysisMode == analysisModes[1])
+                this.variable = product.currentVariable.currentAnomaly.variable;
+        }
+        equals(rhs) {
+            return this.product.id == rhs.product.id &&
+            this.analysisMode == rhs.analysisMode &&
+            this.dataView == rhs.dataView &&
+            this.variable.id == rhs.variable.id &&
+            this.rt.id == rhs.rt.id &&
+            this.displayPolygonValue.id == rhs.displayPolygonValue.id &&
+            this.boundary.id == rhs.boundary.id;
+        }
+    }
+
     let refs = {};
     let visibleBoundary = null;
     let visibleCogLayerId = null;
@@ -38,6 +63,9 @@
     let clickedCoordinates = null;
     let mapInfoLoading = false;
     let markerLayer = null;
+    let viewOptions = new ViewOptions(new Product(), new Boundary(null));
+    let updateViewOptions = false;
+
 
     let defaultBoundariesStyle = new Style({
         fill: new Fill({ color: "rgb(208, 208, 208, 0.3)" }),
@@ -56,6 +84,8 @@
     });
 
     //Boundary_id/variable_id/rt_flag/raw_or_anomaly/date/column_name/style_array
+
+
 
     function changeVisibleBoundary() {
         if (!("map" in refs)) return;
@@ -105,18 +135,10 @@
     }
 
     function setViewOptions() {
-        if (visibleBoundary == null) return;
-
-        let product = $currentProduct;
-        let analysisMode =
-            $currentProduct.currentVariable.mapViewOptions.analysisMode;
-        let dataView = $currentProduct.currentVariable.mapViewOptions.dataView;
-        let variable = $currentProduct.currentVariable;
-        if (analysisMode == analysisModes[1])
-            variable = $currentProduct.currentVariable.currentAnomaly.variable;
-
-        let varId = variable.id;
-        let rt = $currentProduct.currentVariable.rtFlag.id;
+        viewOptions = new ViewOptions($currentProduct, $currentBoundary);
+        let variable = viewOptions.variable;
+        let varId = viewOptions.variable.id;
+        let rt = viewOptions.rt.id;
         let tmpLayer = refs.map.getLayerObject(
             $boundaries[visibleBoundary].layerId,
         );
@@ -136,7 +158,7 @@
         if (visibleCogLayerId != null)
             refs.map.setVisibility(visibleCogLayerId, false);
 
-        if (dataView == stratifiedOrRawModes[0]) {
+        if (viewOptions.dataView == stratifiedOrRawModes[0]) {
             //checking if color in cache
             refs.map.activateSpinner();
             //console.log("spinner activated!");
@@ -145,39 +167,39 @@
             if (!(strata.id in $styleCache)) $styleCache[strata.id] = {};
 
             let strataCache = $styleCache[strata.id];
-            if (!(product.currentVariable.id in strataCache))
-                strataCache[product.currentVariable.id] = {};
+            if (!(viewOptions.product.currentVariable.id in strataCache))
+                strataCache[viewOptions.product.currentVariable.id] = {};
 
-            let variableCache = strataCache[product.currentVariable.id];
+            let variableCache = strataCache[viewOptions.product.currentVariable.id];
             if (!(rt in variableCache)) variableCache[rt] = {};
 
             let rtCache = variableCache[rt];
             if (
                 !(
-                    product.currentVariable.mapViewOptions.analysisMode in
+                    viewOptions.product.currentVariable.mapViewOptions.analysisMode in
                     rtCache
                 )
             )
-                rtCache[product.currentVariable.mapViewOptions.analysisMode] =
+                rtCache[viewOptions.product.currentVariable.mapViewOptions.analysisMode] =
                     {};
 
             let analysisCache =
-                rtCache[product.currentVariable.mapViewOptions.analysisMode];
+                rtCache[viewOptions.product.currentVariable.mapViewOptions.analysisMode];
 
             if (!(date in analysisCache)) analysisCache[date] = {};
 
             let dateCache = analysisCache[date];
             let columnName =
-                product.currentVariable.mapViewOptions.displayPolygonValue
+                viewOptions.product.currentVariable.mapViewOptions.displayPolygonValue
                     .colorCol;
             if (
-                product.currentVariable.mapViewOptions.analysisMode ==
+                viewOptions.product.currentVariable.mapViewOptions.analysisMode ==
                 analysisModes[1]
             ) {
                 columnName =
-                    product.currentVariable.currentAnomaly.variable
+                    viewOptions.product.currentVariable.currentAnomaly.variable
                         .mapViewOptions.displayPolygonValue.colorCol;
-                varId = product.currentVariable.currentAnomaly.variable.id;
+                varId = viewOptions.product.currentVariable.currentAnomaly.variable.id;
             }
 
             if (!(columnName in dateCache)) {
@@ -219,7 +241,7 @@
                 refs.map.deactivateSpinner();
                 //console.log("spinner deactivated 3");
             }
-        } else if (dataView == stratifiedOrRawModes[1]) {
+        } else if (viewOptions.dataView == stratifiedOrRawModes[1]) {
             tmpLayer.setStyle(outlineboundariestyle);
             if (visibleCogLayerId != null)
                 refs.map.setVisibility(visibleCogLayerId, false);
@@ -266,12 +288,7 @@
     //reactivity
     $: if ($boundaries && "map" in refs) refreshBoundaries();
     $: $currentBoundary, changeVisibleBoundary();
-    $: if (
-        $currentBoundary &&
-        $currentProduct  &&
-        "map" in refs
-    )
-        setViewOptions();
+    $: if (!viewOptions.equals(new ViewOptions($currentProduct, $currentBoundary))  && "map" in refs) setViewOptions();
     $: mapInfoLoading, toggleSpinner();
     $: clickedCoordinates, refreshMarker();
 

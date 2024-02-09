@@ -73,6 +73,7 @@
                 size="4"
                 aria-label="size 3 select example"
             >
+
                 {#each analysisModes as analysisMode}
                     <option
                         on:click={() => {
@@ -84,6 +85,7 @@
                                 .analysisMode}>{analysisMode}</option
                     >
                 {/each}
+
             </select>
         </div>
     </div>

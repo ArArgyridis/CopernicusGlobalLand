@@ -8,7 +8,7 @@
 
     export let finishedLoading;
     let countCogDownloads = 0;
-    let fetchedProductData = new Set();
+    let fetchedVariableData = new Set();
 
     let dtStart = $dateStart;
     let dtEnd = $dateEnd;
@@ -49,7 +49,7 @@
             .then((response) => {
                 $products = {};
                 $currentProduct = null;
-                fetchedProductData = new Set();
+                fetchedVariableData = new Set();
 
                 if (response.data.data != null) {
                     let tmpProducts = new Array(response.data.data.length);
@@ -69,11 +69,11 @@
             $currentProduct.currentVariable.currentAnomaly.variable,
         ];
         console.log("fetching cog info for: ", $currentProduct.description);
-        fetchedProductData.add($currentProduct.id);
 
         variables.forEach((variable) => {
             if (variable == null) return;
             variable.updated = false;
+            fetchedVariableData.add(variable.id);
 
             if (Object.keys(variable.cog.layers).length > 0) { //data have been fetched
                 variable.updated = true;
@@ -112,7 +112,7 @@
     }
     $: if($currentCategory == null) fetchCategories();
     $: if($currentCategory != null && ($currentProduct == null || dtStart != $dateStart || dtEnd != $dateEnd) ) fetchProducts();
-    $: if($currentProduct != null && !(fetchedProductData.has($currentProduct.id)) ) updateCogInfo();
+    $: if($currentProduct != null && !(fetchedVariableData.has($currentProduct.currentVariable.id)) ) updateCogInfo();
     $: if($currentBoundary == null) fetchBoundaries();
     $: if(countCogDownloads >=2) finishedLoading = true;
 
