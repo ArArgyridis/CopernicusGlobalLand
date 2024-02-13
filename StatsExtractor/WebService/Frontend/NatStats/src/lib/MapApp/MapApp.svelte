@@ -35,18 +35,21 @@
 
     class ViewOptions {
         constructor(product, boundary) {
-            this.product = product;
-            this.analysisMode = product.currentVariable.mapViewOptions.analysisMode;
-            this.dataView = product.currentVariable.mapViewOptions.dataView;
-            this.variable = product.currentVariable;
-            this.rt = product.currentVariable.rtFlag
-            this.displayPolygonValue = this.variable.mapViewOptions.displayPolygonValue;
-            this.boundary = boundary;
+            this.product = structuredClone(product);
+            this.analysisMode = structuredClone(product.currentVariable.mapViewOptions.analysisMode);
+            this.dataView = structuredClone(product.currentVariable.mapViewOptions.dataView);
+            this.variable = structuredClone(product.currentVariable);
+            this.rt = structuredClone(product.currentVariable.rtFlag);
+            this.displayPolygonValue = structuredClone(this.variable.mapViewOptions.displayPolygonValue);
+            this.boundary = structuredClone(boundary);
             if (this.analysisMode == analysisModes[1])
-                this.variable = product.currentVariable.currentAnomaly.variable;
+                this.variable = structuredClone(product.currentVariable.currentAnomaly.variable);
         }
         equals(rhs) {
+            console.log(this.product.currentVariable.rtFlag.currentDate)
+            console.log(rhs.product.currentVariable.rtFlag.currentDate)
             return this.product.id == rhs.product.id &&
+            this.product.currentVariable.rtFlag.currentDate == rhs.product.currentVariable.rtFlag.currentDate &&
             this.analysisMode == rhs.analysisMode &&
             this.dataView == rhs.dataView &&
             this.variable.id == rhs.variable.id &&
