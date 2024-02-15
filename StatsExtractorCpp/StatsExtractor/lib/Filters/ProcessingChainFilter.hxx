@@ -80,7 +80,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
         data <<"(" << row[0].as<std::string>() <<"," << row[1].as<std::string>() <<"," << row[2].as<std::string>() <<",";
         for (size_t i = 0; i< variable->colorInterpolation.size(); i++) {
             RGBVal color = variable->colorInterpolation[i].interpolateColor(row[i+3].as<long double>());
-            data << "'" << rgbToArrayString(color, 3) << "',";
+            data << "'" << rgbToArrayString(color) << "',";
         }
 
         if (row.back().is_null()) {
@@ -90,7 +90,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
 
         float dt =row.back().as<float>();
         RGBVal meanColor = variable->styleColors[variable->reverseValue(dt)];
-        //std::cout << dt <<"," << product->reverseValue(dt)  << " @@@@@@@: " << rgbToArrayString(meanColor) << "\n";
         data <<"'" << rgbToArrayString(meanColor) <<"'),";
     }
 
@@ -176,7 +175,6 @@ template <class TInputImage, class TPolygonDataType>
 typename TInputImage::Pointer ProcessingChainFilter<TInputImage, TPolygonDataType>::GetReferenceImage() {
     return static_cast<TInputImage*>(this->ProcessObject::GetInput(0));
 }
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(const RegionType& outputRegionForThread, itk::ThreadIdType threadId) {
@@ -281,8 +279,6 @@ typename ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData Proces
     return ret;
 }
 
-
-
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(JsonValue &images) {
     for (auto &image:images.GetArray()) {
@@ -293,7 +289,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(Json
     }
     imageIdsStr = imageIdsStr.substr(0, imageIdsStr.length()-1);
 }
-
 
 template <class TInputImage, class TPolygonDataType>
 void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImages(JsonDocumentSharedPtr &polyIds, JsonValue &images) {
@@ -309,11 +304,4 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImag
     this->prepareImageInfo(images);
 }
 }
-
-
-
-
-
-
-
 #endif // PROCESSINGCHAINFILTER_HXX

@@ -24,7 +24,7 @@ find_package(LibZip REQUIRED)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS serialization filesystem)
+find_package(Boost REQUIRED COMPONENTS serialization filesystem date_time)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
@@ -43,46 +43,54 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
 set(SOURCE
-    lib/PostgreSQL/PostgreSQL.cpp
+    lib/Anomalies/Utils.cpp
+    lib/Anomalies/ZScoreProcessor/ZScoreProcessor.cpp
     lib/ConfigurationParser/ConfigurationParser.cpp
     lib/Constants/Constants.cpp
-    lib/StatsExtractor/StatsExtractor.cpp
-    lib/Utils/Utils.cpp
-    lib/Utils/EmailClient/SmtpServer.cpp
-    lib/Filters/Statistics/PolygonStats.cpp
-    lib/Utils/ColorInterpolation.cpp
     lib/Constants/ProductInfo.cpp
     lib/Constants/ProductVariable.cpp
+    lib/Filters/Statistics/PolygonStats.cpp
+    lib/PostgreSQL/PostgreSQL.cpp
     lib/ProductOrderProcessor/ProductOrderProcessor.cpp
+    lib/StatsExtractor/StatsExtractor.cpp
+    lib/Utils/ColorInterpolation.cpp
+    lib/Utils/EmailClient/SmtpServer.cpp
+    lib/Utils/Utils.cpp
 )
 
 set (HEADERS
-    lib/PostgreSQL/PostgreSQL.h
+    lib/Anomalies/Utils.h
+    lib/Anomalies/ZScoreProcessor/ZScoreProcessor.h
     lib/ConfigurationParser/ConfigurationParser.h
     lib/Constants/Constants.h
-    lib/StatsExtractor/StatsExtractor.h
-    lib/Utils/Utils.hxx
-    lib/Utils/EmailClient/SmtpServer.h
+    lib/Constants/ProductInfo.h
+    lib/Constants/ProductVariable.h
+    lib/Filters/Functors/LinearScaler.h
+    lib/Filters/Functors/ZNormalization.h
+    lib/Filters/IO/VectorWktToLabelImageFilter.h
+    lib/Filters/IO/VectorWktToLabelImageFilter.hxx
+    lib/Filters/ProcessingChainFilter.h
+    lib/Filters/ProcessingChainFilter.hxx
+    lib/Filters/RasterReprojection/RasterReprojectionFilter.h
+    lib/Filters/RasterReprojection/RasterReprojectionFilter.hxx
+    lib/Filters/Reductors/MeanReductor.h
+    lib/Filters/Reductors/MeanReductor.hxx
+    lib/Filters/Reductors/SquareRootReductor.h
+    lib/Filters/Reductors/SquareRootReductor.hxx
+    lib/Filters/Statistics/PolygonStats.h
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.h
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.hxx
     lib/Filters/Statistics/StreamedStatisticsFromLabelImageFilter.h
-    lib/Filters/Statistics/PolygonStats.h
-    lib/Filters/IO/VectorWktToLabelImageFilter.h
-    lib/Filters/IO/VectorWktToLabelImageFilter.hxx
+    lib/Filters/StreamedProcessingChainFilter.h
     lib/Filters/Visualization/WMSCogFilter.h
     lib/Filters/Visualization/WMSCogFilter.hxx
-    lib/Utils/ColorInterpolation.h
-    lib/Filters/ProcessingChainFilter.h
-    lib/Filters/ProcessingChainFilter.hxx
-    lib/Filters/StreamedProcessingChainFilter.h
-    lib/Constants/ProductInfo.h
-    lib/Constants/ProductVariable.h
-    lib/Filters/RasterReprojection/RasterReprojectionFilter.h
-    lib/Filters/RasterReprojection/RasterReprojectionFilter.hxx
+    lib/PostgreSQL/PostgreSQL.h
     lib/ProductOrderProcessor/ProductOrderProcessor.h
-    lib/Filters/Functors/LinearScaler.h
+    lib/StatsExtractor/StatsExtractor.h
+    lib/Utils/ColorInterpolation.h
+    lib/Utils/EmailClient/SmtpServer.h
+    lib/Utils/Utils.hxx
 )
 
 #add_compile_options(-fsanitize=address)
@@ -100,12 +108,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS}
-    lib/ProductOrderProcessor/Crop.hxx)
+    lib/ProductOrderProcessor/Crop.hxx
+    processors/AnomalyExtractor.cpp)
 
 set (PROCESSORS
     processors/CogGenerator.cpp
     processors/StatsExtractor.cpp
     processors/OrderProcessor.cpp
+    processors/AnomalyExtractor.cpp
 )
 
 foreach(sourceFile IN LISTS PROCESSORS)

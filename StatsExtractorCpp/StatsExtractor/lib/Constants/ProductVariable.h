@@ -10,11 +10,10 @@
 struct ValueRange {
     float low, mid, high;
 };
+
 class ProductInfo;
-
 class ProductVariable {
-    using ProductInfoPointer = std::shared_ptr<ProductInfo>;
-
+    std::weak_ptr<ProductInfo> product;
     long double (*pixelsToArea)(long double&, long double);
     float scaleFactor, addOffset, pixelSize, noData;
     float (*scaler)(float, float&, float&);
@@ -39,19 +38,21 @@ public:
     std::vector<float> lutProductValues;
     std::array<ColorInterpolation, 4> colorInterpolation; //0- no val, 1- sparce val, 2- mild val, 3- dense val
 
-    ProductInfoPointer product;
 
     long double convertPixelsToArea(long double pixels);
     float getNoData();
-    std::filesystem::path productAbsPath(std::filesystem::path &relPath);
+    float getOffset();
+    float getScaleFactor();
+    std::filesystem::path productAbsPath(std::filesystem::path relPath);
     size_t reverseValue(float value);
+    void setProductRef(std::weak_ptr<ProductInfo> prd);
     float scaleValue(float value);
-
-    static Pointer New(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath, ProductInfoPointer product);
+    static Pointer New(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath);
+    std::shared_ptr<ProductInfo> getProductInfo();
 
 protected:
     ProductVariable();
-    ProductVariable(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath, ProductInfoPointer product);
+    ProductVariable(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath);
 };
 
 #endif // PRODUCTVARIABLE_H

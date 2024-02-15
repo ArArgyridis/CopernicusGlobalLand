@@ -72,6 +72,7 @@ unsigned short Configuration::parse() {
 
     //filesystem
     filesystem.imageryPath          = cfg["filesystem"]["imagery_path"].GetString();
+    filesystem.ltsPath              = cfg["filesystem"]["long_term_statistics_path"].GetString();
     filesystem.anomalyProductsPath  = cfg["filesystem"]["anomaly_products_path"].GetString();
     filesystem.tmpPath              = cfg["filesystem"]["tmp_path"].GetString();
     filesystem.tmpZipPath           = cfg["filesystem"]["tmp_zip_path"].GetString();

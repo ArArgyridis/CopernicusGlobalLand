@@ -2,9 +2,9 @@
 #include <memory>
 
 
-ProductInfo::ProductInfo():std::enable_shared_from_this<ProductInfo>(){}
+ProductInfo::ProductInfo(){}
 
-ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg):std::enable_shared_from_this<ProductInfo>() {
+ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg) {
 
     auto productNamesArr = row[0].as_array();
     PGPool::pgArrayToVector<std::string>(productNamesArr, productNames);
@@ -13,6 +13,8 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg
     rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.imageryPath);
     if (*productType == "anomaly")
         rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.anomalyProductsPath);
+    else if (*productType == "lts")
+        rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.ltsPath);
 
     id          = row[2].as<size_t>();
     pattern     = row[3].as<std::string>();
@@ -31,11 +33,15 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg
 
         for (auto& ptrn: tmpVars->GetArray()) {
             std::string variable = ptrn["variable"].GetString();
-            variables[variable] = ProductVariable::New(ptrn, productType, rootPath, firstProductPath, shared_from_this());
+            variables[variable] = ProductVariable::New(ptrn, productType, rootPath, firstProductPath);
         }
+        std::weak_ptr<ProductInfo>(shared_from_this());
     }
 }
 
 ProductInfo::Pointer ProductInfo::New(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg) {
-    return std::shared_ptr<ProductInfo>(new ProductInfo(row, cfg));
+    auto pnt = std::shared_ptr<ProductInfo>(new ProductInfo(row, cfg));
+    for(auto var: pnt->variables)
+        var.second->setProductRef(std::weak_ptr<ProductInfo>(pnt));
+    return pnt;
 }

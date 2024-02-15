@@ -1,35 +1,21 @@
-# NatStats
+# NatStats Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+This is the Frontend code for NatStats, based on Svelte and Vite
 
 ## Recommended IDE Setup
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
-## Customize configuration
+## Depedencies
+Major depedencies for this project are:
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+- OpenLayers
 
-## Project Setup
+- HighCharts
 
-```sh
-npm install
-```
+- Bootstrap (>=5.0)
 
-### Compile and Hot-Reload for Development
+# Run the system
+- before any action run **npm install** to install depecencies
 
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+- use **npm run dev** for development or **npm run build** for deployment

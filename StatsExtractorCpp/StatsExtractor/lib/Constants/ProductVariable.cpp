@@ -2,14 +2,16 @@
 
 ProductVariable::ProductVariable() {}
 
-ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathSharedPtr rootPath, PathSharedPtr firstProductPath, ProductInfoPointer product):productType(prdType), rootPath(rootPath),
-    firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), addOffset(0), product(product) {
+ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathSharedPtr rootPath, PathSharedPtr firstProductPath):productType(prdType), rootPath(rootPath),
+    firstProductPath(firstProductPath), firstProductVariablePath(firstProductPath), addOffset(0) {
 
     id              = params["id"].GetInt64();
     variable        = params["variable"].GetString();
-    style           = params["style"].GetString();
+    if(!params["style"].IsNull())
+        style       = params["style"].GetString();
     styleColors     = styleColorParser(style);
-    description     = params["description"].GetString();
+    if(!params["description"].IsNull())
+        description = params["description"].GetString();
     histogramBins   = params["histogram_bins"].GetInt64();
 
     valueRange.low  = params["low_value"].GetDouble();
@@ -27,19 +29,19 @@ ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathShar
         colorInterpolation[i] = ColorInterpolation(params[colorRamps[i].c_str()]);
 
     if (firstProductPath != nullptr) {
-        if(*productType == "raw" && firstProductPath->extension() == ".nc")
+        if((*productType == "raw" || *productType == "lts") && firstProductPath->extension() == ".nc")
             firstProductVariablePath = std::make_shared<std::filesystem::path>(std::string("NETCDF:") + firstProductPath->string() + ":" + variable);
 
         loadMetadata();
     }
 }
 
-ProductVariable::Pointer ProductVariable::New(JsonValue &params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath, ProductInfoPointer product) {
-    return std::shared_ptr<ProductVariable>(new ProductVariable(params, prdType, rootPath, firstProductPath, product));
+ProductVariable::Pointer ProductVariable::New(JsonValue &params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath) {
+    return std::shared_ptr<ProductVariable>(new ProductVariable(params, prdType, rootPath, firstProductPath));
 }
 
 
-std::filesystem::path ProductVariable::productAbsPath(std::filesystem::path &relPath) {
+std::filesystem::path ProductVariable::productAbsPath(std::filesystem::path relPath) {
     std::filesystem::path retPath;
 
     if(relPath.extension() == ".nc")
@@ -49,9 +51,27 @@ std::filesystem::path ProductVariable::productAbsPath(std::filesystem::path &rel
     return retPath;
 }
 
+float ProductVariable::getScaleFactor() {
+    return scaleFactor;
+}
+
+float ProductVariable::getOffset() {
+    return addOffset;
+}
+
+std::shared_ptr<ProductInfo> ProductVariable::getProductInfo() {
+    if(!product.expired())
+        return std::shared_ptr<ProductInfo>(product);
+    return nullptr;
+}
 
 size_t ProductVariable::reverseValue(float value) {
     return reverseScaler(value, scaleFactor, addOffset);
+}
+
+void ProductVariable::setProductRef(std::weak_ptr<ProductInfo> prd) {
+    if(product.expired())
+        product = prd;
 }
 
 float ProductVariable::scaleValue(float value) {

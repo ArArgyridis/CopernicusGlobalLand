@@ -15,6 +15,8 @@
 #ifndef UTILS_HXX
 #define UTILS_HXX
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/filesystem/path.hpp>
 #include <filesystem>
 #include <gdal_priv.h>
@@ -79,7 +81,7 @@ std::string bytesToMaxUnit(unsigned long long& bytes);
 void createDirectoryForFile(std::filesystem::path dstFile);
 
 unsigned long long getFolderSizeOnDisk(std::filesystem::path &dataPath);
-MetadataDictPtr getMetadata(std::filesystem::path &dataPath);
+MetadataDictPtr getMetadata(std::filesystem::path &dataPath, int forcedEPSG=4326);
 OGRPolygon envelopeToGeometry(OGREnvelope& envelope);
 long double pixelsToAreaM2Degrees(long double& pixelCount, long double pixelSize);
 long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize);
@@ -87,7 +89,7 @@ long double pixelsToAreaM2Meters(long double& pixelCount, long double pixelSize)
 float noScalerFunc(float x, float& scale, float& offset);
 
 std::string randomString(size_t len);
-std::string rgbToArrayString(RGBVal& array, size_t keep=4);
+std::string rgbToArrayString(RGBVal& array);
 
 size_t reverseNoScalerFunc(float x, float &scale, float &offset);
 size_t reverseScalerFunc(float x, float& scale, float& offset);
@@ -211,5 +213,7 @@ OGREnvelope alignAOIToImage(OGREnvelope &envlp, typename TInputImage::Pointer in
 
     return aoi;
 }
+
+boost::posix_time::ptime iso8601ToUTCTimestamp(std::string date);
 
 #endif // UTILS_HXX
