@@ -39,7 +39,7 @@ JsonDocumentUniquePtr PolygonStats::histogramToJSON() {
 
 
 
-PolygonStats::PolygonStats(ProductInfo::Pointer &prod, ProductVariable::Pointer &variable, size_t polyID):polyID(polyID), validCount(0), totalCount(0), product(prod), variable(variable) {
+PolygonStats::PolygonStats(ProductVariable::Pointer variable, size_t polyID):polyID(polyID), validCount(0), totalCount(0), variable(variable) {
 
     mean = sd = 0;
 
@@ -68,26 +68,25 @@ PolygonStats::PolygonStats(ProductInfo::Pointer &prod, ProductVariable::Pointer 
 
 PolygonStats::~PolygonStats(){}
 
-PolygonStats::Pointer PolygonStats::New(ProductInfo::Pointer &prod, ProductVariable::Pointer &variable, const size_t &polyID) {
-    return std::shared_ptr<PolygonStats>(new PolygonStats(prod, variable, polyID));
+PolygonStats::Pointer PolygonStats::New(ProductVariable::Pointer variable, const size_t &polyID) {
+    return std::shared_ptr<PolygonStats>(new PolygonStats(variable, polyID));
 }
 
-PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr &labels, ProductInfo::Pointer &prod, ProductVariable::Pointer &variable) {
+PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr &labels, ProductVariable::Pointer variable) {
     PolyStatsMapPtr myMap = std::make_shared<PolyStatsMap>();
 
     for(const size_t & id: *labels)
-        myMap->insert(std::pair<size_t, Pointer>(id,PolygonStats::New(prod, variable, id)));
+        myMap->insert(std::pair<size_t, Pointer>(id,PolygonStats::New(variable, id)));
 
     return myMap;
 }
 
-PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr &labels,
-                                                                           ProductInfo::Pointer &prod, ProductVariable::Pointer &variable ){
+PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductVariable::Pointer variable ){
     PolyStatsPerRegionPtr ret = std::make_shared<PolyStatsPerRegion>();
     for(auto &label:*labels) {
         PolyStatsArrayPtr k = std::make_shared<PolyStatsArray>(regionCount);
         for(size_t i = 0; i < regionCount; i++)
-            (*k)[i]=New(prod, variable, label);
+            (*k)[i]=New(variable, label);
 
         ret->insert(std::pair<size_t, PolyStatsArrayPtr>(label, k));
     }
@@ -131,41 +130,13 @@ void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr de
     }
 }
 
-void PolygonStats::finalizeStatistics(PolyStatsMapPtr stats) {
-    for (auto& polyStat: *stats) {
-        polyStat.second->mean /=polyStat.second->validCount;
-        polyStat.second->sd = sqrt( polyStat.second->sd/polyStat.second->validCount - pow(polyStat.second->mean, 2));
-
-        if (polyStat.second->validCount == 0) {
-            std::cout <<"No valid data for polygon: " << polyStat.second->polyID <<"\n";
-            continue;
-        }
-
-        /*FIX ME!
-        for (size_t i = 0; i < 4; i++)
-            polyStat.second->densityArray[i] = polyStat.second->product->convertPixelsToArea(polyStat.second->densityArray[i]);
-        polyStat.second->computeColors();
-        */
-
-
-    }
-}
-
 void PolygonStats::addToHistogram(float &value) {
 
     bool stop = false;
     for (size_t i = 0; i < variable->histogramBins && !stop; i++ ) {
-        stop = histogramRanges[i] <= value && value <= histogramRanges[i+1];
+        stop = histogramRanges[i] <= value && value < histogramRanges[i+1];
         histogram[i] += static_cast<int>(stop);
     }
-
-}
-
-void PolygonStats::computeColors() {
-
-    long double area = variable->convertPixelsToArea(validCount);
-    for (size_t i = 0; i < densityArray.size(); i++)
-        densityColors[i] = variable->colorInterpolation[i].interpolateColor(densityArray[i]/area*100);
 
 }
 

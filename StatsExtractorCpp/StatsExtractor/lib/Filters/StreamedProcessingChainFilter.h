@@ -48,8 +48,8 @@ public:
         this->GetFilter()->UpdateOutputInformation();
     }
     
-    void SetParams(const Configuration::SharedPtr& config, const ProductInfo::Pointer& product, const ProductVariable::Pointer variable, OGREnvelope &envlp, JsonValue &images, JsonDocumentSharedPtr polyIds, size_t& polySRID) {
-        this->GetFilter()->SetParams(config, product, variable, envlp, images, polyIds, polySRID);
+    void SetParams(const Configuration::SharedPtr config, const ProductVariable::Pointer variable, OGREnvelope &envlp, JsonValue &images, JsonDocumentSharedPtr polyIds, size_t& polySRID) {
+        this->GetFilter()->SetParams(config, variable, envlp, images, polyIds, polySRID);
     }
 
 

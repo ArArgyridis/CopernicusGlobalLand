@@ -82,8 +82,7 @@ public:
 
 
     virtual void Reset(void) override;
-    virtual void SetParams(const Configuration::SharedPtr config, const ProductInfo::Pointer product,
-                           const ProductVariable::Pointer variable, OGREnvelope& envlp, JsonValue& images,
+    virtual void SetParams(const Configuration::SharedPtr config, const ProductVariable::Pointer variable, OGREnvelope& envlp, JsonValue& images,
                            JsonDocumentSharedPtr polyIds, size_t& polSRID);
     virtual void Synthetize(void) override;
     bool ValidAOI();
@@ -110,7 +109,6 @@ private:
     
     
     Configuration::SharedPtr config;
-    ProductInfo::Pointer product;
     ProductVariable::Pointer variable;
     OGREnvelope aoi;
     ImagesInfo productImages;

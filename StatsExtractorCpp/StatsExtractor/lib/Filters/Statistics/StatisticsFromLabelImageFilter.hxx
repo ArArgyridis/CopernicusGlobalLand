@@ -50,18 +50,17 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputLabels(La
 }
 
 template <class TInputImage, class TLabelImage>
-void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputProduct(const ProductInfo::Pointer product, const ProductVariable::Pointer variable) {
-    this->product = product;
+void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputVariable(const ProductVariable::Pointer variable) {
     this->variable = variable;
     rawDataNullPixel = static_cast<InputPixelType>(this->variable->getNoData());
 }
 
 template <class TInputImage, class TLabelImage>
-StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::StatisticsFromLabelImageFilter():labelDataNullPixel(0), product(nullptr),m_ParentRegionId(0) {}
+StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::StatisticsFromLabelImageFilter():labelDataNullPixel(0), m_ParentRegionId(0) {}
 
 template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Synthetize() {
-    PolygonStats::PolyStatsMapPtr polyData = PolygonStats::NewPointerMap(labels, product, variable);
+    PolygonStats::PolyStatsMapPtr polyData = PolygonStats::NewPointerMap(labels, variable);
     PolygonStats::collapseData(perRegionStats, polyData);
     size_t regionDBID = m_ParentRegionId*10e6 + m_ParentThreadId;
     PolygonStats::updateDBTmp(imageId, regionDBID, m_Config, polyData);
@@ -69,7 +68,7 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Synthetize() {
 
 template <class TInputImage, class TLabelImage>
 void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::Reset() {
-    perRegionStats = PolygonStats::NewPolyStatsPerRegionMap(this->GetNumberOfThreads(), labels, product, variable);
+    perRegionStats = PolygonStats::NewPolyStatsPerRegionMap(this->GetNumberOfThreads(), labels, variable);
 }
 
 template <class TInputImage, class TLabelImage>

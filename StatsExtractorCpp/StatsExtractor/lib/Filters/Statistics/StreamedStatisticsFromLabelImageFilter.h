@@ -55,8 +55,8 @@ public:
         this->GetFilter()->SetInputLabels(labels);
     }
 
-    void SetInputProduct(const ProductInfo::Pointer product, const ProductVariable::Pointer variable) {
-        this->GetFilter()->SetInputProduct(product, variable);
+    void SetInputVariable(const ProductVariable::Pointer variable) {
+        this->GetFilter()->SetInputVariable(variable);
     }
 
     void SetNumberOfThreads(itk::ThreadIdType threadCount) {
