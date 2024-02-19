@@ -63,7 +63,7 @@ void StatsExtractor::process() {
 
             std::string query = fmt::format(R""""(
                 WITH info AS (
-                    SELECT sg.id geomid, (JSON_BUILD_ARRAY(pf.rel_file_path, pf.id, pfv.id))::jsonb image
+                    SELECT sg.id geomid, (JSON_BUILD_ARRAY(pf.rel_file_path, pf.id, pfv.id))::jsonb image, pf.rt_flag, pf.date
                     FROM stratification s
                     JOIN stratification_geom sg ON s.id = sg.stratification_id
                     JOIN product p ON TRUE
@@ -72,7 +72,6 @@ void StatsExtractor::process() {
                     JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 1 --AND pf.id = 71 --AND sg.id = 171
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
                     WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
-                    ORDER BY pf.date, pf.rt_flag
                 ),extent AS(
                     SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids, min(a.geomid)  mingmid, max(a.geomid) maxgmid
                     FROM (SELECT distinct geomid FROM info) a
@@ -82,9 +81,9 @@ void StatsExtractor::process() {
                     FROM(
                         SELECT ARRAY_TO_JSON(ARRAY_AGG(image ORDER BY grpid)) images
                         FROM (
-                            SELECT (ROW_NUMBER() OVER(ORDER BY image[1]))/5 grpid, image
+                            SELECT (ROW_NUMBER() OVER(ORDER BY rt_flag, date))/5 grpid, image
                             FROM(
-                                SELECT DISTINCT image --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
+                                SELECT DISTINCT image, rt_flag, date --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
                                 FROM info --LIMIT 1
                             )a
                         )b
@@ -141,4 +140,3 @@ void StatsExtractor::process() {
         }
     }
 }
-
