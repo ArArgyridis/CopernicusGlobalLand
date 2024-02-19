@@ -139,7 +139,7 @@ class StatsRequests(GenericRequest):
                 LEFT JOIN poly_stats psltai ON psltai.product_file_id = pfltaimean.id AND psltai.product_file_variable_id = pfvltaimean.id
                 AND psltai.poly_id = ps.poly_id
             WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0
-            AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
+            AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7 AND ps.rt_flag = {4}""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"], self._requestData["options"]["rt_flag"])
 
         if self._requestData["options"]["rt_flag"] >=0:
             query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
