@@ -129,7 +129,7 @@ class StatsRequests(GenericRequest):
                 SELECT pf."date", ROUND(ps.mean::numeric,4) mean, ROUND(ps.sd::numeric,5) sd, ROUND(psltai.mean::numeric,4) meanlts, ROUND(psltai.sd::numeric,5) sdlts
                 FROM poly_stats ps
                 JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
-                JOIN product_file pf ON ps.product_file_id = pf.id AND CASE WHEN {0} = -1 THEN TRUE ELSE pf.rt_flag = {0}
+                JOIN product_file pf ON ps.product_file_id = pf.id AND CASE WHEN {0} = -1 THEN TRUE ELSE pf.rt_flag = {0} END
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
                 LEFT JOIN long_term_anomaly_info ltai ON pfv.id = ltai.raw_product_variable_id
                 LEFT JOIN product_file_variable pfvltaimean ON ltai.mean_variable_id = pfvltaimean.id
