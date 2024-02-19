@@ -129,7 +129,7 @@ class StatsRequests(GenericRequest):
                 SELECT pf."date", ROUND(ps.mean::numeric,4) mean, ROUND(ps.sd::numeric,5) sd, ROUND(psltai.mean::numeric,4) meanlts, ROUND(psltai.sd::numeric,5) sdlts
                 FROM poly_stats ps
                 JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
-                JOIN product_file pf ON ps.product_file_id = pf.id
+                JOIN product_file pf ON ps.product_file_id = pf.id AND CASE WHEN {0} = -1 THEN TRUE ELSE pf.rt_flag = {0}
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id AND pfv.product_file_description_id = pfd.id
                 LEFT JOIN long_term_anomaly_info ltai ON pfv.id = ltai.raw_product_variable_id
                 LEFT JOIN product_file_variable pfvltaimean ON ltai.mean_variable_id = pfvltaimean.id
@@ -138,8 +138,8 @@ class StatsRequests(GenericRequest):
                 and EXTRACT('doy' FROM pfltaimean."date") between EXTRACT('doy' FROM pf."date") - 2	and EXTRACT('doy' FROM pf."date") +2
                 LEFT JOIN poly_stats psltai ON psltai.product_file_id = pfltaimean.id AND psltai.product_file_variable_id = pfvltaimean.id
                 AND psltai.poly_id = ps.poly_id
-            WHERE ps.poly_id = {0} AND pf."date" BETWEEN '{1}' AND '{2}' AND pfv.id = {3} AND ps.valid_pixels > 0
-            AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7 AND ps.rt_flag = {4}""".format(self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"], self._requestData["options"]["rt_flag"])
+            WHERE ps.poly_id = {1} AND pf."date" BETWEEN '{2}' AND '{3}' AND pfv.id = {4} AND ps.valid_pixels > 0
+            AND ps.valid_pixels*1.0/ps.total_pixels >= 0.7 """.format(self._requestData["options"]["rt_flag"], self._requestData["options"]["poly_id"], self._requestData["options"]["date_start"], self._requestData["options"]["date_end"], self._requestData["options"]["product_variable_id"])
 
         if self._requestData["options"]["rt_flag"] >=0:
             query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
