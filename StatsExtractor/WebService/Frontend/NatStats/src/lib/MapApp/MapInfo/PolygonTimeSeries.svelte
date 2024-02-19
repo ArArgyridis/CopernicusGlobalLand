@@ -223,7 +223,7 @@
     });
 
     //reactivity
-    $: polygonId, refreshData();
+    $: polygonId, $currentProduct, refreshData();
 
 
 </script>
