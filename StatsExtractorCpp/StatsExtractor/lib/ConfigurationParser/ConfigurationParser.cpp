@@ -34,7 +34,6 @@ unsigned short Configuration::parse() {
 
     std::unique_ptr<FILE, int(*)(FILE*)> inFile (fopen(cfgFile.c_str(), "r"), &fclose);
     std::unique_ptr<char[]> readBuffer(new char[80000]);
-    rapidjson::FileReadStream inputFileStream(inFile.get(), readBuffer.get(), 80000);
     rapidjson::Document cfg;
 
     if (cfg.Parse(readBuffer.get()).HasParseError()) {
@@ -68,7 +67,6 @@ unsigned short Configuration::parse() {
     smtpOptions.password    = cfg["smtp_options"]["password"].GetString();
     smtpOptions.certificate = cfg["smtp_options"]["certificate"].GetString();
     smtpOptions.selfSigned  = cfg["smtp_options"]["self_signed"].GetBool();
-
 
     //filesystem
     filesystem.imageryPath          = cfg["filesystem"]["imagery_path"].GetString();

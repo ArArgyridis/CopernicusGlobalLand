@@ -51,7 +51,7 @@ using ExtractROIFilter          = otb::ExtractROI<RawDataImageType::PixelType, R
 using ProcessingChainFilter     = otb::StreamedProcessingChainFilter<RawDataImageType, otb::VectorDataType>;
 
 
-StatsExtractor::StatsExtractor(Configuration::SharedPtr &cfg, std::string stratificationType):config(cfg), stratification(stratificationType) {}
+StatsExtractor::StatsExtractor(Configuration::SharedPtr cfg, std::string stratificationType):config(cfg), stratification(stratificationType) {}
 
 void StatsExtractor::process() {
     for (auto& product: Constants::productInfo) {
@@ -129,16 +129,13 @@ void StatsExtractor::process() {
 
             for (auto &group: imageGroups->GetArray()){
                 ProcessingChainFilter::Pointer processingChain = ProcessingChainFilter::New();
-                processingChain->SetParams(config, product.second, variable.second, envelope, group, polyIds, srid);
+                processingChain->SetParams(config, variable.second, envelope, group, polyIds, srid);
                 processingChain->UpdateOutputInformation();
                 processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
                 processingChain->UpdateOutputInformation();
 
                 if (processingChain->ValidAOI())
                     processingChain->Update();
-
-                processingChain->ReleaseDataFlagOn();
-                processingChain->ResetPipeline();
             }
         }
     }

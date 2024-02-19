@@ -42,11 +42,12 @@ struct FileSystem {
 
 class Configuration {
     std::string cfgFile;
+
 protected:
     Configuration();
     Configuration(std::string &cfg);
-public:
 
+public:
     std::string natStatsURL;
     using SharedPtr = std::shared_ptr<Configuration>;
     FileSystem filesystem;
@@ -58,7 +59,6 @@ public:
 
     static SharedPtr New(std::string cfgPath);
     static std::map<std::string, std::size_t> connectionIds;
-
 };
 
 

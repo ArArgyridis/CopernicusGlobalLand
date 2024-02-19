@@ -75,7 +75,7 @@ public:
     virtual void SetInputDataImage(const TInputImage* image, size_t imageId);
     virtual void SetInputLabelImage(const LabelImageType* image);
     virtual void SetInputLabels(LabelsArrayPtr labels);
-    virtual void SetInputProduct(const ProductInfo::Pointer product, const ProductVariable::Pointer variable);
+    virtual void SetInputVariable(const ProductVariable::Pointer variable);
     virtual void Synthetize(void) override;
 
 protected:
@@ -90,7 +90,6 @@ private:
     InputPixelType rawDataNullPixel;
     LabelPixelType labelDataNullPixel;
     LabelsArrayPtr labels;
-    ProductInfo::Pointer product;
     ProductVariable::Pointer variable;
     itk::ThreadIdType m_ParentThreadId;
     Configuration::SharedPtr m_Config;

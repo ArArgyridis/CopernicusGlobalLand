@@ -39,11 +39,9 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Reset() {
 }
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::SharedPtr config, const ProductInfo::Pointer product,
-                                                                     const ProductVariable::Pointer variable, OGREnvelope &envlp,
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::SharedPtr config,const ProductVariable::Pointer variable, OGREnvelope &envlp,
                                                                      JsonValue &images, JsonDocumentSharedPtr polyIds, size_t &polySRID) {
     this->config        = config;
-    this->product       = product;
     this->variable      = variable;
     this->polySRID      = polySRID;
 
@@ -213,7 +211,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
         roi->SetSizeY(outputRegionForThread.GetSize()[1]);
 
         typename StreamedStatisticsType::Pointer stats = StreamedStatisticsType::New();
-        stats->SetInputProduct(product, variable);
+        stats->SetInputVariable(variable);
         stats->SetConfig(config);
         stats->SetInputLabels(regionData.labels);
         stats->SetInputLabelImage(regionData.labelImage);

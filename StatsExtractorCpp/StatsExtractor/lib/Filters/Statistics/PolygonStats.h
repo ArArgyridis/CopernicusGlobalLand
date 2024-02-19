@@ -41,15 +41,13 @@ public:
 
     ~PolygonStats();
 
-    static Pointer New(ProductInfo::Pointer& prod, ProductVariable::Pointer& variable, const size_t& polyID);
-    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr& labels, ProductInfo::Pointer& prod, ProductVariable::Pointer& variable);
-    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr& labels, ProductInfo::Pointer& prod, ProductVariable::Pointer& variable);
+    static Pointer New(ProductVariable::Pointer variable, const size_t& polyID);
+    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr& labels,ProductVariable::Pointer variable);
+    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductVariable::Pointer variable);
 
-    static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination);
-    static void finalizeStatistics(PolyStatsMapPtr stats);
 
     void addToHistogram(float &value);
-    void computeColors();
+    static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination);
     static void updateDB(const size_t& productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData);
     static void updateDBTmp(const size_t& productFileID, size_t &regionId, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData);
 
@@ -58,7 +56,6 @@ public:
     float min, max;
     std::array<long double, 4> densityArray;
     size_t validCount, totalCount;
-    ProductInfo::Pointer product;
     ProductVariable::Pointer variable;
     std::vector<size_t> histogram;
     std::vector<RGBVal> densityColors;
@@ -90,7 +87,7 @@ public:
 
     }
 protected:
-    PolygonStats(ProductInfo::Pointer &prod, ProductVariable::Pointer &variable, size_t polyID);
+    PolygonStats(ProductVariable::Pointer variable, size_t polyID);
 
 
 };
