@@ -134,7 +134,7 @@ class StatsRequests(GenericRequest):
                 LEFT JOIN long_term_anomaly_info ltai ON pfv.id = ltai.raw_product_variable_id
                 LEFT JOIN product_file_variable pfvltaimean ON ltai.mean_variable_id = pfvltaimean.id
                 LEFT JOIN product_file_description pfdltaimean ON pfvltaimean.product_file_description_id = pfdltaimean.id
-                LEFT JOIN product_file pfltaimean ON pfdltaimean.id = pfltaimean.product_file_description_id
+                LEFT JOIN product_file pfltaimean ON pfdltaimean.id = pfltaimean.product_file_description_id AND CASE WHEN {0} = -1 THEN TRUE ELSE pfltaimean.rt_flag = {0} END
                 and EXTRACT('doy' FROM pfltaimean."date") between EXTRACT('doy' FROM pf."date") - 2	and EXTRACT('doy' FROM pf."date") +2
                 LEFT JOIN poly_stats psltai ON psltai.product_file_id = pfltaimean.id AND psltai.product_file_variable_id = pfvltaimean.id
                 AND psltai.poly_id = ps.poly_id
