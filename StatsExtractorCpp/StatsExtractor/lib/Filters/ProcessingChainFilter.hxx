@@ -63,13 +63,13 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::Synthetize() {
     PGPool::PGConn::Pointer cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     cn->executeQuery(query);
 
-    query = R""""(SELECT poly_id, product_file_id, product_file_variable_id,
+    query = fmt::format(R""""(SELECT poly_id, product_file_id, product_file_variable_id,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,
              mean
-             FROM poly_stats ps WHERE noval_color IS NULL;)"""";
+             FROM poly_stats ps WHERE ps.poly_id IN ({0}) AND ps.product_file_id IN ({1}) AND noval_color IS NULL;)"""", polyIdsStr, imageIdsStr);
 
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
     std::stringstream data;
@@ -222,8 +222,6 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::ThreadedGenerateData(
 
         stats->GlobalWarningDisplayOff();
         stats->Update();
-        stats->ReleaseDataFlagOn();
-        stats->ResetPipeline();
     }
 }
 
@@ -264,13 +262,13 @@ typename ProcessingChainFilter<TInputImage, TPolygonDataType>::RegionData Proces
         return ret;
 
     rasterizer->Update();
-/*
+    /*
     using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
     ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
     labelWriter->SetFileName(randomString(4) + "_"+std::to_string(threadId) + "labelImage_v2.tif");
     labelWriter->SetInput(rasterizer->GetOutput());
     labelWriter->Update();
-*/
+    */
     ret.labelImage = rasterizer->GetOutput();
     ret.labels = tmpLabels;
 
@@ -289,8 +287,7 @@ void ProcessingChainFilter<TInputImage, TPolygonDataType>::prepareImageInfo(Json
 }
 
 template <class TInputImage, class TPolygonDataType>
-void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImages(JsonDocumentSharedPtr &polyIds, JsonValue &images) {
-
+void ProcessingChainFilter<TInputImage, TPolygonDataType>::processGeomIdsAndImages(JsonDocumentSharedPtr polyIds, JsonValue &images) {
     labels = std::make_shared<std::vector<size_t>>(polyIds->GetArray().Size());
     size_t i = 0;
     for (auto& id: polyIds->GetArray()) {

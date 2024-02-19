@@ -32,11 +32,12 @@ unsigned short Configuration::parse() {
         return 1;
     }
 
-    std::unique_ptr<FILE, int(*)(FILE*)> inFile (fopen(cfgFile.c_str(), "r"), &fclose);
-    std::unique_ptr<char[]> readBuffer(new char[80000]);
+    std::ifstream inFile(cfgFile);
+    std::stringstream inFileBuffer;
+    inFileBuffer << inFile.rdbuf();
     rapidjson::Document cfg;
 
-    if (cfg.Parse(readBuffer.get()).HasParseError()) {
+    if (cfg.Parse(inFileBuffer.str()).HasParseError()) {
         std::cout <<"Error in configuration file: " << cfgFile <<". Exiting.";
         return 1;
     }
@@ -47,7 +48,7 @@ unsigned short Configuration::parse() {
         connectionStringStream << "dbname=" << cn.value["db"].GetString() << " host=" <<cn.value["host"].GetString()  <<
         " port="<< cn.value["port"].GetInt() << " user=" << cn.value["user"].GetString();
         if (cn.value["password"].IsString())
-            connectionStringStream <<" password="<< cn.value["password"].GetString();
+            connectionStringStream << " password=" << cn.value["password"].GetString();
 
         std::string connectionString = connectionStringStream.str();
 

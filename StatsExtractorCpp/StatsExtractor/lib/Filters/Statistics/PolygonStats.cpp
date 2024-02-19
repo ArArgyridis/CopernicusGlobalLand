@@ -37,8 +37,6 @@ JsonDocumentUniquePtr PolygonStats::histogramToJSON() {
     return tmpHistogram;
 }
 
-
-
 PolygonStats::PolygonStats(ProductVariable::Pointer variable, size_t polyID):polyID(polyID), validCount(0), totalCount(0), variable(variable) {
 
     mean = sd = 0;
@@ -94,8 +92,6 @@ PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_
     return ret;
 }
 
-
-
 void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination) {
     if (source == nullptr)
         return;
@@ -121,8 +117,6 @@ void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr de
 
             for (size_t i = 0; i < polyStat->second->densityArray.size(); i++)
                 polyStat->second->densityArray[i] += regionStat->densityArray[i];
-
-
 
             for(size_t i = 0; i <polyStat->second->variable->histogramBins; i++)
                 polyStat->second->histogram[i] += regionStat->histogram[i];
@@ -166,7 +160,6 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPt
     PGPool::PGConn::Pointer cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
     cn->executeQuery(query);
 }
-
 
 void PolygonStats::updateDBTmp(const size_t &productFileID, size_t& regionId, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData) {
     std::stringstream data;

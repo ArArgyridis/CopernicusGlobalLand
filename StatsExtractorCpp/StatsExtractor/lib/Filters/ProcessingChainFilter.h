@@ -80,13 +80,11 @@ public:
     /** Creation through object factory macro */
     itkTypeMacro(ProcessingChainFilter, PersistentImageFilter);
 
-
     virtual void Reset(void) override;
     virtual void SetParams(const Configuration::SharedPtr config, const ProductVariable::Pointer variable, OGREnvelope& envlp, JsonValue& images,
                            JsonDocumentSharedPtr polyIds, size_t& polSRID);
     virtual void Synthetize(void) override;
     bool ValidAOI();
-
 
 protected:
     ProcessingChainFilter();
@@ -106,8 +104,7 @@ private:
       LabelImageType::Pointer labelImage=nullptr;
       LabelsArrayPtr labels=nullptr;
     };
-    
-    
+
     Configuration::SharedPtr config;
     ProductVariable::Pointer variable;
     OGREnvelope aoi;
@@ -119,8 +116,7 @@ private:
     RegionData rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
 
     void prepareImageInfo(JsonValue& images);
-    void processGeomIdsAndImages(JsonDocumentSharedPtr &polyIds, JsonValue& images);
-
+    void processGeomIdsAndImages(JsonDocumentSharedPtr polyIds, JsonValue& images);
 };
 
 }
