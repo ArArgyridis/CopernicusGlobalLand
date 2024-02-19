@@ -72,6 +72,7 @@ void StatsExtractor::process() {
                     JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 1 --AND pf.id = 71 --AND sg.id = 171
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
                     WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
+                    ORDER BY pf.date, pf.rt_flag
                 ),extent AS(
                     SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids, min(a.geomid)  mingmid, max(a.geomid) maxgmid
                     FROM (SELECT distinct geomid FROM info) a
