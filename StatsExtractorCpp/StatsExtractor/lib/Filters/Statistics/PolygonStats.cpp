@@ -38,7 +38,6 @@ JsonDocumentUniquePtr PolygonStats::histogramToJSON() {
 }
 
 PolygonStats::PolygonStats(ProductVariable::Pointer variable, size_t polyID):polyID(polyID), validCount(0), totalCount(0), variable(variable) {
-
     mean = sd = 0;
 
     min = std::numeric_limits<float>::max();
@@ -61,7 +60,6 @@ PolygonStats::PolygonStats(ProductVariable::Pointer variable, size_t polyID):pol
     densityColors = std::vector<RGBVal>(4);
     for (auto & color: densityColors)
         color.fill(0);
-
 }
 
 PolygonStats::~PolygonStats(){}
@@ -125,13 +123,11 @@ void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr de
 }
 
 void PolygonStats::addToHistogram(float &value) {
-
     bool stop = false;
     for (size_t i = 0; i < variable->histogramBins && !stop; i++ ) {
         stop = histogramRanges[i] <= value && value < histogramRanges[i+1];
         histogram[i] += static_cast<int>(stop);
     }
-
 }
 
 void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData){
@@ -143,6 +139,7 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPt
              <<",'"<<rgbToArrayString(polyData.second->densityColors[0]) <<"','" <<rgbToArrayString(polyData.second->densityColors[1]) <<"','" << rgbToArrayString(polyData.second->densityColors[2]) << "','" << rgbToArrayString(polyData.second->densityColors[3])
                 <<"','"<< jsonToString(*hist) << "'," << polyData.second->totalCount <<"," <<polyData.second->validCount << "),";
     }
+
     if (data.tellp() == 0)
         return;
 
