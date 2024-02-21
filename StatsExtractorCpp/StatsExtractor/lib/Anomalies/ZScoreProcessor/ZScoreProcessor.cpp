@@ -33,7 +33,7 @@ using UCharVectorImageWriter = otb::ImageFileWriter<UCharVectorImageType>;
 
 ZScoreProcessor::ZScoreProcessor():product(nullptr), anomalyVariable(nullptr) {}
 
-ZScoreProcessor::ZScoreProcessor(boost::posix_time::ptime dateStart, boost::posix_time::ptime dateEnd, Configuration::SharedPtr cfg, ProductInfo::Pointer product, ProductVariable::Pointer anomalyVariable, ProductVariable::Pointer productVariable):
+ZScoreProcessor::ZScoreProcessor(boost::posix_time::ptime dateStart, boost::posix_time::ptime dateEnd, Configuration::SharedPtr cfg, ProductInfo::SharedPtr product, ProductVariable::SharedPtr anomalyVariable, ProductVariable::SharedPtr productVariable):
     dateStart(dateStart), dateEnd(dateEnd), config(cfg), product(product), anomalyVariable(anomalyVariable), productVariable(productVariable){
     tmpFolder = config->filesystem.tmpPath/anomalyVariable->getProductInfo()->productNames[0];
     if(std::filesystem::exists(tmpFolder))

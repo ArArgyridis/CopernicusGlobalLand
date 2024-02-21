@@ -66,6 +66,7 @@ set (HEADERS
     lib/Constants/Constants.h
     lib/Constants/ProductInfo.h
     lib/Constants/ProductVariable.h
+    lib/Filters/Functors/GLCReclassifier.h
     lib/Filters/Functors/LinearScaler.h
     lib/Filters/Functors/ZNormalization.h
     lib/Filters/IO/VectorWktToLabelImageFilter.h
@@ -86,6 +87,7 @@ set (HEADERS
     lib/Filters/Visualization/WMSCogFilter.h
     lib/Filters/Visualization/WMSCogFilter.hxx
     lib/PostgreSQL/PostgreSQL.h
+    lib/ProductOrderProcessor/Crop.hxx
     lib/ProductOrderProcessor/ProductOrderProcessor.h
     lib/StatsExtractor/StatsExtractor.h
     lib/Utils/ColorInterpolation.h
@@ -107,15 +109,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS}
-    lib/ProductOrderProcessor/Crop.hxx
-    processors/AnomalyExtractor.cpp)
+add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS})
 
 set (PROCESSORS
     processors/CogGenerator.cpp
     processors/StatsExtractor.cpp
     processors/OrderProcessor.cpp
     processors/AnomalyExtractor.cpp
+    processors/GLCReclassifier.cpp
 )
 
 foreach(sourceFile IN LISTS PROCESSORS)

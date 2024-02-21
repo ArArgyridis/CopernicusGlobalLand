@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2021  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 #include <sstream>
 
 #include "Constants.h"
-std::map<std::size_t, ProductInfo::Pointer> Constants::productInfo;
-std::map<std::size_t, ProductVariable::Pointer> Constants::variableInfo;
+std::map<std::size_t, ProductInfo::SharedPtr> Constants::productInfo;
+std::map<std::size_t, ProductVariable::SharedPtr> Constants::variableInfo;
 
 Constants::Constants() {}
 
@@ -56,7 +56,7 @@ unsigned short Constants::load(Configuration::SharedPtr cfg) {
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query, "");
 
     for (size_t i = 0; i < res.size(); i++) {
-        Constants::productInfo.insert(std::make_pair<size_t, ProductInfo::Pointer>(res[i][2].as<size_t>(),
+        Constants::productInfo.insert(std::make_pair<size_t, ProductInfo::SharedPtr>(res[i][2].as<size_t>(),
                                       ProductInfo::New(PGPool::PGConn::PGRow(res[i]), cfg)));
         for(auto& variable: Constants::productInfo[res[i][2].as<size_t>()]->variables) {
            Constants::variableInfo[variable.second->id] = variable.second;

@@ -1,3 +1,17 @@
+/*
+   Copyright (C) 2024  Argyros Argyridis arargyridis at gmail dot com
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef PRODUCTVARIABLE_H
 #define PRODUCTVARIABLE_H
 #include <array>
@@ -22,7 +36,7 @@ class ProductVariable {
 
 public:
     MetadataDictPtr metadata;
-    using Pointer = std::shared_ptr<ProductVariable>;
+    using SharedPtr = std::shared_ptr<ProductVariable>;
     StringPtr productType;
     PathSharedPtr rootPath, firstProductPath, firstProductVariablePath;
     std::vector<RGBVal> styleColors;
@@ -47,7 +61,7 @@ public:
     size_t reverseValue(float value);
     void setProductRef(std::weak_ptr<ProductInfo> prd);
     float scaleValue(float value);
-    static Pointer New(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath);
+    static SharedPtr New(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath);
     std::shared_ptr<ProductInfo> getProductInfo();
 
 protected:

@@ -152,7 +152,7 @@ class StatsRequests(GenericRequest):
        SELECT ARRAY_TO_JSON(ARRAY_AGG(res) ) FROM(
             SELECT jsonb_build_object(
 		'id', sg.id,
-                'meanval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.meanval_color::jsonb ELSE NULL END,
+        'meanval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.meanval_color::jsonb ELSE NULL END,
 		'noval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.noval_color::jsonb ELSE NULL END,
 		'sparseval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.sparseval_color::jsonb ELSE NULL END,
 		'midval_color', CASE WHEN ps.valid_pixels*1.0/ps.total_pixels > 0.7 THEN ps.midval_color::jsonb ELSE NULL END,
@@ -160,7 +160,7 @@ class StatsRequests(GenericRequest):
         ) res
         FROM  poly_stats ps
         JOIN  product_file pf ON ps.product_file_id = pf.id
-        JOIN product_file_variable pfv ON ps.product_file_variable_id = pfv.id
+        JOIN  product_file_variable pfv ON ps.product_file_variable_id = pfv.id
         JOIN  product_file_description pfd ON pf.product_file_description_id = pfd.id
         JOIN  product p ON pfd.product_id = p.id
         JOIN  stratification_geom sg ON sg.id = ps.poly_id

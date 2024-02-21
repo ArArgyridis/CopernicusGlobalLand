@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2021  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,9 +41,9 @@ public:
 
     ~PolygonStats();
 
-    static Pointer New(ProductVariable::Pointer variable, const size_t& polyID);
-    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr& labels,ProductVariable::Pointer variable);
-    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductVariable::Pointer variable);
+    static Pointer New(ProductVariable::SharedPtr variable, const size_t& polyID);
+    static PolyStatsMapPtr NewPointerMap(const LabelsArrayPtr& labels,ProductVariable::SharedPtr variable);
+    static PolyStatsPerRegionPtr NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductVariable::SharedPtr variable);
 
 
     void addToHistogram(float &value);
@@ -56,7 +56,7 @@ public:
     float min, max;
     std::array<long double, 4> densityArray;
     size_t validCount, totalCount;
-    ProductVariable::Pointer variable;
+    ProductVariable::SharedPtr variable;
     std::vector<size_t> histogram;
     std::vector<RGBVal> densityColors;
 
@@ -87,7 +87,7 @@ public:
 
     }
 protected:
-    PolygonStats(ProductVariable::Pointer variable, size_t polyID);
+    PolygonStats(ProductVariable::SharedPtr variable, size_t polyID);
 
 
 };

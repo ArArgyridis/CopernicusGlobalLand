@@ -47,7 +47,7 @@
 
         requests.fetchProductInfo($dateStart.toISOString(), $dateEnd.toISOString(), $currentCategory.id)
             .then((response) => {
-                $products = {};
+                $products[$currentCategory.id] = {};
                 $currentProduct = null;
                 fetchedVariableData = new Set();
 
@@ -57,9 +57,8 @@
                         tmpProducts[prdId] = new Product(response.data.data[prdId]);
                  
                     $products[$currentCategory.id] = tmpProducts;
+                    $currentProduct = $products[$currentCategory.id][0];
                 }
-                $currentProduct = $products[$currentCategory.id][0];
-                
             });   
     }
 

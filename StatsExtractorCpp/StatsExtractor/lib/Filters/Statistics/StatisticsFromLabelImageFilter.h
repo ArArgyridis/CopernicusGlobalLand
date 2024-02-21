@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2021  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ public:
     virtual void SetInputDataImage(const TInputImage* image, size_t imageId);
     virtual void SetInputLabelImage(const LabelImageType* image);
     virtual void SetInputLabels(LabelsArrayPtr labels);
-    virtual void SetInputVariable(const ProductVariable::Pointer variable);
+    virtual void SetInputVariable(const ProductVariable::SharedPtr variable);
     virtual void Synthetize(void) override;
 
 protected:
@@ -90,7 +90,7 @@ private:
     InputPixelType rawDataNullPixel;
     LabelPixelType labelDataNullPixel;
     LabelsArrayPtr labels;
-    ProductVariable::Pointer variable;
+    ProductVariable::SharedPtr variable;
     itk::ThreadIdType m_ParentThreadId;
     Configuration::SharedPtr m_Config;
     size_t m_ParentRegionId, imageId;

@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2021  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ public:
     itkTypeMacro(ProcessingChainFilter, PersistentImageFilter);
 
     virtual void Reset(void) override;
-    virtual void SetParams(const Configuration::SharedPtr config, const ProductVariable::Pointer variable, OGREnvelope& envlp, JsonValue& images,
+    virtual void SetParams(const Configuration::SharedPtr config, const ProductVariable::SharedPtr variable, OGREnvelope& envlp, JsonValue& images,
                            JsonDocumentSharedPtr polyIds, size_t& polSRID);
     virtual void Synthetize(void) override;
     bool ValidAOI();
@@ -106,7 +106,7 @@ private:
     };
 
     Configuration::SharedPtr config;
-    ProductVariable::Pointer variable;
+    ProductVariable::SharedPtr variable;
     OGREnvelope aoi;
     ImagesInfo productImages;
     size_t polySRID, currentRegionId;

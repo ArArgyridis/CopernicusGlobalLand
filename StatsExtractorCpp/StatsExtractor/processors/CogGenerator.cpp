@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2023  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include "../lib/Filters/RasterReprojection/RasterReprojectionFilter.hxx"
 
 template <class TInput>
-void createTmpFile(std::filesystem::path &inFile, std::filesystem::path &tmpFile, ProductInfo::Pointer product, ProductVariable::Pointer variable, Configuration::SharedPtr config){
+void createTmpFile(std::filesystem::path &inFile, std::filesystem::path &tmpFile, ProductInfo::SharedPtr product, ProductVariable::SharedPtr variable, Configuration::SharedPtr config){
     using TInputImage           = otb::Image<TInput, 2>;
     using TOutputImage          = otb::VectorImage<unsigned char, 2>;
     using TInputImageReader     = otb::ImageFileReader<TInputImage>;

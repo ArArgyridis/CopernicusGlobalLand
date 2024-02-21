@@ -12,13 +12,13 @@
 class ZScoreProcessor {
     boost::posix_time::ptime dateStart, dateEnd;
     Configuration::SharedPtr config;
-    ProductInfo::Pointer product;
-    ProductVariable::Pointer anomalyVariable, productVariable;
+    ProductInfo::SharedPtr product;
+    ProductVariable::SharedPtr anomalyVariable, productVariable;
     std::filesystem::path tmpFolder;
 
 public:
     ZScoreProcessor();
-    ZScoreProcessor(boost::posix_time::ptime dateStart, boost::posix_time::ptime dateEnd, Configuration::SharedPtr cfg, ProductInfo::Pointer product, ProductVariable::Pointer anomalyVariable, ProductVariable::Pointer productVariable);
+    ZScoreProcessor(boost::posix_time::ptime dateStart, boost::posix_time::ptime dateEnd, Configuration::SharedPtr cfg, ProductInfo::SharedPtr product, ProductVariable::SharedPtr anomalyVariable, ProductVariable::SharedPtr productVariable);
     ~ZScoreProcessor();
     void process();
 };

@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2021  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,7 +50,7 @@ void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputLabels(La
 }
 
 template <class TInputImage, class TLabelImage>
-void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputVariable(const ProductVariable::Pointer variable) {
+void StatisticsFromLabelImageFilter<TInputImage, TLabelImage>::SetInputVariable(const ProductVariable::SharedPtr variable) {
     this->variable = variable;
     rawDataNullPixel = static_cast<InputPixelType>(this->variable->getNoData());
 }

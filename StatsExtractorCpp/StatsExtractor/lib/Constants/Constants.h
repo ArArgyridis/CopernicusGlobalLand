@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2021  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@
 
 class Constants {
 public:
-    static std::map<std::size_t, ProductInfo::Pointer> productInfo;
-    static std::map<std::size_t, ProductVariable::Pointer> variableInfo;
+    static std::map<std::size_t, ProductInfo::SharedPtr> productInfo;
+    static std::map<std::size_t, ProductVariable::SharedPtr> variableInfo;
     Constants();
     static unsigned short load(Configuration::SharedPtr cfg);
 

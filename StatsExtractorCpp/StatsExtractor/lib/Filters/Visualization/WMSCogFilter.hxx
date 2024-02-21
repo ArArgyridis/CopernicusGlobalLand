@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2023  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ otb::WMSCogFilter<TInputImage, TOutputImage>::WMSCogFilter(): itk::ImageToImageF
 }
 
 template <class TInputImage, class TOutputImage>
-void otb::WMSCogFilter<TInputImage, TOutputImage>::setProduct(ProductInfo::Pointer product, ProductVariable::Pointer variable) {
+void otb::WMSCogFilter<TInputImage, TOutputImage>::setProduct(ProductInfo::SharedPtr product, ProductVariable::SharedPtr variable) {
     this->product = product;
     this->variable = variable;
 }

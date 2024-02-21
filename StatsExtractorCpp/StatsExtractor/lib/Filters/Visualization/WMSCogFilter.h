@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2023  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ public:
     /** Creation through object factory macro */
     itkTypeMacro(WMSCogFilter, itk::ImageToImageFilter);
 
-    void setProduct(ProductInfo::Pointer product, ProductVariable::Pointer variable);
+    void setProduct(ProductInfo::SharedPtr product, ProductVariable::SharedPtr variable);
 
 protected:
     WMSCogFilter();
@@ -57,8 +57,8 @@ protected:
     std::vector<bool>           noDataFlags;
     std::vector<double>         noDataValues;
     size_t                      nOutputBands;
-    ProductInfo::Pointer        product;
-    ProductVariable::Pointer    variable;
+    ProductInfo::SharedPtr        product;
+    ProductVariable::SharedPtr    variable;
 
 };
 }

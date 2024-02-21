@@ -1,4 +1,4 @@
-/**
+/*
    Copyright (C) 2021  Argyros Argyridis arargyridis at gmail dot com
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ JsonDocumentUniquePtr PolygonStats::histogramToJSON() {
     return tmpHistogram;
 }
 
-PolygonStats::PolygonStats(ProductVariable::Pointer variable, size_t polyID):polyID(polyID), validCount(0), totalCount(0), variable(variable) {
+PolygonStats::PolygonStats(ProductVariable::SharedPtr variable, size_t polyID):polyID(polyID), validCount(0), totalCount(0), variable(variable) {
     mean = sd = 0;
 
     min = std::numeric_limits<float>::max();
@@ -64,11 +64,11 @@ PolygonStats::PolygonStats(ProductVariable::Pointer variable, size_t polyID):pol
 
 PolygonStats::~PolygonStats(){}
 
-PolygonStats::Pointer PolygonStats::New(ProductVariable::Pointer variable, const size_t &polyID) {
+PolygonStats::Pointer PolygonStats::New(ProductVariable::SharedPtr variable, const size_t &polyID) {
     return std::shared_ptr<PolygonStats>(new PolygonStats(variable, polyID));
 }
 
-PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr &labels, ProductVariable::Pointer variable) {
+PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr &labels, ProductVariable::SharedPtr variable) {
     PolyStatsMapPtr myMap = std::make_shared<PolyStatsMap>();
 
     for(const size_t & id: *labels)
@@ -77,7 +77,7 @@ PolygonStats::PolyStatsMapPtr PolygonStats::NewPointerMap(const LabelsArrayPtr &
     return myMap;
 }
 
-PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductVariable::Pointer variable ){
+PolygonStats::PolyStatsPerRegionPtr PolygonStats::NewPolyStatsPerRegionMap(size_t regionCount, const LabelsArrayPtr labels, ProductVariable::SharedPtr variable ){
     PolyStatsPerRegionPtr ret = std::make_shared<PolyStatsPerRegion>();
     for(auto &label:*labels) {
         PolyStatsArrayPtr k = std::make_shared<PolyStatsArray>(regionCount);
