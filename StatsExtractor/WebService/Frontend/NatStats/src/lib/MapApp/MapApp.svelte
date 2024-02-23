@@ -46,8 +46,6 @@
                 this.variable = structuredClone(product.currentVariable.currentAnomaly.variable);
         }
         equals(rhs) {
-            console.log(this.product.currentVariable.rtFlag.currentDate)
-            console.log(rhs.product.currentVariable.rtFlag.currentDate)
             return this.product.id == rhs.product.id &&
             this.product.currentVariable.rtFlag.currentDate == rhs.product.currentVariable.rtFlag.currentDate &&
             this.analysisMode == rhs.analysisMode &&

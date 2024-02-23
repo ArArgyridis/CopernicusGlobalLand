@@ -74,7 +74,7 @@
         width: 500px;
         margin: auto;
         bottom: 10px;
-        right: 300px;
+        right: 10px;
         z-index: 1;
     }
     .logo {

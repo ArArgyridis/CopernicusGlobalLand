@@ -197,9 +197,9 @@
 
     export function toShow() {
         let ret = false;
-        if (mode == "raw") ret = $currentProduct.currentVariable != null;
+        if (mode == "raw") ret = polygonId != null && $currentProduct.currentVariable != null;
         else if (mode == "anomalies")
-            ret =
+            ret = polygonId != null &&
                 $currentProduct.currentVariable.currentAnomaly.variable != null  && 
             $currentProduct.currentVariable.rtFlag.id in $currentProduct.currentVariable.currentAnomaly.variable.cog.layers;
         return ret;

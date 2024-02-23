@@ -100,8 +100,8 @@
         });
     }
 
-    $: $currentProduct, updateDiagramsVisibility();
-    $: selectedFeatureId, clickedCoordinates, displayDiagramModal();
+    $: $currentProduct, selectedFeatureId, updateDiagramsVisibility();
+    $: selectedFeatureId, displayDiagramModal();
     $: loadingDiagrams, enableRegionReport();
 
     onMount(() => {
