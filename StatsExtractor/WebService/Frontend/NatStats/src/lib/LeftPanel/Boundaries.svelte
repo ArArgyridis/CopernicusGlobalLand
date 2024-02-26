@@ -49,11 +49,12 @@
                 <select
                     class="form-select"
                     size="4"
-                    aria-label="size 3 select example"
+                    aria-label="size 3"
                 >
                     {#each Object.keys($boundaries) as stratId, productIdx}
                         <option
                             on:click={() => {
+                                console.log("hereeee");
                                 $currentBoundary = $boundaries[stratId];
                             }}
                             selected={$currentBoundary.id ==

@@ -16,7 +16,7 @@
     import "bootstrap/dist/css/bootstrap.min.css";
 </script>
 
-<div class="d-flex align-items-center text-center header">
+<div class="row d-flex align-items-center text-center header">
     <div class="col mx-0">
         <span><h5>NatStats</h5></span>
         <span
