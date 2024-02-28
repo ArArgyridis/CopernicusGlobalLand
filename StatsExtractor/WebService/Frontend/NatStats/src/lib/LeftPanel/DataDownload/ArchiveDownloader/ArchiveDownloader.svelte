@@ -306,6 +306,7 @@
                                     >
                                         Email(*):
                                     </div>
+                                    <!--
                                     <div class="col">
                                         <input
                                             type="email"
@@ -318,6 +319,7 @@
                                             }}
                                         />
                                     </div>
+                                    -->
                                 </div>
                             </div>
                         </div>

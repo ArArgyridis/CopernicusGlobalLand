@@ -117,6 +117,7 @@ set (PROCESSORS
     processors/OrderProcessor.cpp
     processors/AnomalyExtractor.cpp
     processors/GLCReclassifier.cpp
+    processors/GLCSimplifier.cpp
 )
 
 foreach(sourceFile IN LISTS PROCESSORS)

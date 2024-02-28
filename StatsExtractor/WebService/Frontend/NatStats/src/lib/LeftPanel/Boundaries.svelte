@@ -49,7 +49,7 @@
                 <select
                     class="form-select"
                     size="4"
-                    aria-label="size 3"
+                    aria-label="size 4"
                 >
                     {#each Object.keys($boundaries) as stratId, productIdx}
                         <option
@@ -71,5 +71,9 @@
 <style>
     .accordion-button:not(.collapsed) {
         background-color: rgba(172, 184, 38, 0.3);
+    }
+
+    .tmp {
+        cursor:pointer;
     }
 </style>
