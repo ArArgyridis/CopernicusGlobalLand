@@ -26,12 +26,14 @@
     import PointTimeSeries from "./PointTimeSeries.svelte";
     import PolygonHistogramData from "./PolygonHistogramData.svelte";
     import RegionReport from "./RegionReport.svelte";
+    import {uuidv4} from "../../base/utils";
 
-    export let mapInfoId = "mapInfo";
     export let selectedFeatureId = false;
     export let clickedCoordinates = null;
     export let dataLoading = false;
 
+    let mapInfoId = uuidv4();
+    
     let diagramModal = null;
     let selectedRegion = {
         properties: {

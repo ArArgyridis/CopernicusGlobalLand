@@ -34,7 +34,7 @@
     <div class="panelBody">
         <ProductCategories />
         <DateRangePicker />
-        <Boundaries accordionId="boundaries" />
+        <Boundaries />
         <ProductConfiguration />
         <VariableDisplayOptions />
     </div>

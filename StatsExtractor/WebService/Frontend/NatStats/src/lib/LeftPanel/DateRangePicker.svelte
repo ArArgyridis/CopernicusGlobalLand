@@ -18,7 +18,7 @@
     import DataDownload from "./DataDownload/DataDownload.svelte";
 
     import { DateInput } from "date-picker-svelte";
-    import utils from "../base/utils.js";
+    import {dateFromUTCDateString, localDateAsUTCString} from "../base/utils.js";
     import {
         currentProduct,
         dateEnd,
@@ -30,7 +30,7 @@
     let activeProduct;
 
     function setCurrentDate(idx) {
-        $currentProduct.currentVariable.rtFlag.currentDate = utils.dateFromUTCDateString(displayDates[idx]);
+        $currentProduct.currentVariable.rtFlag.currentDate = dateFromUTCDateString(displayDates[idx]);
     }
 
     function updateDates() {
@@ -80,8 +80,7 @@
                 type="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
-                >{utils
-                    .localDateAsUTCString(activeProduct.currentVariable.rtFlag.currentDate)
+                >{localDateAsUTCString(activeProduct.currentVariable.rtFlag.currentDate)
                     .substring(0, 10)}</button>
             <ul
                 class="dropdown-menu scrollable"

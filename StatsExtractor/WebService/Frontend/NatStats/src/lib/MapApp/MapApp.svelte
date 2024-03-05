@@ -31,7 +31,7 @@
     import requests from "../base/requests.js";
     import options from "../base/options.js";
     import MapInfo from "./MapInfo/MapInfo.svelte";
-    import utils from "../base/utils.js";
+    import {MarkerProperties} from "../base/utils.js";
 
     class ViewOptions {
         constructor(product, boundary) {
@@ -125,7 +125,7 @@
             1,
             clickedCoordinates.obj.coordinate[0],
             clickedCoordinates.obj.coordinate[1],
-            { icon: new Icon(utils.markerProperties()) },
+            { icon: new Icon(new MarkerProperties()) },
         );
     }
 
@@ -313,7 +313,6 @@
     />
 
     <OLMap
-        id="basemap"
         class="map"
         bind:this={refs.map}
         disableMapControls={true}

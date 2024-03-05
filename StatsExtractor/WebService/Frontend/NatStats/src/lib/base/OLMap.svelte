@@ -48,7 +48,7 @@
     import { nullId } from "../../store/ProductParameters";
 
 	/*params*/
-	export let id;
+	export let id = uuidv4();
 	export let center = "[0,0]";
 	export let zoom = 1;
 	export let projection = "EPSG:3857";
@@ -79,6 +79,12 @@
 			};
 		},
 	};
+
+	function uuidv4() {
+  		return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+    		(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  		);
+	}
 
 	function addFeatureToLayer(layerId, ft) {
 		layers[layerId].getSource().addFeature(ft);
@@ -154,7 +160,7 @@
 	}
 
 	export function activateSpinner() {
-		document.getElementById(id).classList.add("spinner");
+		map.getTargetElement().classList.add("spinner");
 	}
 
 	export function addDrawInteraction(params) {
@@ -235,7 +241,6 @@
 		const source = new GeoTIFF({
 			sources: [sourceObj],
 		});
-		//need to see how to update the
 		source.tileOptions.interpolate = interpolate; //hack to disable interpollation
 		return createTileLayer(source, zIndex, "WebGLTileLayer");
 	}
@@ -250,7 +255,7 @@
 	}
 
 	export function deactivateSpinner() {
-		document.getElementById(id).classList.remove("spinner");
+		map.getTargetElement().classList.remove("spinner");
 	}
 
 	export function deleteFeatureFromVectorLayer(layerId, featureId) {
@@ -420,6 +425,7 @@
 	}
 
 	onMount(() => {
+
 		if (projectionDef != "") {
 			proj4.defs(projection, projectionDef);
 			register(proj4);
@@ -434,7 +440,9 @@
 				projection: projection,
 			}),
 		});
+
 		map.getView().setCenter(cntr);
+		
 		if (disableMapControls) {
 			let ctrls = map.getControls();
 			for (let i = 0; i < ctrls.getLength(); i++)
@@ -442,8 +450,6 @@
 		}
 	});
 </script>
-
-
 
 <div {id} class={$$restProps.class || ""} />
 
@@ -496,9 +502,11 @@
 			transform: rotate(360deg);
 		}
 	}
+
 	.spinner {
 		pointer-events: none;
 	}
+	
 	.spinner:after {
 		content: "";
 		box-sizing: border-box;

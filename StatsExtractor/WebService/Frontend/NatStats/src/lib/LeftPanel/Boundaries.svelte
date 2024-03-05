@@ -15,11 +15,10 @@
 <script>
     import "bootstrap/dist/css/bootstrap.min.css";
     import { currentBoundary, boundaries } from "../../store/Boundaries.js";
+    import { uuidv4 } from "../base/utils.js";
 
-    export let accordionId = "boundaries";
-    export let bindToId = accordionId;
-    export let propIdx = 0;
-
+    let accordionId = uuidv4();
+    let propIdx = 0;
 
 </script>
 
@@ -33,17 +32,17 @@
                 class="accordion-button"
                 type="button"
                 data-bs-toggle="collapse"
-                data-bs-target={"#collapse_" + bindToId + "_" + propIdx}
+                data-bs-target={"#collapse_" + accordionId + "_" + propIdx}
                 aria-expanded="true"
-                aria-controls={"collapse_" + bindToId + "_" + propIdx}
+                aria-controls={"collapse_" + accordionId + "_" + propIdx}
             >
                 <b>Active Boundary:&nbsp;</b>{$currentBoundary.description}
             </button>
         </h2>
         <div
-            id={"collapse_" + bindToId + "_" + propIdx}
+            id={"collapse_" + accordionId + "_" + propIdx}
             class="accordion-collapse collapse show overflow-auto"
-            data-bs-parent={"#" + bindToId}
+            data-bs-parent={"#" + accordionId}
         >
             <div class="accordion-body">
                 <select
@@ -54,7 +53,6 @@
                     {#each Object.keys($boundaries) as stratId, productIdx}
                         <option
                             on:click={() => {
-                                console.log("hereeee");
                                 $currentBoundary = $boundaries[stratId];
                             }}
                             selected={$currentBoundary.id ==
@@ -71,9 +69,5 @@
 <style>
     .accordion-button:not(.collapsed) {
         background-color: rgba(172, 184, 38, 0.3);
-    }
-
-    .tmp {
-        cursor:pointer;
     }
 </style>

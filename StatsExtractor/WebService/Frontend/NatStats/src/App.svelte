@@ -20,14 +20,10 @@
   import Legend from "./lib/base/Legend.svelte";
   import ArchiveDownloader from "./lib/LeftPanel/DataDownload/ArchiveDownloader/ArchiveDownloader.svelte";
   import {currentProduct} from "./store/ProductParameters.js";
-  import {currentBoundary} from "./store/Boundaries.js";
   import DataInitializer from "./lib/base/DataInitializer.svelte";
   
   let finishedDataLoading = false;
   let refs = {};
-
-  
-
 
 </script>
 

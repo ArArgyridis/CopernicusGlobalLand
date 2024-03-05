@@ -156,7 +156,6 @@
 
 <div class={$$restProps.class + " achiveDownloaderMap"}>
     <OlMap
-        id={downloadPanelId + "_map"}
         projection={mapProjection}
         bind:this={refs.map}
         class="aoiMap"

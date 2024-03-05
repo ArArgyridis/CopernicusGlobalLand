@@ -3,9 +3,7 @@
     import {categories, currentCategory, currentProduct, dateEnd, dateStart, products} from "../../store/ProductParameters.js";
     import {currentBoundary, boundaries} from "../../store/Boundaries.js";
     import {Boundary, Product, ProductFile } from "./CGLSDataConstructors.js";
-    import {onMount} from "svelte";
-    import AnalysisMode from "../LeftPanel/VariableDisplayOptions/AnalysisMode.svelte";
-
+    
     export let finishedLoading;
     let countCogDownloads = 0;
     let fetchedVariableData = new Set();
@@ -107,6 +105,7 @@
                     }
                     variable.updated = true;
                 });
+                
         });
     }
     $: if($currentCategory == null) fetchCategories();

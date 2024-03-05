@@ -116,7 +116,7 @@ set (PROCESSORS
     processors/StatsExtractor.cpp
     processors/OrderProcessor.cpp
     processors/AnomalyExtractor.cpp
-    processors/GLCReclassifier.cpp
+    #processors/GLCReclassifier.cpp
     processors/GLCSimplifier.cpp
 )
 

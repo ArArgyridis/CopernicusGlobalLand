@@ -29,7 +29,7 @@
     } from "../../../store/ProductParameters";
     import OlMap from "../../base/OLMap.svelte";
     import options from "../../base/options.js";
-    import utils from "../../base/utils";
+    import {MarkerProperties} from "../../base/utils";
     import { ProductFile } from "../../base/CGLSDataConstructors.js";
     
     export let regionInfo;
@@ -112,7 +112,7 @@
 
                 pointLayerIDs[pair.key] = map.createEmptyVectorLayer();
                 map.setVisibility(pointLayerIDs[pair.key], true);
-                map.addPointToLayer(pointLayerIDs[pair.key], 1, clickedCoordinates.obj.coordinate[0], clickedCoordinates.obj.coordinate[1], {icon: new Icon(utils.markerProperties())});
+                map.addPointToLayer(pointLayerIDs[pair.key], 1, clickedCoordinates.obj.coordinate[0], clickedCoordinates.obj.coordinate[1], {icon: new Icon(new MarkerProperties())});
                 //renderHandlers.push( new Promise(resolve=> map.getMap().once("rendercomplete", resolve)));
                 //renderHandlers.push( new Promise(resolve=> map.getLayerObject(cogLayerIDs[pair.key]).on("postcompose", resolve)));
             }
@@ -227,7 +227,6 @@
                     class="col-sm reportMaps d-flex align-items-center flex-column justify-content-center">
                         <h6>Raw Data</h6>
                         <OlMap
-                            id={parentId + "_product_map"}
                             class="reportMap"
                             disableMapControls={true}
                             bind:this={refs.maps.productMap}
@@ -242,7 +241,6 @@
                 >                   
                         <h6>Anomalies</h6>
                         <OlMap
-                            id={parentId + "_anomaly_map"}
                             class="reportMap"
                             disableMapControls={true}
                             bind:this={refs.maps.anomalyMap}
