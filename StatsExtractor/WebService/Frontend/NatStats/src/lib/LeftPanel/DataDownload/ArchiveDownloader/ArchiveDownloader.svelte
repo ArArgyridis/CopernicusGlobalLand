@@ -47,6 +47,11 @@
     let validated = false;
     let aoiSet = false;
 
+    const valueTypeOptions = [
+        {id: 0, description: "Statistics"},
+        {id: 1, description: "Raster Data"},
+    ];
+
     const statisticsGetModeOptions = [
         { id: 0, description: "Raw Data" },
         { id: 1, description: "Anomalies" },
@@ -189,7 +194,6 @@
     onMount(() => {
         init();
         //setting up modal
-
     });
 
     //reactivity
@@ -238,15 +242,16 @@
                                         <h6>Select Date Range</h6>
                                     </div>
                                 </div>
-                                <div class="row mt-2">
-                                    <div
-                                        class="col d-flex flex-column justify-content-center"
-                                    >
-                                        <span class="align-middle"
-                                            >Date Start</span
-                                        >
+                                <div class="row">
+                                    <div class = "col text-center">
+                                        <span class="align-middle">Date Start</span>
                                     </div>
-                                    <div class="col">
+                                    <div class = "col text-center">
+                                        <span class="align-middle">Date End</span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class = "col text-center">
                                         <DateInput
                                             bind:value={dnDateStart}
                                             format={dateFormat}
@@ -254,16 +259,7 @@
                                             closeOnSelection={true}
                                         />
                                     </div>
-                                </div>
-                                <div class="row mt-2">
-                                    <div
-                                        class="col d-flex flex-column justify-content-center"
-                                    >
-                                        <span class="align-middle"
-                                            >Date End</span
-                                        >
-                                    </div>
-                                    <div class="col">
+                                    <div class = "col text-center">
                                         <DateInput
                                             bind:value={dnDateEnd}
                                             format={dateFormat}
@@ -272,6 +268,11 @@
                                         />
                                     </div>
                                 </div>
+
+                                <div class="row mt-2">
+                                    
+                                </div>
+
                                 <div class="row mt-2">
                                     <div class="col text-center">
                                         <h6>Select Product Data to Download</h6>

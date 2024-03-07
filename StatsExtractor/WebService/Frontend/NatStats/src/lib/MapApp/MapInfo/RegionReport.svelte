@@ -232,7 +232,6 @@
                             bind:this={refs.maps.productMap}
                         />
                         <Legend analysisMode={"Raw"}/>
-
                 </div>
                 <div
                     class="col-sm reportMaps d-flex align-items-center flex-column justify-content-center"
@@ -246,7 +245,6 @@
                             bind:this={refs.maps.anomalyMap}
                         />
                         <Legend analysisMode={"Anomalies"}/>
-
                 </div>
             </div>
             <div class="row mt-1">

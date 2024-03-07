@@ -46,11 +46,6 @@ class DBImporter:
         #fetching table columns
         try:
             session = self.__configuration.pgConnections[self.__configuration.statsInfo.connectionId].getNewSession()
-
-            print("""INSERT INTO {0}.stratification (description) VALUES ('{1}') ON CONFLICT(description) 
-                       DO NOTHING;""".format(self.__configuration.statsInfo.schema, self.__descriptor))
-
-
             queries = ["DELETE FROM {0}.stratification where description = '{1}';".format(
                 self.__configuration.statsInfo.schema, self.__descriptor),
             """INSERT INTO {0}.stratification (description) VALUES ('{1}') ON CONFLICT(description) 
