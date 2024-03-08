@@ -3,6 +3,7 @@
     export let downloadOptions;
     export let auxilaryDownloadOptions;
     export let statisticsGetModeOptions;
+    export let outputValuesOptions;
     import Fa from "svelte-fa/src/fa.svelte";
     import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
@@ -11,8 +12,9 @@
         delete auxilaryDownloadOptions[key];
         downloadOptions = downloadOptions;
         auxilaryDownloadOptions = auxilaryDownloadOptions;
-        downloadOptions;
     }
+
+    $: downloadOptions, console.log(outputValuesOptions);
 </script>
 
 <div class={$$restProps.class || ""}>
@@ -24,6 +26,7 @@
                 <th scope="col">Variable</th>
                 <th scope="col">RT Flag</th>
                 <th scope="col">Download Data</th>
+                <th scope="col">Output Type</th>
                 <th scope="col">Delete</th>
             </tr>
         </thead>
@@ -37,6 +40,9 @@
                     >{statisticsGetModeOptions[downloadOptions[key].dataFlag]
                         .description}</td
                 >
+                <td>
+                    {outputValuesOptions[downloadOptions[key].outputValue].description}
+                </td>
                 <td
                     ><div>
                         <button

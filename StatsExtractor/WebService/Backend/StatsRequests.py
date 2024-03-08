@@ -341,7 +341,7 @@ class StatsRequests(GenericRequest):
         ret = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(checkQuery)
 
         if ret[0][0] == True or ret[0][1] == True:
-            aoi = "NULL"
+            aoi = "MULTIPOLYGON(((-180 90,180 90,180 -90,-180 -90,-180 90)))"
             if self._requestData["options"]["aoi"] is not None:
                 aoi = "ST_MakeValid(ST_Force2D(ST_Multi(ST_Union(ST_GeomFromText('{0}')))))".format(self._requestData["options"]["aoi"])
 

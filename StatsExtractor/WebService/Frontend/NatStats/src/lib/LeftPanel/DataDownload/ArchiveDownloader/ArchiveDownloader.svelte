@@ -47,9 +47,10 @@
     let validated = false;
     let aoiSet = false;
 
-    const valueTypeOptions = [
-        {id: 0, description: "Statistics"},
-        {id: 1, description: "Raster Data"},
+    const outputValuesOptions = [
+        {id: 0, description: "AOI Statistics (.csv)"},
+        {id: 1, description: "Raster Data within AOI Boundary (.tif)"},
+        {id: 1, description: "Both"},
     ];
 
     const statisticsGetModeOptions = [
@@ -70,6 +71,7 @@
     
     let selectedCategory = null;
     let selectedProduct = null;
+    let outputValue = outputValuesOptions[0];
     let statisticsGetMode = statisticsGetModeOptions[0];
     let myDnRTs = null; 
     let selectedRT = null;
@@ -90,6 +92,7 @@
             dataFlag: statisticsGetMode.id,
             rtFlag: selectedRT.id,
             variable: selectedProduct.currentVariable.id,
+            outputValue: outputValue.id
         };
 
         auxilaryDownloadOptions[key] = {
@@ -270,14 +273,11 @@
                                 </div>
 
                                 <div class="row mt-2">
-                                    
-                                </div>
-
-                                <div class="row mt-2">
                                     <div class="col text-center">
                                         <h6>Select Product Data to Download</h6>
                                     </div>
                                 </div>
+
                                 <div class="row mt-1">                                     
                                     {#each statisticsGetModeOptions as mode, idx}
                                         <div class="form-check">
@@ -299,8 +299,38 @@
                                             >
                                         </div>
                                     {/each}
-                                    
                                 </div>
+
+                                <div class="row mt-2">
+                                    <div class="col text-center">
+                                        <h6>Select Ouput</h6>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        {#each outputValuesOptions as mode, idx}
+                                        <div class="form-check">
+                                            <input
+                                                class="form-check-input"
+                                                type="radio"
+                                                name="outputData"
+                                                checked={outputValue.id ==
+                                                    mode.id}
+                                                on:click={() => {
+                                                    outputValue = mode;
+                                                }}
+                                            />                                         
+                                            <label
+                                                class="form-check-label"
+                                                for="outputData"
+                                                >{mode.description}</label
+                                            >
+                                        </div>
+                                    {/each}
+                                    </div>
+                                </div>
+
                                 <div class="row mt-2">
                                     <div
                                         class="col-2 d-flex flex-column justify-content-center"
@@ -446,6 +476,7 @@
                             bind:downloadOptions
                             bind:auxilaryDownloadOptions
                             {statisticsGetModeOptions}
+                            {outputValuesOptions}
                         />
                     </div>
                 </div>
