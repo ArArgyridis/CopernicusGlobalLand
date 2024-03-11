@@ -14,7 +14,6 @@
         auxilaryDownloadOptions = auxilaryDownloadOptions;
     }
 
-    $: downloadOptions, console.log(outputValuesOptions);
 </script>
 
 <div class={$$restProps.class || ""}>

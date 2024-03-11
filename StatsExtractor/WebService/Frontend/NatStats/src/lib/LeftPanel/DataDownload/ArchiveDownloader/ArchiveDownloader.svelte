@@ -37,6 +37,7 @@
     import DownloadTable from "./DownloadTable.svelte";
     import ArchiveDownloaderMap from "./ArchiveDownloaderMap.svelte";
     import WKT from "ol/format/WKT";
+    import GeoJSON from "ol/format/GeoJSON";
 
     export let downloadPanelId = "downloadRoot";
 
@@ -142,6 +143,8 @@
         if (aoiSet) {
             let fmt = new WKT();
             aoi = fmt.writeFeatures(refs.map.getFeatures());
+            let geojson = new GeoJSON();
+            console.log(geojson.writeFeatures(refs.map.getFeatures()));
         }
 
         let optionsObj =  {
@@ -337,7 +340,7 @@
                                     >
                                         Email(*):
                                     </div>
-                                    <!--
+                                    
                                     <div class="col">
                                         <input
                                             type="email"
@@ -350,7 +353,7 @@
                                             }}
                                         />
                                     </div>
-                                    -->
+                                    
                                 </div>
                             </div>
                         </div>

@@ -339,23 +339,32 @@ class StatsRequests(GenericRequest):
             FULL OUTER JOIN tmp ON TRUE;""".format(self._requestData["options"]["email"])
 
         ret = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(checkQuery)
-
-        if ret[0][0] == True or ret[0][1] == True:
-            aoi = "MULTIPOLYGON(((-180 90,180 90,180 -90,-180 -90,-180 90)))"
-            if self._requestData["options"]["aoi"] is not None:
-                aoi = "ST_MakeValid(ST_Force2D(ST_Multi(ST_Union(ST_GeomFromText('{0}')))))".format(self._requestData["options"]["aoi"])
-
-            insertQuery = """
-            WITH tmp AS(
-            SELECT '{0}'::text, {1}, '{2}'::jsonb
+        
+        if(!ret[0][0] && !ret[0][1])
+            return {"result": "Error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
+        
+        insertQuery = """
+            WITH tmp AS (
+                SELECT '' AS dt
+            ),polys AS(
+                SELECT (feat->'properties'->'id')::text::int AS id,
+                ST_SetSRID(ST_MakeValid(ST_Force2D(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')))),3857) AS geom
+                FROM (
+                    SELECT JSON_ARRAY_ELEMENTS(dt->'features') AS feat
+                    FROM tmp
+                ) AS a
+            ),insert_order AS(
+                INSERT INTO product_order (email, aoi, request_data)
+                SELECT '{1}'::TEXT, ST_Envelope(st_Extent(geom)), '{2}'::JSONB
+                FROM polys 
+                RETURNING id
             )
-            INSERT INTO product_order(email, aoi, request_data)
-            SELECT * FROM tmp""".format(self._requestData["options"]["email"],aoi,json.dumps(self._requestData["options"]["request_data"]))
-            print(insertQuery)
+            INSERT INTO product_order_geom(product_order_id, poly_id, geom)
+            SELECT io.id, polys.id, polys.geom
+            FROM insert_order io
+            JOIN polys ON true""".format(aoi,self._requestData["options"]["email"],json.dumps(self._requestData["options"]["request_data"]))
             self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([insertQuery,])
             return {"result": "OK", "message": "Your request has been submitted successfully. You will receive an email when the data are available"}
-        else:
-            return {"result": "Error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
 
     def __pieDataByDateAndPolygon(self):
         query = """

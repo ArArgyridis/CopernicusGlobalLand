@@ -18,6 +18,7 @@
         faUpload,
     } from "@fortawesome/free-solid-svg-icons";
     import Fa from "svelte-fa/src/fa.svelte";
+    import { isNumber } from "highcharts";
 
     export let aoiSet = false;
     export let maxExtentFt = null;
@@ -53,8 +54,9 @@
         eraseAOI();
         aoiMode = "drawAOI";
         aoiOLOptions.draw.setActive(true);
-        aoiOLOptions.draw.on("drawend", () => {
+        aoiOLOptions.draw.on("drawend", (evt) => {
             aoiOLOptions.draw.setActive(false);
+            evt.feature.set("id", 1);
             aoiSet = true;
         });
     }
@@ -70,32 +72,41 @@
         let reader = new FileReader();
         reader.readAsText(file);
 
-        let validGeoms = true;
 
         reader.onload = (e) => {
             let features = new KML().readFeatures(e.target.result);
             let newFeatures = [];
-            features.forEach((ft) => {
-                if (
-                    ft.getGeometry() instanceof Polygon ||
-                    ft.getGeometry() instanceof MultiPolygon
-                ) {
-                    ft.getGeometry().transform("EPSG:4326", mapProjection);
-                    ft.setStyle(showStyle);
-                    newFeatures.push(ft);
-                } else validGeoms = false;
-            });
+            let errorMessage = `The system accepts only: 
+            - Polygon/Multipolygon geometries. 
+            - A field called "id" having unique integer values (add it before converting your dataset to KML)
+            - A max File size of 10 MB\n`;
+            errorMessage += "Please update your KML data accordingly :-)";
+            let ids = new Set();
+            let validFeature = true;
+            for (let readerId = 0; readerId < features.length && validFeature; readerId++ ) {
+                let ft = features[readerId];
+                let ftId = parseInt(ft.get("id"));
+                //validate feature                
+                validFeature = (ft.getGeometry() instanceof Polygon ||
+                    ft.getGeometry() instanceof MultiPolygon) && isNumber(ftId) && Number.isInteger(ftId) 
+                    && !ids.has(ftId);
 
-            if (!validGeoms)
-                window.alert(
-                    "The system accepts only Polygon/Multipolygon geometries. Please update your KML data accordingly",
-                );
+                ft.getGeometry().transform("EPSG:4326", mapProjection);
+                ft.setStyle(showStyle);
+                ft.set("id",ftId);
+                newFeatures.push(ft);
+                ids.add(ftId);
+            }
+
+            if (!validFeature)
+                window.alert(errorMessage);
             else {
                 refs.map.addFeaturesToLayer(
                     aoiOLOptions.layer,
                     newFeatures,
                 );
-                this.aoiSet = true;
+                refs.map.fitToLayerExtent(aoiOLOptions.layer);
+                aoiSet = true;
             }
         };
     }
