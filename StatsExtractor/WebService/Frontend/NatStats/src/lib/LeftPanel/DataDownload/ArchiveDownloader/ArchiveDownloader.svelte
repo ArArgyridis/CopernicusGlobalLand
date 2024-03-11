@@ -36,7 +36,6 @@
     import Fa from "svelte-fa/src/fa.svelte";
     import DownloadTable from "./DownloadTable.svelte";
     import ArchiveDownloaderMap from "./ArchiveDownloaderMap.svelte";
-    import WKT from "ol/format/WKT";
     import GeoJSON from "ol/format/GeoJSON";
 
     export let downloadPanelId = "downloadRoot";
@@ -141,10 +140,8 @@
     function submitOrder() {
         let aoi = null;
         if (aoiSet) {
-            let fmt = new WKT();
+            let fmt = new GeoJSON();
             aoi = fmt.writeFeatures(refs.map.getFeatures());
-            let geojson = new GeoJSON();
-            console.log(geojson.writeFeatures(refs.map.getFeatures()));
         }
 
         let optionsObj =  {
