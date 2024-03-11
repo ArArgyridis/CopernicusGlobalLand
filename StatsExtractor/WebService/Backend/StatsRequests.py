@@ -363,8 +363,8 @@ class StatsRequests(GenericRequest):
             SELECT io.id, polys.id, polys.geom
             FROM insert_order io
             JOIN polys ON true""".format(aoi,self._requestData["options"]["email"],json.dumps(self._requestData["options"]["request_data"]))
-            self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([insertQuery,])
-            return {"result": "OK", "message": "Your request has been submitted successfully. You will receive an email when the data are available"}
+        self._config.pgConnections[self._config.statsInfo.connectionId].executeQueries([insertQuery,])
+        return {"result": "OK", "message": "Your request has been submitted successfully. You will receive an email when the data are available"}
 
     def __pieDataByDateAndPolygon(self):
         query = """
