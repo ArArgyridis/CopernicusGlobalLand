@@ -154,6 +154,8 @@
             if(response.data.data.result == "OK") {
                 downloadOptions = {};
                 auxilaryDownloadOptions = {};
+                dataVerification();
+                validated = false;
             }
 		});
     }
