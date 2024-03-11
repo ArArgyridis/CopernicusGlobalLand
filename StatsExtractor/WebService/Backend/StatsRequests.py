@@ -340,7 +340,7 @@ class StatsRequests(GenericRequest):
 
         ret = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(checkQuery)
         
-        if(not ret[0][0] && not ret[0][1])
+        if(not ret[0][0] and not ret[0][1])
             return {"result": "Error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
         
         insertQuery = """
