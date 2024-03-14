@@ -135,7 +135,7 @@ void ProductOrderProcessor::computeStatistics(PGPool::PGConn::UniquePtr &cn, std
         if(imagesArray.Size() == maxArraySize ||
             (rowCnt > 0 && imagesArray.Size() < maxArraySize && processFiles[rowCnt-1][4].as<size_t>() != processFiles[rowCnt][4].as<size_t>()) ) {
             //process images to get the statistics
-            size_t variableId = processFiles[rowCnt][4].as<size_t>();
+            size_t variableId = processFiles[rowCnt-1][4].as<size_t>();
             polyStatsExtractor(orderId, orderParams, polyIds, variableId, imagesArray, maskInfo, dstDir);
             imagesArray.Clear();
         }
