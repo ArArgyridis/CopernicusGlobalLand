@@ -124,7 +124,7 @@ void ProductOrderProcessor::computeStatistics(PGPool::PGConn::UniquePtr &cn, std
     JsonDocumentSharedPtr polyIds = std::make_shared<JsonDocument>();
     JsonValue imagesArray;
     imagesArray.SetArray();
-    unsigned char maxArraySize = 3;
+    unsigned char maxArraySize = 10;
     std::string query = fmt::format(R"""(SELECT ARRAY_TO_JSON(ARRAY_AGG(pog.poly_id))
             FROM product_order_geom pog
             WHERE product_order_id  = '{0}')""", orderId);
