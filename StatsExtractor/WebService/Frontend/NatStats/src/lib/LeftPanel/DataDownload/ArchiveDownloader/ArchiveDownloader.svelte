@@ -50,7 +50,7 @@
     const outputValuesOptions = [
         {id: 0, description: "AOI Statistics (.csv)"},
         {id: 1, description: "Raster Data within AOI Boundary (.tif)"},
-        {id: 1, description: "Both"},
+        {id: 2, description: "Polygon Statistics and AOI Raster Data"},
     ];
 
     const statisticsGetModeOptions = [

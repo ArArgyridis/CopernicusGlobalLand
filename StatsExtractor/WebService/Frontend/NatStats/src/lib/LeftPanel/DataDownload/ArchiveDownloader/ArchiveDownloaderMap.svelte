@@ -14,7 +14,6 @@
         faDrawPolygon,
         faEraser,
         faGlobe,
-        faDownload,
         faUpload,
     } from "@fortawesome/free-solid-svg-icons";
     import Fa from "svelte-fa/src/fa.svelte";
@@ -28,6 +27,7 @@
     let aoiMode = null;
     let aoiOLOptions = {
         layer: null,
+        draw: null
     };
 
     let drawStyle = new Style({
@@ -71,7 +71,6 @@
         let file = evt.target.files[0];
         let reader = new FileReader();
         reader.readAsText(file);
-
 
         reader.onload = (e) => {
             let features = new KML().readFeatures(e.target.result);
@@ -163,6 +162,8 @@
                 });
             });
     });
+
+    $: if(aoiMode != "drawAOI" && aoiOLOptions.draw != null) aoiOLOptions.draw.setActive(false);
 </script>
 
 <div class={$$restProps.class + " achiveDownloaderMap"}>
