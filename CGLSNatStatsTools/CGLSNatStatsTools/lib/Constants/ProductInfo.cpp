@@ -42,7 +42,7 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg
         fileNameCreationPattern = row[6].as<std::string>();
 
     if(!row[7].is_null())
-        rtPattern = row[8].as<std::string>();
+        rtPattern = row[7].as<std::string>();
 
     if (!row[8].is_null())
         firstProductPath = std::make_shared<std::filesystem::path>(*rootPath/std::filesystem::path(row[8].as<std::string>()));

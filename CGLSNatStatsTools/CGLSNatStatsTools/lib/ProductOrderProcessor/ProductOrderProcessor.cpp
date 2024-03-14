@@ -232,11 +232,9 @@ void ProductOrderProcessor::process() {
                 if(dataReq.value["outputValue"].GetInt() == 1 || dataReq.value["outputValue"].GetInt() == 2)
                     generateRasterData(maskInfo, variableId, tmpOrderPath, processFiles);
             }
-/*
             compressAndEMail(tmpOrderPath, unprocessedOrders[order][0].as<std::string>(), unprocessedOrders[order][1].as<std::string>());
             std::string updateQuery = fmt::format("UPDATE product_order SET processed = TRUE WHERE id = '{0}'",  unprocessedOrders[order][0].as<std::string>());
             cn->executeQuery(updateQuery);
-*/
         }
         std::cout << "Waiting....\n";
         sleep(12);
