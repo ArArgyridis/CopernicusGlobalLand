@@ -48,6 +48,9 @@ public:
             }
             std::filesystem::path outPath =  m_OutputDirectory/ std::filesystem::path(this->variable->getProductInfo()->productNames[0])/ std::filesystem::path(this->variable->variable);
 
+            if(m_RTFlag > -1)
+                outPath /=std::to_string(m_RTFlag);
+
             if(!std::filesystem::is_directory(outPath))
                 std::filesystem::create_directories(outPath);
 
@@ -68,7 +71,7 @@ protected:
     OrderStatisticsFilter(): SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>() {}
     ~OrderStatisticsFilter(){}
     virtual std::string polygonInfoQuery(OGREnvelope &envelope) override {
-        return fmt::format(         (R"""(with region AS( select st_setsrid((st_makeenvelope({0},{1},{2},{3})),4326) bbox),
+        return fmt::format((R"""(with region AS( select st_setsrid((st_makeenvelope({0},{1},{2},{3})),4326) bbox),
             aoi AS(SELECT pog.poly_id id, st_transform(pog.geom, 4326) aoi FROM product_order_geom pog
             WHERE pog.poly_id IN({4}) AND pog.product_order_id = '{5}')
             SELECT aoi.id, ST_ASTEXT(ST_MULTI(CASE WHEN ST_CONTAINS(region.bbox, aoi.aoi) THEN aoi.aoi ELSE ST_INTERSECTION(aoi.aoi, region.bbox) END)) geom

@@ -48,9 +48,9 @@
     let aoiSet = false;
 
     const outputValuesOptions = [
-        {id: 0, description: "AOI Statistics (.csv)"},
-        {id: 1, description: "Raster Data within AOI Boundary (.tif)"},
-        {id: 2, description: "Polygon Statistics and AOI Raster Data"},
+        {id: 0, description: "Polygon(s) Statistics (.csv)"},
+        {id: 1, description: "AOI (Bounding Box) Raster Data (.tif)"},
+        {id: 2, description: "Polygon(s) Statistics and AOI Raster Data"},
     ];
 
     const statisticsGetModeOptions = [
@@ -305,7 +305,7 @@
 
                                 <div class="row mt-2">
                                     <div class="col text-center">
-                                        <h6>Select Ouput</h6>
+                                        <h6>Select Output</h6>
                                     </div>
                                 </div>
 

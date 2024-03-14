@@ -36,7 +36,6 @@ using StreamedOrderStatistics = otb::StreamedStatisticsExtractorFilter<OrderStat
 
 ProductOrderProcessor::AOINfo::AOINfo(){
     originIdx[0] = originIdx[1] = size[0] = size[1] = envelope.MinX = envelope.MaxX = envelope.MinY = envelope.MaxY = 0;
-
 }
 
 std::string ProductOrderProcessor::createRawDataQuery(JSONObjectMember &dataReq) {
@@ -207,7 +206,8 @@ void ProductOrderProcessor::process() {
                 else if (dataReq.value["dataFlag"].GetInt() == 1)
                     dataQuery = createAnomaliesDataQuery(dataReq);
                 else if (dataReq.value["dataFlag"].GetInt() == 2)
-                    dataQuery = createRawDataQuery(dataReq) + " UNION " + createAnomaliesDataQuery(dataReq) + " ORDER BY flag, pfvid";
+                    dataQuery = createRawDataQuery(dataReq) + " UNION " + createAnomaliesDataQuery(dataReq);
+                dataQuery += " ORDER BY flag, pf.date";
                 processFiles = cn->fetchQueryResult(dataQuery);
 
                 //std::cout << dataQuery << "\n";

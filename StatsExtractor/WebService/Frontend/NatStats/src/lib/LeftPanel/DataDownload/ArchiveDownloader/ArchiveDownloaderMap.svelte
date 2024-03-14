@@ -77,7 +77,7 @@
             let newFeatures = [];
             let errorMessage = `The system accepts only: 
             - Polygon/Multipolygon geometries. 
-            - A field called "id" having unique integer values (add it before converting your dataset to KML)
+            - A field called "id" having unique integer values greater than 1 (add it before converting your dataset to KML)
             - A max File size of 10 MB\n`;
             errorMessage += "Please update your KML data accordingly :-)";
             let ids = new Set();
