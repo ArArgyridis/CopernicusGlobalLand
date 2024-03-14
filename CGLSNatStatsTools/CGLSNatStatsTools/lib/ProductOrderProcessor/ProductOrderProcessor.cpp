@@ -41,7 +41,7 @@ ProductOrderProcessor::AOINfo::AOINfo(){
 std::string ProductOrderProcessor::createRawDataQuery(JSONObjectMember &dataReq) {
     std::string query =  fmt::format(R"""(
                 SELECT
-                pf.rel_file_path, pfd.id, pfv.variable, pf.id, pfv.id pfvid, 0 flag
+                pf.rel_file_path, pfd.id, pfv.variable, pf.id, pfv.id pfvid, 0 flag, pf.date
                 FROM product_file pf
                 JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                 JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
@@ -55,7 +55,7 @@ std::string ProductOrderProcessor::createRawDataQuery(JSONObjectMember &dataReq)
 
 std::string ProductOrderProcessor::createAnomaliesDataQuery(JSONObjectMember &dataReq) {
     std::string query =  fmt::format(R"""(
-                SELECT  pf.rel_file_path, pfv.product_file_description_id , pfv.variable, pf.id, pfv.id pfvid, 1 flag
+                SELECT  pf.rel_file_path, pfv.product_file_description_id , pfv.variable, pf.id, pfv.id pfvid, 1 flag, pf.date
                 FROM long_term_anomaly_info ltai
                 JOIN product_file_variable pfv  ON pfv.id = ltai.anomaly_product_variable_id
                 JOIN product_file pf  ON pf.product_file_description_id = pfv.product_file_description_id
@@ -207,7 +207,7 @@ void ProductOrderProcessor::process() {
                     dataQuery = createAnomaliesDataQuery(dataReq);
                 else if (dataReq.value["dataFlag"].GetInt() == 2)
                     dataQuery = createRawDataQuery(dataReq) + " UNION " + createAnomaliesDataQuery(dataReq);
-                dataQuery += " ORDER BY flag, pf.date";
+                dataQuery += " ORDER BY flag, \"date\";";
                 processFiles = cn->fetchQueryResult(dataQuery);
 
                 //std::cout << dataQuery << "\n";
