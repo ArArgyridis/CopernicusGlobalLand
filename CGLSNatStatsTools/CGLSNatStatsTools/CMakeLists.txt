@@ -14,7 +14,7 @@ endif(OTB_FOUND)
 
 SET (PQXX_DIR .)
 SET (POSTGRES_DIR .)
-
+find_package(CURL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
 find_package(OpenMP)
@@ -118,7 +118,7 @@ set (PROCESSORS
     processors/StatsExtractor.cpp
     processors/OrderProcessor.cpp
     processors/AnomalyExtractor.cpp
-    #processors/GLCReclassifier.cpp
+    processors/GLCReclassifier.cpp
     processors/GLCSimplifier.cpp
 )
 
@@ -128,7 +128,7 @@ foreach(sourceFile IN LISTS PROCESSORS)
     add_executable(${fileName} ${sourceFile})
     target_include_directories(${fileName} PRIVATE ${LIBZIP_INCLUDE_DIR})
     target_link_libraries(${fileName} ${PROJECT_NAME} ${LIBZIP_LIBRARY} ${PQXX_LIBRARIES} ${OTB_LIBRARIES}
-            ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only OpenMP::OpenMP_CXX )
+            ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only OpenMP::OpenMP_CXX CURL::libcurl )
 endforeach()
 
 
