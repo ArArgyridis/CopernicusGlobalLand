@@ -13,7 +13,7 @@
 */
 
 import options from "./options.js";
-import utils from "./utils.js";
+import {computeDensityDescription, dateFromUTCDateString} from "./utils.js";
 
 export function AreaDensityOptions(valueRanges) {
 	return [
@@ -21,7 +21,7 @@ export function AreaDensityOptions(valueRanges) {
 			id: 1,
 			col: "noval_area_ha",
 			description: "No value",
-			title: utils.computeDensityDescription("Percentage of Variable Values in Range", valueRanges[0], valueRanges[1]),
+			title: computeDensityDescription("Percentage of Variable Values in Range", valueRanges[0], valueRanges[1]),
 			colorCol: "noval_color",
 			paletteCol: "noval_colors"
 		},
@@ -29,7 +29,7 @@ export function AreaDensityOptions(valueRanges) {
 			id: 2,
 			col: "sparse_area_ha",
 			description: "Sparse",
-			title: utils.computeDensityDescription("Percentage of Variable Values in Range", valueRanges[1], valueRanges[2]),
+			title: computeDensityDescription("Percentage of Variable Values in Range", valueRanges[1], valueRanges[2]),
 			colorCol: "sparseval_color",
 			paletteCol: "sparseval_colors"
 		},
@@ -37,7 +37,7 @@ export function AreaDensityOptions(valueRanges) {
 			id: 3,
 			col: "mid_area_ha",
 			description: "Mild",
-			title: utils.computeDensityDescription("Percentage of Variable Values in Range", valueRanges[2], valueRanges[3]),
+			title: computeDensityDescription("Percentage of Variable Values in Range", valueRanges[2], valueRanges[3]),
 			colorCol: "midval_color",
 			paletteCol: "midval_colors"
 		},
@@ -101,7 +101,7 @@ export class ConsolidationPeriods {
 		let rts = {};
 		Object.keys(dates).forEach(id => {
 			rts[id] = structuredClone(ConsolidationPeriods.#rtFlags[id]);
-			rts[id].currentDate = utils.dateFromUTCDateString(dates[id][0]);
+			rts[id].currentDate = dateFromUTCDateString(dates[id][0]);
 			rts[id].dates = dates[id];
 		});
 		Object.assign(this, rts);

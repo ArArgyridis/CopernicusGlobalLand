@@ -36,7 +36,7 @@
     import Fa from "svelte-fa/src/fa.svelte";
     import DownloadTable from "./DownloadTable.svelte";
     import ArchiveDownloaderMap from "./ArchiveDownloaderMap.svelte";
-    import WKT from "ol/format/WKT";
+    import GeoJSON from "ol/format/GeoJSON";
 
     export let downloadPanelId = "downloadRoot";
 
@@ -46,6 +46,12 @@
     let submitVerification = false;
     let validated = false;
     let aoiSet = false;
+
+    const outputValuesOptions = [
+        {id: 0, description: "Polygon(s) Statistics (.csv)"},
+        {id: 1, description: "AOI (Bounding Box) Raster Data (.tif)"},
+        {id: 2, description: "Polygon(s) Statistics and AOI Raster Data"},
+    ];
 
     const statisticsGetModeOptions = [
         { id: 0, description: "Raw Data" },
@@ -65,6 +71,7 @@
     
     let selectedCategory = null;
     let selectedProduct = null;
+    let outputValue = outputValuesOptions[0];
     let statisticsGetMode = statisticsGetModeOptions[0];
     let myDnRTs = null; 
     let selectedRT = null;
@@ -85,6 +92,7 @@
             dataFlag: statisticsGetMode.id,
             rtFlag: selectedRT.id,
             variable: selectedProduct.currentVariable.id,
+            outputValue: outputValue.id
         };
 
         auxilaryDownloadOptions[key] = {
@@ -132,7 +140,7 @@
     function submitOrder() {
         let aoi = null;
         if (aoiSet) {
-            let fmt = new WKT();
+            let fmt = new GeoJSON();
             aoi = fmt.writeFeatures(refs.map.getFeatures());
         }
 
@@ -146,6 +154,8 @@
             if(response.data.data.result == "OK") {
                 downloadOptions = {};
                 auxilaryDownloadOptions = {};
+                dataVerification();
+                validated = false;
             }
 		});
     }
@@ -189,7 +199,6 @@
     onMount(() => {
         init();
         //setting up modal
-
     });
 
     //reactivity
@@ -238,15 +247,16 @@
                                         <h6>Select Date Range</h6>
                                     </div>
                                 </div>
-                                <div class="row mt-2">
-                                    <div
-                                        class="col d-flex flex-column justify-content-center"
-                                    >
-                                        <span class="align-middle"
-                                            >Date Start</span
-                                        >
+                                <div class="row">
+                                    <div class = "col text-center">
+                                        <span class="align-middle">Date Start</span>
                                     </div>
-                                    <div class="col">
+                                    <div class = "col text-center">
+                                        <span class="align-middle">Date End</span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class = "col text-center">
                                         <DateInput
                                             bind:value={dnDateStart}
                                             format={dateFormat}
@@ -254,16 +264,7 @@
                                             closeOnSelection={true}
                                         />
                                     </div>
-                                </div>
-                                <div class="row mt-2">
-                                    <div
-                                        class="col d-flex flex-column justify-content-center"
-                                    >
-                                        <span class="align-middle"
-                                            >Date End</span
-                                        >
-                                    </div>
-                                    <div class="col">
+                                    <div class = "col text-center">
                                         <DateInput
                                             bind:value={dnDateEnd}
                                             format={dateFormat}
@@ -272,11 +273,13 @@
                                         />
                                     </div>
                                 </div>
+
                                 <div class="row mt-2">
                                     <div class="col text-center">
                                         <h6>Select Product Data to Download</h6>
                                     </div>
                                 </div>
+
                                 <div class="row mt-1">                                     
                                     {#each statisticsGetModeOptions as mode, idx}
                                         <div class="form-check">
@@ -298,15 +301,45 @@
                                             >
                                         </div>
                                     {/each}
-                                    
                                 </div>
+
+                                <div class="row mt-2">
+                                    <div class="col text-center">
+                                        <h6>Select Output</h6>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col">
+                                        {#each outputValuesOptions as mode, idx}
+                                        <div class="form-check">
+                                            <input
+                                                class="form-check-input"
+                                                type="radio"
+                                                name="outputData"
+                                                checked={outputValue.id ==
+                                                    mode.id}
+                                                on:click={() => {
+                                                    outputValue = mode;
+                                                }}
+                                            />                                         
+                                            <label
+                                                class="form-check-label"
+                                                for="outputData"
+                                                >{mode.description}</label
+                                            >
+                                        </div>
+                                    {/each}
+                                    </div>
+                                </div>
+
                                 <div class="row mt-2">
                                     <div
                                         class="col-2 d-flex flex-column justify-content-center"
                                     >
                                         Email(*):
                                     </div>
-                                    <!--
+                                    
                                     <div class="col">
                                         <input
                                             type="email"
@@ -319,7 +352,7 @@
                                             }}
                                         />
                                     </div>
-                                    -->
+                                    
                                 </div>
                             </div>
                         </div>
@@ -445,6 +478,7 @@
                             bind:downloadOptions
                             bind:auxilaryDownloadOptions
                             {statisticsGetModeOptions}
+                            {outputValuesOptions}
                         />
                     </div>
                 </div>

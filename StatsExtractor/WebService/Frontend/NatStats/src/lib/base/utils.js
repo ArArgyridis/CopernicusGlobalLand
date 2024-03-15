@@ -12,39 +12,50 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-export default {
-	computeDensityDescription(str, val1, val2) {
-		return str + " [" + val1 + ", " + val2 + ")";
-	},
-	dateFromUTCDateString(date) {
-		return new Date(date + "+00:00");
-	},
-	markerProperties() {
-		return {
-			anchor: [0.3, 1.0],
-			anchorXUnits: 'fraction',
-			anchorYUnits: 'fraction',
-			src: "assets/marker.png",
-			scale: 0.02
-		};
-	},
-	rgbToHex(r, g, b) {
-		return (this.valueToHex(r) + this.valueToHex(g) + this.valueToHex(b));
-	},
-	sort(a, b) {
-		let keyA = a.title, keyB = b.title;
-		if (keyA < keyB) return 1;
-		if (keyA > keyB) return -1;
-		return 0;
-	},
-	valueToHex(c) {
-		let hex = c.toString(16);
-		return hex.length == 1 ? "0" + hex : hex;
-	},
-	subtractYears(date, years) {
-		date.setFullYear(date.getFullYear() - years);
-	},
-	localDateAsUTCString(date) {
-		return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
+export function computeDensityDescription(str, val1, val2) {
+	return str + " [" + val1 + ", " + val2 + ")";
+}
+
+export function dateFromUTCDateString(date) {
+	return new Date(date + "+00:00");
+}
+
+export function	localDateAsUTCString(date) {
+	return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
+}
+
+export class MarkerProperties {
+	constructor() {
+		this.anchor = [0.3, 1.0];
+		this.anchorXUnits = 'fraction';
+		this.anchorYUnits = 'fraction';
+		this.src = "assets/marker.png";
+		this.scale = 0.02;
 	}
-} 
+}
+
+export function	rgbToHex(r, g, b) {
+	return (this.valueToHex(r) + this.valueToHex(g) + this.valueToHex(b));
+}
+
+export function	sort(a, b) {
+	let keyA = a.title, keyB = b.title;
+	if (keyA < keyB) return 1;
+	if (keyA > keyB) return -1;
+	return 0;
+}
+
+export function	subtractYears(date, years) {
+	date.setFullYear(date.getFullYear() - years);
+}
+
+export function	uuidv4() {
+	return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+		(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  	);
+}
+
+export function	valueToHex(c) {
+	let hex = c.toString(16);
+	return hex.length == 1 ? "0" + hex : hex;
+}

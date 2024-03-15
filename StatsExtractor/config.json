@@ -30,7 +30,7 @@
 		"user":	"",
 		"password": "",
 		"certificate": "",
-		"self-signed": false
+		"self_signed": false
 	},
 	"filesystem":{
 		"imagery_path": "/home/argyros/Projects/JRC/ExperimentalData/Imagery/",

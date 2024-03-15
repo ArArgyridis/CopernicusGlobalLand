@@ -13,7 +13,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-	import utils from "./utils.js";
+	import {rgbToHex} from "./utils.js";
 	import { currentProduct } from "../../store/ProductParameters";
 	import {
 		analysisModes,
@@ -56,7 +56,7 @@
 
 				keys.forEach(key =>{
 					let color = variable[paletteCol][key];
-					tmpStyle.push("#"+utils.rgbToHex(color[0], color[1], color[2]));
+					tmpStyle.push("#"+rgbToHex(color[0], color[1], color[2]));
 				});
 				style = tmpStyle;
 			} else {
