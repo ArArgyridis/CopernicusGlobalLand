@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fmt/format.h>
 #include <iostream>
 #include <memory>
@@ -13,8 +14,13 @@ using OGRFeaturePtr = std::unique_ptr<OGRFeature, void(*)(OGRFeature*)>;
 
 int main(int argc, char* argv[]) {
     GDALAllRegister();
-    std::mutex mtx;
+
     std::string dataPath = "/home/argyros/Projects/JRC/Land Cover 2019/to_merge/global_land_cover_2019_subset.gdb";
+    std::string dataPathBK = "/home/argyros/Projects/JRC/Land Cover 2019/to_merge/global_land_cover_2019_subset_bk.gdb";
+
+    std::filesystem::remove_all(dataPath);
+    std::filesystem::copy(dataPathBK, dataPath);
+
     double smallestArea = 5*pow(0.0009920634920634887558,2);
 
     GDALDatasetUniquePtr tmpDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpenEx( dataPath.c_str(), GDAL_OF_VECTOR| GDAL_OF_UPDATE, nullptr, nullptr, nullptr)));
@@ -27,11 +33,11 @@ int main(int argc, char* argv[]) {
 #pragma omp parallel num_threads(nThreads)
     {
         int tid = omp_get_thread_num();
-            GDALDatasetUniquePtr dataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpenEx( dataPath.c_str(), GDAL_OF_VECTOR | GDAL_OF_UPDATE, nullptr, nullptr, nullptr)));
-            auto layer = dataset->GetLayer(0);
+        GDALDatasetUniquePtr dataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpenEx( dataPath.c_str(), GDAL_OF_VECTOR | GDAL_OF_UPDATE, nullptr, nullptr, nullptr)));
+        auto layer = dataset->GetLayer(0);
 #pragma omp for private(ftId)
         for (ftId = 1; ftId < nFeatures+1; ftId++) {
-                auto ft = OGRFeaturePtr(layer->GetFeature(ftId), &OGRFeature::DestroyFeature);
+            auto ft = OGRFeaturePtr(layer->GetFeature(ftId), &OGRFeature::DestroyFeature);
             /*
             if (ft == nullptr) {
                 printf("null feature detected in: %d\t (%d)\n", tid, ftId);
@@ -71,13 +77,16 @@ int main(int argc, char* argv[]) {
 //#pragma omp for private(ftId)
         for (ftId = 0; ftId < rtFeaturesCount; ftId++) {
             auto rtFtId = retainFeatures[ftId];
+            std::cout << "Processing: " << rtFtId << "\n";
             auto rtFt = OGRFeaturePtr(layer->GetFeature(rtFtId)->Clone(), &OGRFeature::DestroyFeature);
             auto rtGeomMulti = static_cast<OGRMultiPolygon*>(rtFt->GetGeometryRef()->clone());
 
             bool create = false;
+            size_t processed = 0;
             for(int rtGeomId = 0; rtGeomId < rtGeomMulti->getNumGeometries(); rtGeomId++ ) {
                 OGRPolygon* rtGeom = static_cast<OGRPolygon*>(rtGeomMulti->getGeometryRef(rtGeomId)->clone());
-                for (int rtGeomRingId = 0; rtGeomRingId < rtGeom->getNumInteriorRings(); rtGeomRingId++) {
+                for (int rtGeomRingId = 0; rtGeomRingId < rtGeom->getNumInteriorRings(); ++rtGeomRingId) {
+
                     OGRPoint rtGeomRingCentroid;
                     auto rtGeomRing = rtGeom->getInteriorRing(rtGeomRingId);
                     OGRPolygon rtGeomRingPoly;
@@ -88,42 +97,41 @@ int main(int argc, char* argv[]) {
                     layer->SetSpatialFilter(&rtGeomRingCentroid);
                     layer->SetAttributeFilter(filter.c_str());
 
-                    for(auto candidate = OGRFeaturePtr(layer->GetNextFeature(), &OGRFeature::DestroyFeature); candidate.get() != nullptr; candidate = OGRFeaturePtr(layer->GetNextFeature(), &OGRFeature::DestroyFeature)) {
+                    bool stop = false;
+                    for(auto candidate = OGRFeaturePtr(layer->GetNextFeature(), &OGRFeature::DestroyFeature); !stop && candidate.get() != nullptr; candidate = OGRFeaturePtr(layer->GetNextFeature(), &OGRFeature::DestroyFeature)) {
                         if(rtGeomRingPoly.Contains(candidate->GetGeometryRef()) && candidate->GetGeometryRef()->Contains(&rtGeomRingPoly)) {
-                            create = true;
-                            std::cout << "contained!!!!!\n";
-//#pragma omp critical
-                            {
-                            tmpDataset->GetLayer(0)->DeleteFeature(candidate->GetFID());
+                            create = stop = true;
+                            std::cout << rtGeomRingId << "\t:";
+                            std::cout << "contained!!!!!\t:";
+                            layer->DeleteFeature(candidate->GetFID());
                             rtGeom->removeRing(rtGeomRingId);
+                            rtGeomRingId--;
+                            std::cout << rtGeomRingId << "\n";
                             rtGeomMulti->removeGeometry(rtGeomId);
                             rtGeomMulti->addGeometry(rtGeom);
-                            }
-
-
                         }
                     }
                 }
             }
 
             if(create) {
-//#pragma omp critical
+                //#pragma omp critical
                 {
                     rtFt->SetGeometryDirectly(rtGeomMulti);
                     //delete rtGeomMulti;
-                    std::cout << "DELETING: " << rtFt->GetFID() <<"\n";
+                    std::cout << "Refreshing: " << rtFt->GetFID() <<"\n";
                     tmpDataset->GetLayer(0)->DeleteFeature(rtFt->GetFID());
                     tmpDataset->GetLayer(0)->CreateFeature(rtFt.get());
+                    processed++;
+                    if (processed = 10) {
+                        tmpDataset->GetLayer(0)->SyncToDisk();
+                        processed = 0;
+                    }
                 }
             }
         }
 
     }
-    tmpDataset->GetLayer(0)->SyncToDisk();
     tmpDataset->FlushCache();
-
-
-
-
     return 0;
 }
