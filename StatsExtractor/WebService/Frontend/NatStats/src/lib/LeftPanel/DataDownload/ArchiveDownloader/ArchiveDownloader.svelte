@@ -106,7 +106,10 @@
         submitVerification = false;
         if (validEmail && Object.keys(downloadOptions).length > 0 && aoiSet)
             submitVerification = true;
-        else refs.submitVerification.checked = false;
+        else {
+            refs.submitVerification.checked = false;
+            validated = false;
+        }
     }
 
     function displayDownloadModal() {

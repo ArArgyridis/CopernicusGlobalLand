@@ -48,7 +48,6 @@ public:
     using TPolygonDataTypePointer   = typename TPolygonDataType::Pointer;
     using RegionType                = typename TInputImage::RegionType;
 
-
     struct ImageInfo {
         std::string path;
         //std::vector<std::pair<LabelsArrayPtr, PolygonStats::PolyStatsPerRegionPtr>> tmpRegionData;
@@ -57,9 +56,6 @@ public:
     };
 
     using ImageInfoPtr  = std::shared_ptr<ImageInfo>;
-
-
-
 
     /** typedefs for needed filters */
     using labelType             = unsigned int;
