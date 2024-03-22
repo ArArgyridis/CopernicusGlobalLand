@@ -205,8 +205,7 @@
 
             if (!(columnName in dateCache)) {
                 let polygonStyles = DisplayPolygonValues(
-                    $currentProduct.currentVariable.valueRanges,
-                );
+                    $currentProduct.currentVariable);
                 polygonStyles.forEach((polyStyle) => {
                     dateCache[polyStyle.colorCol] = {};
                 });
@@ -294,8 +293,9 @@
     $: clickedCoordinates, refreshMarker();
 
     onMount(() => {
-        let layerId = refs.map.addBingLayerToMap("aerial", options.bingKey);
-        refs.map.setVisibility(layerId, true);
+        let basemapLayerId = refs.map.addBingLayerToMap("aerial", options.bingKey);
+        //let basemapLayerId = refs.map.addXYZLayer("https://s2maps-tiles.eu/wmts?layer=s2cloudless-2022_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}");
+        refs.map.setVisibility(basemapLayerId, true);
         refs.map.toggleGetMapCoordinates();
 
         markerLayer = refs.map.createEmptyVectorLayer(6);
@@ -306,7 +306,6 @@
 <div class="col px-0 mainMap">
     
     <MapInfo
-        mapInfoId="mapInfoId"
         {selectedFeatureId}
         {clickedCoordinates}
         bind:dataLoading={mapInfoLoading}

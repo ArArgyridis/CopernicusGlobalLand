@@ -24,7 +24,7 @@
         )
             variable = $currentProduct.currentVariable.currentAnomaly.variable;
 
-        polygonValuesType = DisplayPolygonValues(variable.valueRanges);
+        polygonValuesType = DisplayPolygonValues(variable);
     }
 
     $: $currentProduct, updateValues();

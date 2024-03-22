@@ -33,7 +33,7 @@
     import { DateInput } from "date-picker-svelte";
     import { faDownload, faTrash } from "@fortawesome/free-solid-svg-icons";
     import "bootstrap/dist/css/bootstrap.min.css";
-    import Fa from "svelte-fa/src/fa.svelte";
+    import Fa from 'svelte-fa'
     import DownloadTable from "./DownloadTable.svelte";
     import ArchiveDownloaderMap from "./ArchiveDownloaderMap.svelte";
     import GeoJSON from "ol/format/GeoJSON";

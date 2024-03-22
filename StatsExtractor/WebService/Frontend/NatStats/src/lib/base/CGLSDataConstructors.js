@@ -15,13 +15,13 @@
 import options from "./options.js";
 import {computeDensityDescription, dateFromUTCDateString} from "./utils.js";
 
-export function AreaDensityOptions(valueRanges) {
+export function AreaDensityOptions(variable) {
 	return [
 		{
 			id: 1,
 			col: "noval_area_ha",
 			description: "No value",
-			title: computeDensityDescription("Percentage of Variable Values in Range", valueRanges[0], valueRanges[1]),
+			title: computeDensityDescription("Percentage of Variable Values in Range", variable.valueRanges[0], variable.valueRanges[1]),
 			colorCol: "noval_color",
 			paletteCol: "noval_colors"
 		},
@@ -29,7 +29,7 @@ export function AreaDensityOptions(valueRanges) {
 			id: 2,
 			col: "sparse_area_ha",
 			description: "Sparse",
-			title: computeDensityDescription("Percentage of Variable Values in Range", valueRanges[1], valueRanges[2]),
+			title: computeDensityDescription("Percentage of Variable Values in Range", variable.valueRanges[1], variable.valueRanges[2]),
 			colorCol: "sparseval_color",
 			paletteCol: "sparseval_colors"
 		},
@@ -37,7 +37,7 @@ export function AreaDensityOptions(valueRanges) {
 			id: 3,
 			col: "mid_area_ha",
 			description: "Mild",
-			title: computeDensityDescription("Percentage of Variable Values in Range", valueRanges[2], valueRanges[3]),
+			title: computeDensityDescription("Percentage of Variable Values in Range", variable.valueRanges[2], variable.valueRanges[3]),
 			colorCol: "midval_color",
 			paletteCol: "midval_colors"
 		},
@@ -45,22 +45,26 @@ export function AreaDensityOptions(valueRanges) {
 			id: 4,
 			col: "dense_area_ha",
 			description: "Dense",
-			title: "Percentage of Variable Values in Range (≥" + valueRanges[3] + ")",
+			title: "Percentage of Variable Values in Range (≥" + variable.valueRanges[3] + ")",
 			colorCol: "highval_color",
 			paletteCol: "highval_colors"
 		}
 	];
 }
 
-export function DisplayPolygonValues(valueRanges) {
+export function DisplayPolygonValues(variable) {
+	let description = variable.variable +" Value Range";
+	if(variable.isAnomaly)
+		description = "Shifted "+variable.description;
+
 	return [{
 		id: 0,
 		col: "meanval_color",
-		description: "Mean Variable Value",
-		title: "Mean Variable Value",
+		description: description,
+		title: description,
 		colorCol: "meanval_color",
 		paletteCol: "meanval_colors"
-	}, ...AreaDensityOptions(valueRanges)]
+	}, ...AreaDensityOptions(variable)]
 }
 
 //analysis mode options
@@ -125,8 +129,9 @@ export class MapViewOptions {
 }
 
 export class VariableInfo {
-	constructor(variable, dates = null) {
+	constructor(variable, dates = null, isAnomaly=false) {
 		Object.assign(this, variable);
+		this.isAnomaly = isAnomaly;
 		this.cog = new CogProps();
 		if(!variable) { //create a null variable just to initialize the values
 			this.valueRanges = [0, 1, 2, 3, 4];
@@ -145,7 +150,7 @@ export class VariableInfo {
 				this.#anomaliesProps(variable);
 			}
 		}
-		this.mapViewOptions = new MapViewOptions(DisplayPolygonValues(this.valueRanges)[0]);
+		this.mapViewOptions = new MapViewOptions(DisplayPolygonValues(this)[0]);
 	}
 	#anomaliesProps(variable) {
 		this.previousAnomaly = null;
@@ -160,7 +165,7 @@ export class VariableInfo {
 				continue;
 
 			//because the anomaly variable for a product variable can be only one.....
-			variable.anomaly_info[i].variable = new VariableInfo(variable.anomaly_info[i].variable);
+			variable.anomaly_info[i].variable = new VariableInfo(variable.anomaly_info[i].variable, null, true);
 		}
 		this.currentAnomaly = variable.anomaly_info[0];
 	}

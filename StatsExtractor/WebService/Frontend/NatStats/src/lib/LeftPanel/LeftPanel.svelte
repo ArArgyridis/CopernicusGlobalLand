@@ -15,7 +15,7 @@
 <script>
     import { faBars } from "@fortawesome/free-solid-svg-icons";
     import "bootstrap/dist/css/bootstrap.min.css";
-    import Fa from "svelte-fa/src/fa.svelte";
+    import Fa from 'svelte-fa'
     import DateRangePicker from "./DateRangePicker.svelte";
     import VariableDisplayOptions from "./VariableDisplayOptions/VariableDisplayOptions.svelte";
     import Boundaries from "./Boundaries.svelte";

@@ -35,7 +35,7 @@ export class MarkerProperties {
 }
 
 export function	rgbToHex(r, g, b) {
-	return (this.valueToHex(r) + this.valueToHex(g) + this.valueToHex(b));
+	return (valueToHex(r) + valueToHex(g) + valueToHex(b));
 }
 
 export function	sort(a, b) {

@@ -4,7 +4,7 @@
     export let auxilaryDownloadOptions;
     export let statisticsGetModeOptions;
     export let outputValuesOptions;
-    import Fa from "svelte-fa/src/fa.svelte";
+    import Fa from 'svelte-fa'
     import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
     function removeFromDownloadList(key) {

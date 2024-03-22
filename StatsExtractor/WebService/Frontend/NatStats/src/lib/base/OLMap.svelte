@@ -23,7 +23,7 @@
 	import Map from "ol/Map";
 	import Overlay from "ol/Overlay";
 	import View from "ol/View";
-	import { defaults as defaultControls } from "ol/control";
+	import {Attribution, defaults as defaultControls } from "ol/control";
 	import KML from "ol/format/KML";
 	import MVT from "ol/format/MVT";
 	import WMSCapabilities from "ol/format/WMSCapabilities";
@@ -42,6 +42,7 @@
 	import VectorSource from "ol/source/Vector";
 	import VectorTileSource from "ol/source/VectorTile";
 	import VectorTile from "ol/layer/VectorTile.js";
+	import XYZ from 'ol/source/XYZ.js';
 	import { Circle, Fill, Stroke, Style, Text } from "ol/style";
 	import proj4 from "proj4";
 	import { onMount } from "svelte";
@@ -60,6 +61,9 @@
 	/*internal variables*/
 	let hoverLayers = {};
 	let layers = {};
+	let attribution = new Attribution({
+		collapsible: false,
+	});
 	let map = null;
 	let activeHighlightLayer = null;
 	let highlightPolygonStyle = new Style({
@@ -110,6 +114,11 @@
 			declutter: false,
 		});
 		return addGenericLayer(tmpLayer, zIndex);
+	}
+
+	function checkMapSize() {
+		let small = map.getSize()[0] < 600;
+
 	}
 
 	function createTileLayer(source, zIndex = null, tileLayerConstructor = "TileLayer") {
@@ -201,7 +210,12 @@
 			ft.setId(featureId);
 			ft.setStyle(newMarkerStyle(options, featureId));
 			addFeatureToLayer(layerId, ft);
-		}
+	}
+
+	export function addXYZLayer(url, zIndex = null) {
+		let source = new XYZ({url:url});
+		return createTileLayer(source, zIndex);
+	}
 
 	export function clearVectorLayer(id) {
 		layers[id].getSource().clear();
@@ -218,6 +232,7 @@
 		});
 		 return addVectorLayerToMap(geojsonSource, zIndex);
 	}
+
 
 	export function createGeoTIFFLayer(
 		url,
@@ -433,7 +448,7 @@
 
 		let cntr = JSON.parse(center);
 		map = new Map({
-			controls: defaultControls({ attribution: false }),
+			controls: defaultControls({ attribution: false }).extend(attribution),
 			target: id,
 			view: new View({
 				zoom: zoom,
@@ -448,6 +463,11 @@
 			for (let i = 0; i < ctrls.getLength(); i++)
 				map.removeControl(ctrls.getArray()[i]);
 		}
+
+		//properly resize attribution
+		window.addEventListener('resize', checkMapSize);
+		checkMapSize();
+
 	});
 </script>
 

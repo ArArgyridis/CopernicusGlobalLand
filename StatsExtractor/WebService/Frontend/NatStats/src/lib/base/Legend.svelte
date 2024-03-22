@@ -67,6 +67,13 @@
 					Math.round((valueRange[0]+valueRange[valueRange.length-1])/4*300)/100,
 					valueRange[valueRange.length-1]
 				];
+				/*
+				console.log(variable);
+				if(variable.isAnomaly)
+					for(let i = 0; i < this.values.length; i++)
+						this.values[i] -=3;
+				*/
+
 			}
 			settings.title = variable.mapViewOptions.displayPolygonValue.title;
 			let step = 100/(style.length-1);

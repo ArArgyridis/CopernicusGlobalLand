@@ -105,8 +105,7 @@
             )
             .then((response) => {                
                 let areaDensityInfo = AreaDensityOptions(
-                    $currentProduct.currentVariable.valueRanges,
-                );
+                    $currentProduct.currentVariable);
                 diagramData = [];
                 areaDensityInfo.forEach((density) => {
                     diagramData.push({
