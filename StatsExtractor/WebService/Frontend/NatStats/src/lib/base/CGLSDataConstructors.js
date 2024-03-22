@@ -16,12 +16,16 @@ import options from "./options.js";
 import {computeDensityDescription, dateFromUTCDateString} from "./utils.js";
 
 export function AreaDensityOptions(variable) {
+	let description = variable.variable;
+	if (variable.isAnomaly)
+		description = variable.description;
+
 	return [
 		{
 			id: 1,
 			col: "noval_area_ha",
 			description: "No value",
-			title: computeDensityDescription("Percentage of Variable Values in Range", variable.valueRanges[0], variable.valueRanges[1]),
+			title: computeDensityDescription("Percentage of " + description + " values in Range", variable.valueRanges[0], variable.valueRanges[1]),
 			colorCol: "noval_color",
 			paletteCol: "noval_colors"
 		},
@@ -29,7 +33,7 @@ export function AreaDensityOptions(variable) {
 			id: 2,
 			col: "sparse_area_ha",
 			description: "Sparse",
-			title: computeDensityDescription("Percentage of Variable Values in Range", variable.valueRanges[1], variable.valueRanges[2]),
+			title: computeDensityDescription("Percentage of " + description + " values in Range", variable.valueRanges[1], variable.valueRanges[2]),
 			colorCol: "sparseval_color",
 			paletteCol: "sparseval_colors"
 		},
@@ -37,7 +41,7 @@ export function AreaDensityOptions(variable) {
 			id: 3,
 			col: "mid_area_ha",
 			description: "Mild",
-			title: computeDensityDescription("Percentage of Variable Values in Range", variable.valueRanges[2], variable.valueRanges[3]),
+			title: computeDensityDescription("Percentage of " + description + " values in Range", variable.valueRanges[2], variable.valueRanges[3]),
 			colorCol: "midval_color",
 			paletteCol: "midval_colors"
 		},
@@ -45,7 +49,7 @@ export function AreaDensityOptions(variable) {
 			id: 4,
 			col: "dense_area_ha",
 			description: "Dense",
-			title: "Percentage of Variable Values in Range (≥" + variable.valueRanges[3] + ")",
+			title: "Percentage of " + description + " in Range (≥" + variable.valueRanges[3] + ")",
 			colorCol: "highval_color",
 			paletteCol: "highval_colors"
 		}
@@ -54,14 +58,18 @@ export function AreaDensityOptions(variable) {
 
 export function DisplayPolygonValues(variable) {
 	let description = variable.variable +" Value Range";
-	if(variable.isAnomaly)
+	let title = variable.variable + " Raw Values";
+	if(variable.isAnomaly) {
 		description = "Shifted "+variable.description;
+		title = description;
+
+	}
 
 	return [{
 		id: 0,
 		col: "meanval_color",
 		description: description,
-		title: description,
+		title: title,
 		colorCol: "meanval_color",
 		paletteCol: "meanval_colors"
 	}, ...AreaDensityOptions(variable)]
