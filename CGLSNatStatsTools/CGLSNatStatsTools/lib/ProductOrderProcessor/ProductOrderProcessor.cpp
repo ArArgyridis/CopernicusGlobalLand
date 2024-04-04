@@ -102,7 +102,7 @@ void ProductOrderProcessor::cropSingleRasterFile(std::filesystem::path &inFile, 
     createDirectoryForFile(outFile);
 
     //identifying proper crop function
-    bool scale = metadata->find(variable+"#add_offset") != metadata->end();
+    bool scale = metadata->find(variable+"#scale_factor") != metadata->end();
     if(scale)
         crop<otb::FloatImageType>(inFile, outFile, maskInfo, scale, stof((*metadata)[variable+"#scale_factor"]), stof((*metadata)[variable+"#add_offset"])  );
     else if(stoi((*metadata)["GDAL_RASTER_TYPE"]) == GDT_Byte)
