@@ -21,11 +21,11 @@ void PolygonStats::finalizeData() {
     if(finalized)
         return;
 
-    //if (validCount != 0 || sd > pow(polyData.second->mean/polyData.second->validCount, 2)) {
-    mean /= validCount;
-    sd = sqrt((sd/validCount) - pow(mean, 2));
+    if (validCount != 0 || sd > pow(mean/validCount, 2)) {
+        mean /= validCount;
+        sd = sqrt((sd/validCount) - pow(mean, 2));
+    }
     finalized = true;
-    //}
 }
 
 JsonDocumentUniquePtr PolygonStats::histogramToJSON() {
