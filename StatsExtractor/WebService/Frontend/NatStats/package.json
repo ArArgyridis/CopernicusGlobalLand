@@ -19,12 +19,14 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
     "axios": "^1.6.2",
     "bootstrap": "^5.3.2",
+    "cesium": "^1.116.0",
     "date-picker-svelte": "^2.11.0",
     "highcharts": "^11.2.0",
     "html2canvas": "^1.4.1",
     "mc-datepicker": "^0.6.5",
     "ol": "^9.0.0",
     "ol-ext": "^4.0.13",
+    "olcs": "^2.19.3",
     "proj4": "^2.9.2"
   }
 }

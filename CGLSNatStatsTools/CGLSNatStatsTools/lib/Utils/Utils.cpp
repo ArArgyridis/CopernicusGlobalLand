@@ -191,6 +191,9 @@ std::string stringstreamToString(std::stringstream &stream) {
 std::vector<RGBVal> styleColorParser(std::string &style) {
     std::vector<RGBVal> styleColors;
 
+    if (style.size() < 5)
+        return styleColors;
+
     XmlDocPtr doc = XmlDocPtr(xmlReadMemory(style.c_str(), style.size(), "tmp.xml", nullptr, 0), xmlFreeDoc);
 
     XmlXPathContextPtr ctx = XmlXPathContextPtr(xmlXPathNewContext(doc.get()), xmlXPathFreeContext);
