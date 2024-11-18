@@ -11,7 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import os,paramiko,re,socks,sys
+import hashlib, os,paramiko,re,socks,sys
 sys.path.extend(['../../']) #to properly import modules from other dirs
 from Libs.ConfigurationParser import ConfigurationParser
 from Libs.Constants import Constants
@@ -60,8 +60,8 @@ def validateFile(validateOptions):
 
     if len(validateOptions.prodInfo.variables) > 0:  # try to open file with gdal
         tmpDt = gdal.Open(validateOptions.fl)
-        if tmpDt is None:
-            return None
+        if tmpDt is None and os.path.splitext(validateOptions.fl)[1] in ('.tif', ".nc"):
+            return [chk, "INVALID FILE"]
 
         del tmpDt
         tmpDt = None
@@ -93,14 +93,25 @@ def validateFile(validateOptions):
 
 
 class DataCrawler:
-    def __init__(self, cn, product, useProxy=False, download=True):
+    def __init__(self, cn, product, useProxy=False, mode="download"):
         self._cn = cn
-        self._missingFileLog = "{0}_missing_files.txt".format(product)
+        self._missingFileLog = "{0}_{1}_missing_files.txt".format(product.productNames[0],
+                                                                  os.path.splitext(product.pattern)[1][1::].upper())
         self.sock = None
-        self._download = download
-        self._outLog = None
-        if not self._download:
-            self._outLog = open(self._missingFileLog, "w")
+        self._mode = mode
+        self._outLogData = {}
+        if self._mode == "validate":
+            #if log exists, load info
+            if os.path.isfile(self._missingFileLog):
+                infl = open(self._missingFileLog, "r")
+                infl.readline() #skip header
+                for row in infl:
+                    if len(row) == 0:
+                        continue
+                    spt = row.split(",")
+                    self._outLogData[spt[0]] = spt[1].replace("\n","")
+                infl.close()
+                infl = None
 
         if useProxy:
             self.sock = socks.socksocket()
@@ -117,7 +128,7 @@ class DataCrawler:
         self._prodInfo = product
 
     def __del__(self):
-        self._outLog = self._cn = self.sock = self._download = self._sshCn = self._prodInfo = None
+        self._cn = self.sock = self._download = self._sshCn = self._prodInfo = None
 
 
     def fetchOrValidateAgainstVITO(self, dir, storageDir):
@@ -167,22 +178,19 @@ class DataCrawler:
             chk = os.path.split(fl)[1]
             if pattern.fullmatch(chk) or pattern.fullmatch(chk[6::]):
                 #check if product exists in DB
-                checkQuery = """SELECT EXISTS (
-                        SELECT *
+                checkQuery = """WITH tmp AS(
+                        SELECT pf.rel_file_path
                         FROM product_file pf 
                         JOIN product_file_description pfd ON pf.product_file_description_id = pfd.id
                         JOIN product p ON p.id = pfd.product_id 
                         WHERE pf.rel_file_path LIKE '%{0}'
-                        AND  '{1}' = ANY(p."name"));""".format(chk, detectedProductName)
+                        AND  '{1}' = ANY(p."name")) 
+                        SELECT EXISTS(SELECT * FROM tmp), tmp.rel_file_path
+                        FROM (SELECT 1) LEFT JOIN tmp ON true;""".format(chk, detectedProductName)
 
                 res = self._cn.pgConnections[self._cn.statsInfo.connectionId].fetchQueryResult(checkQuery)
-                if res[0][0]:
-                    continue
-
-                if not self._download:
-                    self._outLog.write(chk+"\n")
-
-                else:
+                flName = fl.split("/")[-1]
+                if self._mode == "download" and not res[0][0] : # download mode and not in the db
                     #download file if not exists in DB
                     productParams = pattern.findall(chk)[0]
                     outFilePath = fl.replace(inProdDir, outProdDir)
@@ -204,6 +212,26 @@ class DataCrawler:
                                                           rtFlag]))])
 
                     print("Downloading Finished!")
+                elif not self._mode == "download" and res[0][0]: #the system validates and the file exists in the DB
+                    localFilePath = os.path.join(storageDir, res[0][1])
+                    localmd5 = hashlib.md5(open(localFilePath,"rb").read()).hexdigest()
+                    stdin, stdout, stderr = self._sshCn.exec_command("md5sum {0}".format(fl))
+                    check = "FAILED"
+                    if stdout.read().split()[0].decode("ascii") == localmd5:
+                        check = "OK"
+                    self._outLogData[flName]=check
+                elif not self._mode == "download" and not res[0][0] and flName not in self._outLogData:
+                    self._outLogData[flName] = "NOT FOUND"
+        if self._mode == "validate":
+            self._storeValidationData()
+
+    def _storeValidationData(self):
+        outFl = open(self._missingFileLog, "w")
+        outFl.write("FileName,Status\n")
+        for key in sorted(self._outLogData.keys()):
+            outFl.write("{0},{1}\n".format(key, self._outLogData[key]))
+        outFl.close()
+        outFl = None
 
 
     def _store(self, dbData):
@@ -240,17 +268,21 @@ class DataCrawler:
         dbData = []
         with Pool() as pool:
             for result in pool.map(validateFile, files):
-                if result is not None:
+                if isinstance(result, str):
                     dbData.append(result)
+                elif isinstance(result, list):
+                    self._outLogData[result[0]] = result[1]
 
         if len(dbData) > 0:
             self._store(dbData)
 
+        if len(self._outLogData) > 0:
+            self._storeValidationData()
+
 def main():
     if len(sys.argv) < 3:
-        print("usage: python DataCrawler.py config_file remote_server_path (optional) disk_import")
+        print("usage: python DataCrawler.py config_file mode (download or validate) location (remote_server_path or disk_import)")
         return 1
-
 
     cfg = sys.argv[1]
 
@@ -262,8 +294,8 @@ def main():
     if cfg.parse() != 1:
         for pid in Constants.PRODUCT_INFO:
             print("Processing: ", Constants.PRODUCT_INFO[pid].productNames[0])
-            obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False, True)
-            if sys.argv[2] == "disk_import":
+            obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False, sys.argv[2])
+            if sys.argv[3] == "disk_import":
                 inDir = cfg.filesystem.imageryPath
                 if Constants.PRODUCT_INFO[pid].productType == "anomaly":
                     inDir = cfg.filesystem.anomalyProductsPath
@@ -278,7 +310,7 @@ def main():
                 if Constants.PRODUCT_INFO[pid].productType == "lts":
                     storageDir = cfg.filesystem.ltsPath
 
-                obj.fetchOrValidateAgainstVITO(dir=sys.argv[2], storageDir=storageDir)
+                obj.fetchOrValidateAgainstVITO(dir=sys.argv[3], storageDir=storageDir)
 
 
 
