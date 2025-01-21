@@ -13,6 +13,8 @@
 """
 import copy
 import copyreg, re, types
+import os.path
+
 from Libs.ConfigurationParser import ConfigurationParser
 
 class ProductVariable:
@@ -41,20 +43,37 @@ class ProductInfo:
         self.productNames = row[0]
         self.productType = row[1]
         self.id = row[2]
-        self.pattern = row[3]
+        self.patterns = row[3]
         self.types = eval(row[4])
         self._dateptr = row[5]
         self.fileNameCreationPattern = row[6]
+        self.rtFlag = row[7]
+        self.firstProductPath = row[8]
         self.variables = {}
-        if isinstance(row[7], list):
-            for ptrn in row[7]:
+        if isinstance(row[9], list):
+            for ptrn in row[9]:
                 self.variables[ptrn["variable"] ] = ProductVariable(ptrn)
-        self.rtFlag = row[8]
+
 
     def createDate(self, ptr):
         return self._dateptr.format(*ptr)
 
+    def getFileNameInfo(self, flName):
+        results = []
+        ptrId = 0
 
+        if os.path.splitext(flName)[1] != os.path.splitext(self.patterns[0])[1]:
+            return None
+
+        while ptrId < len(self.patterns) and len(results) == 0:
+            xpr = re.compile(self.patterns[ptrId])
+            results = xpr.findall(flName)
+            ptrId += 1
+
+        if len(results) == 0:
+            return None
+
+        return results[0]
 
 class Constants:
     PRODUCT_INFO={}
@@ -64,17 +83,32 @@ class Constants:
         try:
             _cfg = ConfigurationParser(cfg)
             _cfg.parse()
-            query = """WITH product_variables as not MATERIALIZED(
-                SELECT pfv.product_file_description_id , array_to_json(ARRAY_AGG(row_to_json(pfv.*))) product_variables
-	            FROM product_file_variable pfv 
-	            GROUP BY pfv.product_file_description_id 
-            )
-            SELECT p.name, p.type, pfd.id, pfd.pattern, pfd."types", pfd.create_date, pfd.file_name_creation_pattern, 
-            pv.product_variables, pfd.rt_flag_pattern
-            FROM product p 
-            LEFT JOIN product_file_description pfd on p.id = pfd.product_id 
-            LEFT JOIN product_variables pv on pv.product_file_description_id = pfd.id
-            WHERE pattern is not NULL"""
+            query = """WITH anomalies AS NOT MATERIALIZED (
+                    SELECT ltai.raw_product_variable_id, ARRAY_TO_JSON((ARRAY_AGG(ltai.anomaly_product_variable_id)))::jsonb anomalies
+                    FROM long_term_anomaly_info ltai
+                    GROUP BY ltai.raw_product_variable_id
+                ),product_variables as not MATERIALIZED(
+                    SELECT pfv.product_file_description_id ,
+                    CASE WHEN anom.anomalies IS NOT NULL THEN  array_to_json(ARRAY_AGG(row_to_json(pfv.*)::jsonb|| jsonb_build_object('anomalies',anom.anomalies)))
+                    ELSE array_to_json(ARRAY_AGG(row_to_json(pfv.*)))
+                    END product_variables
+                    FROM product_file_variable pfv
+                    LEFT JOIN anomalies anom ON pfv.id = anom.raw_product_variable_id
+                    GROUP BY pfv.product_file_description_id,anom.anomalies
+                )
+                SELECT p.name, p.type, pfd.id, pfd.pattern, pfd."types", pfd.create_date, pfd.file_name_creation_pattern, pfd.rt_flag_pattern, productPath.rel_file_path,
+                pv.product_variables
+                FROM product p
+                LEFT JOIN product_file_description pfd on p.id = pfd.product_id
+                LEFT JOIN product_variables pv on pv.product_file_description_id = pfd.id
+                LEFT JOIN LATERAL (
+                    SELECT rel_file_path
+                    FROM product_file pf
+                    WHERE pf.product_file_description_id = pfd.id
+                    ORDER BY pf.id
+                    LIMIT 1
+                ) productPath ON TRUE
+                WHERE pfd.pattern is not NULL"""
             if _cfg.enabledProductIds is not None:
                 query += " AND p.id IN (" + ",".join([str(id) for id in _cfg.enabledProductIds]) +")"
 
