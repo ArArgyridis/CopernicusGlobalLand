@@ -45,7 +45,7 @@ using StratificationStatisticsFilter                    = otb::SystemStratificat
 using StreamedSystemStratificationStatisticsFilter      = otb::StreamedStatisticsExtractorFilter<StratificationStatisticsFilter>;
 
 
-StatsExtractor::StatsExtractor(Configuration::SharedPtr cfg, std::string stratificationType):config(cfg), stratification(stratificationType) {}
+StatsExtractor::StatsExtractor(Configuration::SharedPtr cfg, const std::string &stratificationType):config(cfg), stratificationID(stratificationType) {}
 
 void StatsExtractor::process() {
     for (auto& product: Constants::productInfo) {
@@ -65,7 +65,7 @@ void StatsExtractor::process() {
                     JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
                     JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 1 --AND pf.id = 71 --AND sg.id = 171
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
-                    WHERE s.description  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
+                    WHERE s.id  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
                 ),extent AS(
                     SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids, min(a.geomid)  mingmid, max(a.geomid) maxgmid
                     FROM (SELECT distinct geomid FROM info) a
@@ -87,7 +87,7 @@ void StatsExtractor::process() {
                 SELECT images, geomids, st_xmin(extg), st_ymin(extg), st_xmax(extg), st_ymax(extg), Find_SRID('public', 'stratification_geom', 'geom'),
                 mingmid, maxgmid+1
                 FROM extent
-                JOIN images ON TRUE)"""", stratification, std::to_string(variable.second->id));
+                JOIN images ON TRUE)"""", stratificationID, std::to_string(variable.second->id));
             //std::cout << query <<"\n";
 
             PGPool::PGConn::UniquePtr cn          = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);

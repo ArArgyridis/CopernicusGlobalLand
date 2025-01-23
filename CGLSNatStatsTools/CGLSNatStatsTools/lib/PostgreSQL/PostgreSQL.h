@@ -14,19 +14,28 @@
 
 #ifndef POSTGRESQL_HXX
 #define POSTGRESQL_HXX
-#include <atomic>
 #include <mutex>
 #include <pqxx/pqxx>
+#include <iostream>
 
 namespace PGPool {
 using CnType            = pqxx::connection;
 using CnTypePtr     = std::shared_ptr<CnType>;
 
-template <class T>
-void pgArrayToVector(pqxx::array_parser value, std::vector<T> &vec) {
+template <class T, int dim>
+std::vector<T> pgArrayToVector(const pqxx::array<T,dim> &value) {
+    std::vector<T> result(value.size());
+    size_t i = 0;
+    for (auto val = value.cbegin(); val != value.cend(); val++, i++)
+        result[i] = *val.base();
+
+
+    /*
     for (std::pair<pqxx::array_parser::juncture, std::string> elem = value.get_next();elem.first != pqxx::array_parser::juncture::done; elem = value.get_next())
         if (elem.first == pqxx::array_parser::juncture::string_value)
             vec.emplace_back(elem.second);
+    */
+    return result;
 }
 
 

@@ -30,7 +30,6 @@
 #include <otbGdalDataTypeBridge.h>
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
-#include <set>
 
 #include "ColorInterpolation.h"
 #include "itkVariableLengthVector.h"
@@ -141,6 +140,7 @@ GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image, ty
     typename TImage::RegionType::IndexType bufferedRegionIndex = image->GetBufferedRegion().GetIndex();
 
     auto dif = originIdx - bufferedRegionIndex;
+    setenv("GDAL_MEM_ENABLE_OPEN", "YES", 1);
     stream << "MEM:::"
            << "DATAPOINTER=" << (uintptr_t)(image->GetBufferPointer()+(dif[0]+image->GetBufferedRegion().GetSize()[0]*dif[1])*nBands) << ","
            << "PIXELS=" << region.GetSize()[0] << ","

@@ -45,7 +45,7 @@ class Configuration {
 
 protected:
     Configuration();
-    Configuration(std::string &cfg);
+    Configuration(const std::string& cfg);
 
 public:
     std::string natStatsURL;
@@ -57,7 +57,7 @@ public:
 
     unsigned short parse();
 
-    static SharedPtr New(std::string cfgPath);
+    static SharedPtr New(const std::string& cfgPath);
     static std::map<std::string, std::size_t> connectionIds;
 };
 

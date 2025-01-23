@@ -31,7 +31,7 @@ public:
     using SharedPtr = std::shared_ptr<ProductInfo>;
     StringPtr productType;
     std::map<std::string, ProductVariable::SharedPtr> variables;
-    std::regex pattern;
+    std::vector<std::regex> pattern;
     std::string types, datePattern, fileNameCreationPattern, rtPattern;
     PathSharedPtr rootPath, firstProductPath;
     std::vector<std::string> productNames;

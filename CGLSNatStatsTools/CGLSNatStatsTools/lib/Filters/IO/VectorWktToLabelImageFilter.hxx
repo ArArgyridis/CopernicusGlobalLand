@@ -71,6 +71,7 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
 
     std::ostringstream stream;
     size_t nbBands = m_BandsToBurn.size();
+    setenv("GDAL_MEM_ENABLE_OPEN","YES", 1);
     stream << "MEM:::"
            << "DATAPOINTER=" << (uintptr_t)(this->GetOutput()->GetBufferPointer()) << ","
            << "PIXELS=" << bufferedRegion.GetSize()[0] << ","

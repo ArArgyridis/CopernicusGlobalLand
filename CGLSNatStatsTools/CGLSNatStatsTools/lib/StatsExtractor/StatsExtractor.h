@@ -22,10 +22,10 @@
 
 class StatsExtractor {
     Configuration::SharedPtr config;
-    std::string stratification;
+    std::string stratificationID;
 
 public:
-    StatsExtractor(Configuration::SharedPtr cfg, std::string stratificationType);
+    StatsExtractor(Configuration::SharedPtr cfg, const std::string&  stratificationType);
     void process();
     void process(bool k);
 };

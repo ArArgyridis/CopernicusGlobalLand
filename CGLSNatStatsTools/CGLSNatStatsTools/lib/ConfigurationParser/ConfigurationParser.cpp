@@ -24,7 +24,7 @@
 
 std::map<std::string, std::size_t> Configuration::connectionIds;
 Configuration::Configuration() {}
-Configuration::Configuration(std::string &cfg):cfgFile(cfg) {}
+Configuration::Configuration(const std::string &cfg):cfgFile(cfg) {}
 
 unsigned short Configuration::parse() {
     if (!boost::filesystem::exists(cfgFile)) {
@@ -93,6 +93,6 @@ unsigned short Configuration::parse() {
     return 0;
 }
 
-Configuration::SharedPtr Configuration::New(std::string cfgPath) {
+Configuration::SharedPtr Configuration::New(const std::string &cfgPath) {
     return Configuration::SharedPtr(new Configuration(cfgPath));
 }

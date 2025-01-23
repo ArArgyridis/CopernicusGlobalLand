@@ -115,6 +115,7 @@ class Constants:
             query += """ ORDER BY p.id""".format(_cfg.statsInfo.schema)
             res = _cfg.pgConnections[_cfg.statsInfo.connectionId].getIteratableResult(query)
 
+            #print(query)
             if res != 1:
                 for row in res:
                     key = copy.deepcopy(row[2])

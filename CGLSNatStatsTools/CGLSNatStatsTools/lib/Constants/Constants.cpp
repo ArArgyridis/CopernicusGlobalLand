@@ -60,6 +60,7 @@ unsigned short Constants::load(Configuration::SharedPtr cfg) {
     }
     query += " ORDER BY p.id;";
 
+    //std::cout << query  << "\n";
     PGPool::PGConn::UniquePtr cn = PGPool::PGConn::New(Configuration::connectionIds[cfg->statsInfo.connectionId]);
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query, "");
 
