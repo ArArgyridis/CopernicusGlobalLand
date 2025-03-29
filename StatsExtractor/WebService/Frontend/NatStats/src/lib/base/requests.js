@@ -155,5 +155,16 @@ export default {
 			density: density
 		};
 		return axios.post(options.endpointURL, postParams);
+	},
+	terraMeterIndicator(polyId, date, productVariableID, rtFlag) {
+		let postParams = {};
+		postParams["request"] = "terraMeterIndicator";
+		postParams["options"] = {
+			date: date,
+			poly_id: polyId,
+			product_variable_id: productVariableID,
+			rt_flag: rtFlag
+		}
+		return axios.post(options.endpointURL, postParams);
 	}
 };

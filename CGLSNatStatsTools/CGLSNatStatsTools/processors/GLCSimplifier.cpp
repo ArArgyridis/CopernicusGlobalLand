@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
             */
             double area = poly->get_Area();
             ft.get()->SetField("area", area);
-            layer->SetFeature(ft.get());
+            static_cast<void>(layer->SetFeature(ft.get()));
             if (area > smallestArea)
                 tmpRetainFeatures[tid].emplace_back(ftId);
         }
@@ -103,7 +103,8 @@ int main(int argc, char* argv[]) {
                             create = stop = true;
                             std::cout << rtGeomRingId << "\t:";
                             std::cout << "contained!!!!!\t:";
-                            layer->DeleteFeature(candidate->GetFID());
+                            if(OGRErr err = layer->DeleteFeature(candidate->GetFID()) != OGRERR_NONE )
+                                throw std::runtime_error("Failed to delete feature with id: " + std::to_string(candidate->GetFID()) +". Error code: " + std::to_string(err) + "\n");
                             rtGeom->removeRing(rtGeomRingId);
                             rtGeomRingId--;
                             std::cout << rtGeomRingId << "\n";
@@ -120,10 +121,13 @@ int main(int argc, char* argv[]) {
                     rtFt->SetGeometryDirectly(rtGeomMulti);
                     //delete rtGeomMulti;
                     std::cout << "Refreshing: " << rtFt->GetFID() <<"\n";
-                    tmpDataset->GetLayer(0)->DeleteFeature(rtFt->GetFID());
-                    tmpDataset->GetLayer(0)->CreateFeature(rtFt.get());
+                    if(OGRErr err = tmpDataset->GetLayer(0)->DeleteFeature(rtFt->GetFID()) != OGRERR_NONE)
+                        throw std::runtime_error("Failed to delete feature with id: " + std::to_string(rtFt->GetFID()) +". Error code: " + std::to_string(err) + "\n");
+
+                    if(OGRErr err = (tmpDataset->GetLayer(0)->CreateFeature(rtFt.get()) != OGRERR_NONE))
+                        throw std::runtime_error("Failed to create feature with id: " + std::to_string(rtFt->GetFID()) +". Error code: " + std::to_string(err) + "\n");
                     processed++;
-                    if (processed = 10) {
+                    if (processed == 10) {
                         tmpDataset->GetLayer(0)->SyncToDisk();
                         processed = 0;
                     }

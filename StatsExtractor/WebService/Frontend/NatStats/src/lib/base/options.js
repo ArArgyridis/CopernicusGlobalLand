@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+/*
 export default {
 	endpointURL: "https://natstats-demo.cgls.dev/endpoint",
 	fetchRawDataURL: "https://natstats-demo.cgls.dev/eodata",
@@ -24,9 +24,9 @@ export default {
 	vectorTileZIndex: 2,
    markerIcon: "assets/marker.png"
 }
+*/
 
 
-/*
 export default {
 	endpointURL: "https://arargyridis.hopto.org/endpoint",
 	fetchRawDataURL: "https://arargyridis.hopto.org/eodata",
@@ -38,4 +38,3 @@ export default {
 	vectorTileZIndex: 2,
    markerIcon: "assets/marker.png"
 }
-*/

@@ -135,7 +135,7 @@ void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr de
             if(outputPolygonStats == destination->end())
                 continue;
             auto polyStat = polyData.second;
-            if(polyStat->validCount == 0)
+            if(polyStat->totalCount == 0)
                 continue;
 
             outputPolygonStats->second->totalCount += polyStat->totalCount;

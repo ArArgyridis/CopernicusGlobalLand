@@ -385,6 +385,26 @@ class StatsRequests(GenericRequest):
 
         return self.__getResponseFromDB(query)
 
+    def __terraMeterIndicator(self):
+        query = """
+        SELECT json_build_object('raw_mean', psraw.mean , 'lts_mean', pslts.mean , 'lts_sd', pslts.sd )
+        FROM long_term_anomaly_info ltai
+        JOIN poly_stats psraw ON ltai.raw_product_variable_id = psraw.product_file_variable_id
+        JOIN product_file pfraw ON psraw.product_file_id = pfraw.id
+        JOIN poly_stats pslts ON ltai.mean_variable_id = pslts.product_file_variable_id AND psraw.poly_id = pslts.poly_id
+        JOIN product_file pflts ON pslts.product_file_id = pflts.id
+
+        WHERE ltai.raw_product_variable_id = {0} AND psraw.poly_id = {1} AND pfraw.date = '{2}'
+        AND date_part('month', pfraw.date) = date_part('month', pflts.date)
+        AND date_part('day', pfraw.date) = date_part('day', pflts.date) ;
+        """.format(self._requestData["options"]["product_variable_id"], self._requestData["options"]["poly_id"],
+                   self._requestData["options"]["date"])
+
+        if self._requestData["options"]["rt_flag"] >= 0:
+            query += " AND pfraw.rt_flag = {0} AND pflts.rt_flag = pfraw.rt_flag".format(self._requestData["options"]["rt_flag"])
+
+        return self.__getResponseFromDB(query)
+
     def polygonDescription(self):
         query = """SELECT json_build_object('description',sg.description, 'strata', s.description) response
                             FROM stratification_geom sg
@@ -439,6 +459,8 @@ class StatsRequests(GenericRequest):
             ret = self.__getRawTimeSeriesDataForRegion()
         elif self._requestData["request"] == "piedatabydateandpolygon":
             ret = self.__pieDataByDateAndPolygon()
+        elif self._requestData["request"] == "terraMeterIndicator":
+            ret = self.__terraMeterIndicator()
         else:
             raise SystemError
         return ret

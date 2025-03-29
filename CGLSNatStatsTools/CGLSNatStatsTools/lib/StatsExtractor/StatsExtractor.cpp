@@ -63,7 +63,7 @@ void StatsExtractor::process() {
                     JOIN product p ON TRUE
                     JOIN product_file_description pfd ON p.id = pfd.product_id
                     JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-                    JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 1 --AND pf.id = 71 --AND sg.id = 171
+                    JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 171
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
                     WHERE s.id  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
                 ),extent AS(
@@ -75,7 +75,7 @@ void StatsExtractor::process() {
                     FROM(
                         SELECT ARRAY_TO_JSON(ARRAY_AGG(image ORDER BY grpid)) images
                         FROM (
-                            SELECT (ROW_NUMBER() OVER(ORDER BY rt_flag, date))/5 grpid, image
+                            SELECT (ROW_NUMBER() OVER(ORDER BY rt_flag, date))/340 grpid, image
                             FROM(
                                 SELECT DISTINCT image, rt_flag, date --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
                                 FROM info --LIMIT 1

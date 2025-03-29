@@ -71,6 +71,9 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
     std::stringstream data;
 
+    if(variable->styleColors.empty())
+        return;
+
     for (auto row: res) {
         data <<"(" << row[0].as<std::string>() <<"," << row[1].as<std::string>() <<"," << row[2].as<std::string>() <<",";
         for (size_t i = 0; i< variable->colorInterpolation.size(); i++) {
@@ -204,6 +207,7 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Thread
         roi->SetStartY(originRawDataIdx[1]);
         roi->SetSizeX(outputRegionForThread.GetSize()[0]);
         roi->SetSizeY(outputRegionForThread.GetSize()[1]);
+        roi->SetNumberOfThreads(1);
 
         typename StreamedStatisticsType::Pointer stats = StreamedStatisticsType::New();
         stats->SetInputVariable(variable);
@@ -214,9 +218,8 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Thread
         stats->SetParentThreadId(threadId);
         stats->SetInputDataImage(roi->GetOutput(), image.first);
         stats->SetStatsDestination((*imageStats)[image.first]);
-        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB/(this->GetNumberOfThreads()*2));
-
-        stats->GlobalWarningDisplayOff();
+        stats->GetStreamer()->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB/(this->GetNumberOfThreads()));
+        stats->GetStreamer()->SetNumberOfThreads(1);
         stats->Update();
     }
 }
@@ -257,13 +260,13 @@ typename SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Re
         return ret;
 
     rasterizer->Update();
-    /*
+
     using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
     ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
-    labelWriter->SetFileName(randomString(4) + "_"+std::to_string(threadId) + "labelImage_v2.tif");
+    labelWriter->SetFileName(std::to_string(threadId) +"_" + "labelImage_v2.tif");
     labelWriter->SetInput(rasterizer->GetOutput());
     labelWriter->Update();
-    */
+
     ret.labelImage = rasterizer->GetOutput();
     ret.labels = tmpLabels;
 
