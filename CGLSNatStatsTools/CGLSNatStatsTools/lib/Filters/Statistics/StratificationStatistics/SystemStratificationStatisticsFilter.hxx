@@ -261,11 +261,13 @@ typename SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Re
 
     rasterizer->Update();
 
+    /*
     using ULongImageWriterType = otb::ImageFileWriter<LabelImageType>;
     ULongImageWriterType::Pointer labelWriter =ULongImageWriterType::New();
-    labelWriter->SetFileName(std::to_string(threadId) +"_" + "labelImage_v2.tif");
+    labelWriter->SetFileName(randomString(4)+ "_" + std::to_string(threadId) +"_" + "labelImage_v2.tif");
     labelWriter->SetInput(rasterizer->GetOutput());
     labelWriter->Update();
+    */
 
     ret.labelImage = rasterizer->GetOutput();
     ret.labels = tmpLabels;

@@ -75,7 +75,7 @@ void StatsExtractor::process() {
                     FROM(
                         SELECT ARRAY_TO_JSON(ARRAY_AGG(image ORDER BY grpid)) images
                         FROM (
-                            SELECT (ROW_NUMBER() OVER(ORDER BY rt_flag, date))/340 grpid, image
+                            SELECT (ROW_NUMBER() OVER(ORDER BY rt_flag, date))/5 grpid, image
                             FROM(
                                 SELECT DISTINCT image, rt_flag, date --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
                                 FROM info --LIMIT 1
