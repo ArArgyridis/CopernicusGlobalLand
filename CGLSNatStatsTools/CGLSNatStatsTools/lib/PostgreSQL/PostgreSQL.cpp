@@ -192,12 +192,16 @@ void PGConn::releaseConnection(PGPoolConnectionPtr cn) {
 
 std::vector<std::string> PGPool::arrayToVector(const PGConn::PGField &field) {
     std::vector<std::string> ret;
-    auto arrayInfo = field.as_array();
-    for (auto stInfo = arrayInfo.get_next(); stInfo.first != pqxx::array_parser::juncture::done; stInfo = arrayInfo.get_next()) {
-        if(stInfo.first == pqxx::array_parser::juncture::row_start)
+    auto arrayInfo = field.as_sql_array<std::string, 1>();
+    //for (auto stInfo = arrayInfo.get_next(); stInfo.first != pqxx::array_parser::juncture::done; stInfo = arrayInfo.get_next()) {
+    for (auto stInfo = arrayInfo.cbegin(); stInfo != arrayInfo.cend(); true) {
+        std::cout << stInfo->data() << "\n";
+        /*
+        if(stInfo. == pqxx::array_parser::juncture::row_start)
             std::cout << "@@@@@: " << field.as<std::string>() <<"\n";
         else if(stInfo.first == pqxx::array_parser::juncture::string_value)
             ret.emplace_back(stInfo.second);
+        */
     }
     return ret;
 }

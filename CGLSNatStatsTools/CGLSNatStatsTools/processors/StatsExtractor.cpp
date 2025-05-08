@@ -24,12 +24,12 @@
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        std::cout << "usage: StatsExtractor configuration_file stratification_description";
+        std::cout << "usage: StatsExtractor configuration_file stratification_id";
 		return 1;
 	}
 	GDALAllRegister();
 	
-	std::string cfgFile(argv[1]), stratification(argv[2]);
+    std::string cfgFile(argv[1]);
     
     Configuration::SharedPtr config = Configuration::New(cfgFile);
 	if (config->parse() != 0)
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 	if (Constants::load(config) != 0)
         return 1;
 
-    StatsExtractor extractor(config, stratification);
+    StatsExtractor extractor(config, argv[2]);
 	extractor.process();
     return 0;
 }

@@ -12,10 +12,25 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
 export default {
 	endpointURL: "https://natstats-demo.cgls.dev/endpoint",
 	fetchRawDataURL: "https://natstats-demo.cgls.dev/eodata",
 	fetchAnomaliesDataURL: "https://natstats-demo.cgls.dev/eodataanomalies",
+	s3CogURL: "https://s3.waw3-1.cloudferro.com/swift/v1/CGLSWMS/projects/natstats/mapserver/",
+	bingKey: "Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl",
+	maxAOIBounds3857URL: "assets/bounds3857.geojson",
+	cogZIndex: 1,
+	vectorTileZIndex: 2,
+   markerIcon: "assets/marker.png"
+}
+*/
+
+
+export default {
+	endpointURL: "https://arargyridis.hopto.org/endpoint",
+	fetchRawDataURL: "https://arargyridis.hopto.org/eodata",
+	fetchAnomaliesDataURL: "https://arargyridis.hopto.org/eodataanomalies",
 	s3CogURL: "https://s3.waw3-1.cloudferro.com/swift/v1/CGLSWMS/projects/natstats/mapserver/",
 	bingKey: "Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl",
 	maxAOIBounds3857URL: "assets/bounds3857.geojson",

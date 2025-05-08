@@ -25,6 +25,7 @@
     import PolygonTimeSeries from "./PolygonTimeSeries.svelte";
     import PointTimeSeries from "./PointTimeSeries.svelte";
     import PolygonHistogramData from "./PolygonHistogramData.svelte";
+    import TerraMeterIndicator from "./TerraMeterIndicator.svelte";
     import RegionReport from "./RegionReport.svelte";
     import {uuidv4} from "../../base/utils";
 
@@ -221,6 +222,15 @@
                     chartId={mapInfoId + "_histogramdata"}
                     polygonId={selectedFeatureId}
                 />
+                <TerraMeterIndicator
+                    shown={activeDiagramId ==
+                        diagramKeys.indexOf("terraMeterIndicator")}
+                    bind:this={refs.diagrams.terraMeterIndicator}
+                    chartId={mapInfoId + "TerraMeterIndicator"}
+                    polygonId={selectedFeatureId}
+
+                />
+
             </div>
             <div class="modal-footer">
                 <button

@@ -23,8 +23,7 @@ ProductInfo::ProductInfo(){}
 
 ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg) {
 
-    auto productNamesArr = row[0].as_array();
-    PGPool::pgArrayToVector<std::string>(productNamesArr, productNames);
+    productNames = PGPool::pgArrayToVector<std::string, 1>(row[0].as_sql_array<std::string, 1>());
     productType = std::make_shared<std::string>(row[1].as<std::string>());
 
     rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.imageryPath);
@@ -33,8 +32,12 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg
     else if (*productType == "lts")
         rootPath = std::make_shared<std::filesystem::path>(cfg->filesystem.ltsPath);
 
-    id          = row[2].as<size_t>();
-    pattern     = std::regex(row[3].as<std::string>());
+    id              = row[2].as<size_t>();
+    auto patterns   = PGPool::pgArrayToVector<std::string, 1>(row[3].as_sql_array<std::string, 1>());
+    pattern.resize(patterns.size());
+    for (size_t i = 0; i < patterns.size(); i++)
+        pattern[i] = std::regex(patterns[i]);
+
     types       = row[4].as<std::string>();
     datePattern = row[5].as<std::string>();
 
@@ -60,17 +63,28 @@ ProductInfo::ProductInfo(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg
 }
 
 std::string ProductInfo::getDateAsStringForFile(std::string &fileName) {
-    std::sregex_iterator it(fileName.begin(), fileName.end(), pattern);
-    return fmt::format(datePattern, static_cast<std::string>((*it)[1]),
-                       static_cast<std::string>((*it)[2]), static_cast<std::string>((*it)[3]),
-                       static_cast<std::string>((*it)[4]));
+    for (auto& ptrn: pattern) {
+        std::sregex_iterator it(fileName.begin(), fileName.end(), ptrn);
+        if (it->size() > 0)
+            return fmt::format(datePattern, static_cast<std::string>((*it)[1]),
+                               static_cast<std::string>((*it)[2]), static_cast<std::string>((*it)[3]),
+                               static_cast<std::string>((*it)[4]));
+    }
+    return "UNKNOWN DATE";
 }
 
 std::string ProductInfo::getRtFlagForFile(std::string &fileName) {
     if(rtPattern.size() == 0)
         return "-1";
-    std::sregex_iterator it(fileName.begin(), fileName.end(), pattern);
-    return fmt::format(rtPattern, (*it)[0].str());
+
+    for (auto& ptrn: pattern) {
+        std::sregex_iterator it(fileName.begin(), fileName.end(), ptrn);
+        if (it->size() > 0)
+            return fmt::format(rtPattern, (*it)[0].str());
+    }
+    return "-1";
+
+
 }
 
 ProductInfo::SharedPtr ProductInfo::New(PGPool::PGConn::PGRow row, Configuration::SharedPtr cfg) {

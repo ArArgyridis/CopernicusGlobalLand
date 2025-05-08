@@ -20,6 +20,23 @@ export function dateFromUTCDateString(date) {
 	return new Date(date + "+00:00");
 }
 
+export function baseURL() {
+	`${document.location.protocol}//${document.location.hostname}/NatStats/`;
+}
+
+export function endpointURL() {
+    return `${baseURL()}endpoint`;
+}
+
+export function fetchAnomaliesDataURL() {
+	return `${baseURL()}eodataanomalies`;
+}
+
+export function fetchRawDataURL() {
+	return `${baseURL()}eodata`;
+}
+
+
 export function	localDateAsUTCString(date) {
 	return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
 }

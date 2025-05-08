@@ -53,7 +53,7 @@ def main():
 				print(Constants.PRODUCT_INFO[pid].productNames[0])
 				obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
 				obj.importProductFromLocalStorage(inDir)
-				#obj.fetchProductFromVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
+				#obj.fetchOrValidateAgainstVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 
 				#compute anomalies
 				del obj
@@ -63,13 +63,14 @@ def main():
 					print("Computing anomalies!")
 					#runLongTermComparisonAnomalyDetector(pid, config)
 					cmd = """AnomalyExtractor "{0}" "{1}" """.format(config, pid)
+					os.system(cmd)
 
 			cmd = "CogGenerator {0}".format(config)
 			os.system(cmd)
 
 			#fetching stratifications and compute stats for each strata
 
-			query = "select description from stratification s "
+			query = "select id from stratification s "
 			print("Extracting statistics")
 			
 			res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)

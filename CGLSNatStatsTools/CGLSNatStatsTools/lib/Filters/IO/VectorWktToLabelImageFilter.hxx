@@ -15,7 +15,6 @@
 #define VECTORWKTTOLABELIMAGEFILTER_HXX
 #include <gdal_alg.h>
 #include <otbGdalDataTypeBridge.h>
-#include <iomanip>
 
 #include "VectorWktToLabelImageFilter.h"
 
@@ -71,6 +70,7 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
 
     std::ostringstream stream;
     size_t nbBands = m_BandsToBurn.size();
+    setenv("GDAL_MEM_ENABLE_OPEN","YES", 1);
     stream << "MEM:::"
            << "DATAPOINTER=" << (uintptr_t)(this->GetOutput()->GetBufferPointer()) << ","
            << "PIXELS=" << bufferedRegion.GetSize()[0] << ","
@@ -99,7 +99,7 @@ void VectorWktToLabelImageFilter<TOutputImage>::GenerateData() {
 
     char** options = nullptr;
     if (m_AllTouchedMode)
-        options = CSLSetNameValue(options, "ALL_TOUCHED", "TRUE");
+        options = CSLSetNameValue(options, "ALL_TOUCHED", "FALSE");
 
     GDALRasterizeGeometries(memRasterDataset.get(), m_BandsToBurn.size(), &(m_BandsToBurn[0]), burnGeoms.size(), &(burnGeoms[0]), nullptr, nullptr,
                                 &(burnValues[0]), options, GDALDummyProgress, nullptr);
