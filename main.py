@@ -17,7 +17,7 @@ import shutil
 from time import sleep
 from StatsExtractor.Backend.DataCrawler import DataCrawler
 from StatsExtractor.Backend.ZonalStatsExtractor import ZonalStatsExtractor
-from StatsExtractor.Backend.MapserverImporter import MapserverImporter
+#from StatsExtractor.Backend.MapserverImporter import MapserverImporter
 from AnomalyDetectors.LongTermComparisonAnomalyDetector import run as runLongTermComparisonAnomalyDetector
 from Libs.Constants import Constants
 from Libs.ConfigurationParser import ConfigurationParser
