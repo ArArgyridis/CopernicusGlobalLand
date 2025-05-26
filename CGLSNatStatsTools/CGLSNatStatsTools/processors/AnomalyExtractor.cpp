@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::cout << res[0][1].as<std::string>() << "\n";
+    //std::cout << res[0][1].as<std::string>() << "\n";
 
     auto timeStart = iso8601ToUTCTimestamp(res[0][0].as<std::string>());
     auto p = boost::posix_time::to_tm(timeStart);
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     p.tm_mday = 1*(p.tm_mday >=1) + 10*(p.tm_mday >=11) + 10*(p.tm_mday >=21);
     timeStart = boost::posix_time::ptime_from_tm(p);
 
-    auto timeEnd = iso8601ToUTCTimestamp(res[0][1].as<std::string>());
+    auto timeEnd = iso8601ToUTCTimestamp(res[0][1].as<std::string>()) + boost::gregorian::date_duration(1);
     std::vector<int> dekads = {1,11,21};
     //std::cout << timeStart.date() << "\n";
     for (boost::posix_time::ptime currentTime = timeStart; currentTime < timeEnd; currentTime=getNextDekad(currentTime)) {
