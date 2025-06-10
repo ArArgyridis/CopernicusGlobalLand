@@ -29,13 +29,13 @@ def main():
 	if len(sys.argv) < 2:
 		print("usage: python main.py config_file")
 		return 1
-	
+
 	config = sys.argv[1]
 	# loading constants
 	Constants.load(config)
 
 	cfg = ConfigurationParser(config)
-	
+
 	if cfg.parse() != 1:
 		while True:
 			if os.path.isdir(cfg.filesystem.tmpPath):
@@ -70,13 +70,14 @@ def main():
 
 			#fetching stratifications and compute stats for each strata
 
-			query = "select id from stratification s "
+			query = "select id from stratification s order by id"
 			print("Extracting statistics")
-			
+
 			res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
 			if res != 1:
 				for row in res:
 					statsCmd = """StatsExtractor "{0}" "{1}" """.format(config, row[0])
+					print(statsCmd)
 					os.system(statsCmd)
 
 					"""
@@ -87,7 +88,7 @@ def main():
 			sleep(43200)
 
 	return 0
-	
-	
+
+
 if __name__ == "__main__":
 	main()
