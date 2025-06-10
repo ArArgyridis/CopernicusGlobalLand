@@ -25,42 +25,7 @@
 #include <otbImage.h>
 #include <otbImageFileWriter.h>
 
-int main()
-{
-    using PixelType = float;
-    constexpr unsigned int Dimension = 2;
-    using ImageType = otb::Image<PixelType, Dimension>;
-
-    // Create image
-    ImageType::Pointer image = ImageType::New();
-    ImageType::RegionType region;
-    ImageType::IndexType start = {0, 0};
-    ImageType::SizeType size = {100, 100};
-
-    region.SetSize(size);
-    region.SetIndex(start);
-    image->SetRegions(region);
-    image->Allocate();
-    image->FillBuffer(42.0); // Fill with dummy data
-
-    // Writer
-    using WriterType = otb::ImageFileWriter<ImageType>;
-    WriterType::Pointer writer = WriterType::New();
-    writer->SetFileName("NETCDF:\"output.nc\":variable_name"); // NetCDF file
-    writer->SetInput(image);
-
-    try {
-        writer->Update();
-    } catch (itk::ExceptionObject & err) {
-        std::cerr << "Exception caught: " << err << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
-}
-
-
-int _main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cout << "usage: AnomalyExtractor configuration_file anomaly_product_file_description_id";
         return 1;
