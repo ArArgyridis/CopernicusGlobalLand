@@ -293,8 +293,8 @@
     $: clickedCoordinates, refreshMarker();
 
     onMount(() => {
-        let basemapLayerId = refs.map.addBingLayerToMap("aerial", options.bingKey);
-        //let basemapLayerId = refs.map.addXYZLayer("https://s2maps-tiles.eu/wmts?layer=s2cloudless-2022_3857&style=default&tilematrixset=GoogleMapsCompatible&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}");
+        //let basemapLayerId = refs.map.addBingLayerToMap("aerial", options.bingKey);
+        let basemapLayerId = refs.map.addXYZLayer("https://gisco-services.ec.europa.eu/maps/tiles/OSMPositronComposite/EPSG3857/{z}/{x}/{y}.png");
         refs.map.setVisibility(basemapLayerId, true);
         refs.map.toggleGetMapCoordinates();
 
