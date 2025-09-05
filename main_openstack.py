@@ -59,7 +59,6 @@ def main():
 		#obj.fetchOrValidateAgainstVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
 
 		#compute anomalies
-		del obj
 		obj = None
 
 		if Constants.PRODUCT_INFO[pid].productType == "anomaly":
@@ -74,7 +73,7 @@ def main():
 			#fetching stratifications and compute stats for each strata
 
 		query = "select id from stratification s order by id"
-		print("Extracting statistics for product id: {0}".format(pid))
+		print("Extracting statistics for : {0}".format(Constants.PRODUCT_INFO[pid].productNames[0]))
 
 		res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
 		if res == 1:
