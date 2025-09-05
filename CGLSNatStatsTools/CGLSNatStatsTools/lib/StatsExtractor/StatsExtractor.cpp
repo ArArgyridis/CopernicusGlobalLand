@@ -59,14 +59,13 @@ void StatsExtractor::process() {
                 WITH info AS (
                     SELECT sg.id geomid, (JSON_BUILD_ARRAY(pf.rel_file_path, pf.id, pfv.id))::jsonb image, pf.rt_flag, pf.date
                     FROM stratification s
-                    JOIN stratification_geom sg ON s.id = sg.stratification_id AND s.id  = '{0}'
+                    JOIN stratification_geom sg ON s.id = sg.stratification_id
                     JOIN product p ON TRUE
                     JOIN product_file_description pfd ON p.id = pfd.product_id
                     JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
                     JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 171
                     LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
-                    WHERE NOT EXISTS (SELECT 1 FROM poly_stats ps WHERE ps.poly_id = sg.id AND ps.product_file_id = pf.id
-                        AND ps.product_file_variable_id = pfv.id) AND pfv.id = {1}
+                    WHERE s.id  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
                 ),extent AS(
                     SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids, min(a.geomid)  mingmid, max(a.geomid) maxgmid
                     FROM (SELECT distinct geomid FROM info) a
