@@ -56,38 +56,37 @@ void StatsExtractor::process() {
             std::cout <<"Retrieving image info for product " << product.second->productNames[0] <<"(variable: " << variable.second->variable <<")\n";
 
             std::string query = fmt::format(R""""(
-                WITH info AS (
-                    SELECT sg.id geomid, (JSON_BUILD_ARRAY(pf.rel_file_path, pf.id, pfv.id))::jsonb image, pf.rt_flag, pf.date
-                    FROM stratification s
-                    JOIN stratification_geom sg ON s.id = sg.stratification_id
-                    JOIN product p ON TRUE
-                    JOIN product_file_description pfd ON p.id = pfd.product_id
-                    JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
-                    JOIN product_file pf ON pfd.id = pf.product_file_description_id --AND sg.id = 171
-                    LEFT JOIN poly_stats ps ON ps.poly_id = sg.id AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
-                    WHERE s.id  = '{0}' AND pfv.id = {1} AND ps.poly_id IS NULL AND ps.product_file_id IS NULL AND ps.product_file_variable_id IS NULL
-                ),extent AS(
-                    SELECT  st_extent(geom) extg, ARRAY_TO_JSON(array_agg(a.geomid)) geomids, min(a.geomid)  mingmid, max(a.geomid) maxgmid
-                    FROM (SELECT distinct geomid FROM info) a
-                    JOIN stratification_geom sg ON a.geomid = sg.id
-                ),images AS( -- partition images into groups each having 5 images
-                    SELECT ARRAY_TO_JSON(ARRAY_AGG(images)) images
-                    FROM(
-                        SELECT ARRAY_TO_JSON(ARRAY_AGG(image ORDER BY grpid)) images
-                        FROM (
-                            SELECT (ROW_NUMBER() OVER(ORDER BY rt_flag, date))/5 grpid, image
-                            FROM(
-                                SELECT DISTINCT image, rt_flag, date --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
-                                FROM info --LIMIT 1
-                            )a
-                        )b
-                        GROUP BY grpid
-                    )c
-                )
-                SELECT images, geomids, st_xmin(extg), st_ymin(extg), st_xmax(extg), st_ymax(extg), Find_SRID('public', 'stratification_geom', 'geom'),
-                mingmid, maxgmid+1
-                FROM extent
-                JOIN images ON TRUE)"""", stratificationID, std::to_string(variable.second->id));
+            WITH extent AS(
+                SELECT sg.stratification_id, st_extent(geom) extg, ARRAY_TO_JSON(array_agg(sg.id)) geomids, min(sg.id)  mingmid, max(sg.id) maxgmid
+                FROM stratification_geom sg
+                WHERE sg.stratification_id = {0}
+                GROUP BY sg.stratification_id
+            ),image_info AS(
+                SELECT (JSON_BUILD_ARRAY(pf.rel_file_path, pf.id, pfv.id))::jsonb image, pf.rt_flag, pf.date
+                FROM extent ext
+                JOIN product_file_variable pfv ON pfv.id = {1}
+                JOIN product_file_description pfd ON pfd.id = pfv.product_file_description_id
+                JOIN product_file pf ON pfd.id = pf.product_file_description_id
+                LEFT JOIN poly_stats ps ON ps.poly_id = ext.mingmid  AND ps.product_file_id = pf.id AND ps.product_file_variable_id = pfv.id
+                WHERE ext.stratification_id = {0} AND ps.poly_id IS NULL
+            ),images AS( -- partition images into groups each having 5 images
+                SELECT ARRAY_TO_JSON(ARRAY_AGG(images)) images
+                FROM (
+                    SELECT ARRAY_TO_JSON(ARRAY_AGG(image ORDER BY grpid)) images
+                    FROM (
+                        SELECT (ROW_NUMBER() OVER(ORDER BY rt_flag, date))/5 grpid, image
+                        FROM(
+                            SELECT DISTINCT image, rt_flag, date --SELECT array_to_json(ARRAY_AGG(DISTINCT image)) images
+                            FROM image_info --LIMIT 1
+                        )a
+                    )b
+                    GROUP BY grpid
+                )c
+            )
+            SELECT images, geomids, st_xmin(extg), st_ymin(extg), st_xmax(extg), st_ymax(extg), Find_SRID('public', 'stratification_geom', 'geom'),
+            mingmid, maxgmid+1
+            FROM extent
+            JOIN images ON TRUE;)"""", stratificationID, std::to_string(variable.second->id));
             //std::cout << query <<"\n";
 
             PGPool::PGConn::UniquePtr cn          = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);

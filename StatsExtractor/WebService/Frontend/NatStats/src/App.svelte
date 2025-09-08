@@ -36,7 +36,7 @@
       <LeftPanel class="leftPanel" shown={true} />
       <ArchiveDownloader />
       <Legend class="legend hide transition is-open" bind:this={refs.legend} analysisMode = {$currentProduct.currentVariable.mapViewOptions.analysisMode}/>
-      <img class="logo" src="assets/copernicus_land_monitoring.png" alt="Copernicus GLMS"/>
+      <!--<img class="logo" src="assets/copernicus_land_monitoring.png" alt="Copernicus GLMS"/>-->
 
     </div>
   </div>
@@ -71,7 +71,8 @@
         width: 500px;
         margin: auto;
         bottom: 10px;
-        right: 300px;
+        /*right: 300px;*/
+        right:10px;
         position: absolute;
     }
     .logo {
