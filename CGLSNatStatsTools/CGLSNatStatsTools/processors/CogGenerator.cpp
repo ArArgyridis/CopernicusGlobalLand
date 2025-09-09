@@ -37,7 +37,8 @@ void createTmpFile(std::filesystem::path &inFile, std::filesystem::path &tmpFile
     typename TInputImageReader::Pointer reader = TInputImageReader::New();
 
     reader->SetFileName(inFile.string());
-    reader->UpdateOutputInformation();
+    //reader->UpdateOutputInformation();
+    reader->Update();
 
     typename WMSCogFilter::Pointer wmsFltr = WMSCogFilter::New();
     wmsFltr->SetInput(reader->GetOutput());
