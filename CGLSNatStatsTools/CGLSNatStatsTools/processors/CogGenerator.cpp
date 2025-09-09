@@ -43,13 +43,13 @@ void createTmpFile(std::filesystem::path &inFile, std::filesystem::path &tmpFile
     typename WMSCogFilter::Pointer wmsFltr = WMSCogFilter::New();
     wmsFltr->SetInput(reader->GetOutput());
     wmsFltr->setProduct(product, variable);
-    wmsFltr->UpdateOutputInformation();
+    wmsFltr->Update();
 
     typename ReprojectionFilter::Pointer reproject = ReprojectionFilter::New();
     reproject->SetInput(wmsFltr->GetOutput());
     reproject->SetInputProjection(4326);
     reproject->SetOutputProjection(3857);
-    reproject->UpdateOutputInformation();
+    reproject->Update();
 
     typename TOutputImageWriter::Pointer writer = TOutputImageWriter::New();
     writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=IF_NEEDED&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512");
