@@ -47,6 +47,9 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
     this->GetOutput()->SetNumberOfComponentsPerPixel(nOutputBands);
     otb::WriteNoDataFlags(noDataFlags, noDataValues, this->GetOutput()->GetImageMetadata());
     this->GetOutput()->SetProjectionRef(this->GetInput()->GetProjectionRef());
+
+    std::array<typename TOutputImage::PixelType::ValueType, 3> pxl = {255, 255, 255};
+    variable->styleColors[variable->getNoData()] = pxl;
 }
 
 template <class TInputImage, class TOutputImage>
@@ -63,11 +66,13 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::ThreadedGenerateData(const In
     typename TOutputImage::PixelType pxl(nOutputBands);
     pxl.Fill(255);
     for(outIt.GoToBegin(), inIt.GoToBegin(); !outIt.IsAtEnd(); ++outIt, ++inIt){
+       /*
         auto val = inIt.Get();
         if (val == variable->getNoData()) {
             outIt.Set(nullPxl);
             continue;
         }
+        */
 
         pxl.SetData(variable->styleColors[inIt.Get()].data());
         outIt.Set(pxl);
