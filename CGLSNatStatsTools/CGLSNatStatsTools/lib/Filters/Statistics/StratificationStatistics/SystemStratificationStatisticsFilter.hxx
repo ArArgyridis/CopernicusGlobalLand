@@ -197,8 +197,8 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Thread
 
         {
             std::lock_guard<std::mutex> lock(readMtx);
-            //imgReader->UpdateOutputInformation();
-            imgReader->Update();
+            imgReader->UpdateOutputInformation();
+            //imgReader->Update();
         }
 
         typename ExtractRawDataROIFilter::Pointer roi = ExtractRawDataROIFilter::New();
