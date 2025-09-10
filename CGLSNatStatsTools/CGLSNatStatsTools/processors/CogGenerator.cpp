@@ -37,28 +37,24 @@ void createTmpFile(std::filesystem::path &inFile, std::filesystem::path &tmpFile
     typename TInputImageReader::Pointer reader = TInputImageReader::New();
 
     reader->SetFileName(inFile.string());
-    //reader->UpdateOutputInformation();
     reader->Update();
     std::cout << "data loaded!\n";
 
     typename WMSCogFilter::Pointer wmsFltr = WMSCogFilter::New();
     wmsFltr->SetInput(reader->GetOutput());
     wmsFltr->setProduct(product, variable);
-    wmsFltr->Update();
-    reader = nullptr;
-    std::cout << "data colored!\n";
+    wmsFltr->UpdateOutputInformation();
 
     typename ReprojectionFilter::Pointer reproject = ReprojectionFilter::New();
     reproject->SetInput(wmsFltr->GetOutput());
     reproject->SetInputProjection(4326);
     reproject->SetOutputProjection(3857);
-    reproject->Update();
-    wmsFltr = nullptr;
+    reproject->UpdateOutputInformation();
 
     typename TOutputImageWriter::Pointer writer = TOutputImageWriter::New();
     writer->SetFileName(tmpFile.string()+"?&gdal:co:BIGTIFF=IF_NEEDED&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512");
     writer->SetInput(reproject->GetOutput());
-    //writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
+    writer->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
     writer->Update();
 }
 
