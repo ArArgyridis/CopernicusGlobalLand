@@ -72,14 +72,11 @@ def main():
 
 			#fetching stratifications and compute stats for each strata
 
-	query = "select id from stratification s order by id"
-	print("Extracting statistics for : {0}".format(Constants.PRODUCT_INFO[pid].productNames[0]))
+	query = "SELECT id, description FROM stratification s ORDER BY id"
 
 	res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
-	if res == 1:
-		continue
-		
 	for row in res:
+		print("Extracting statistics for : {0}".format(row[1])
 		statsCmd = """StatsExtractor "{0}" "{1}" """.format(config, row[0])
 		print(statsCmd)
 		os.system(statsCmd)
