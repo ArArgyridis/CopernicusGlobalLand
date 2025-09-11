@@ -76,7 +76,7 @@ def main():
 
 	res = cfg.pgConnections[cfg.statsInfo.connectionId].fetchQueryResult(query)
 	for row in res:
-		print("Extracting statistics for : {0}".format(row[1])
+		print("Extracting statistics for : {0}".format(row[1]))
 		statsCmd = """StatsExtractor "{0}" "{1}" """.format(config, row[0])
 		print(statsCmd)
 		os.system(statsCmd)
