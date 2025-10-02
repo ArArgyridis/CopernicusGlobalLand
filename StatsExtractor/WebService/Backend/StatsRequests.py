@@ -269,7 +269,7 @@ class StatsRequests(GenericRequest):
             "stdev": []
         }
 
-        with ProcessPoolExecutor(max_workers=4) as executor:
+        with ProcessPoolExecutor(max_workers=20) as executor:
             #processing computations
             for result in executor.map(productStats, images, [self._requestData]*len(images)):
                 if result[0] in ["mean", "stdev"]:

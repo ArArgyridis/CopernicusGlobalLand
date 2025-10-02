@@ -49,13 +49,13 @@ class PointValueExtractor():
                 if not os.path.isfile(img):
                     issueImg  = img
                     raise FileExistsError
-                
+
                 inData = None
                 if img.endswith(".nc"):
                     inData = gdal.Open(self.__getNETCDFSubdataset(img))
                 else:
                     inData = gdal.Open(img)
-                
+
                 if inData is None:
                     continue
 
@@ -77,11 +77,22 @@ class PointValueExtractor():
                 gt = inData.GetGeoTransform()
                 col,row = xyToColRow(self._xCoord, self._yCoord, gt)
                 value = inData.GetRasterBand(1).ReadAsArray(col, row, 1, 1)[0,0].astype(float)
-                
-                ret[i] =[dataRow[3],inData.GetRasterBand(1).GetScale()*value + inData.GetRasterBand(1).GetOffset()]
-                if value == inData.GetRasterBand(1).GetNoDataValue():
-                    ret[i][1] = None
 
+                if value == inData.GetRasterBand(1).GetNoDataValue():
+                    value = None
+                else:
+                    scale = 1.0
+                    offset = 0
+
+                    if inData.GetRasterBand(1).GetScale() is not None:
+                        scale = inData.GetRasterBand(1).GetScale()
+
+                    if inData.GetRasterBand(1).GetOffset() is not None:
+                        offset = inData.GetRasterBand(1).GetOffset()
+
+                    value = scale*value + offset
+
+                ret[i] =[dataRow[3], value]
                 i += 1
         except FileExistsError:
             print("The specified file does not exist: ", issueImg )
