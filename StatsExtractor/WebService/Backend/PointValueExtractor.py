@@ -78,12 +78,10 @@ class PointValueExtractor():
                 col,row = xyToColRow(self._xCoord, self._yCoord, gt)
                 value = inData.GetRasterBand(1).ReadAsArray(col, row, 1, 1)[0,0].astype(float)
                 
-                ret[i] =[dataRow[3],value]
+                ret[i] =[dataRow[3],inData.GetRasterBand(1).GetScale()*value + inData.GetRasterBand(1).GetOffset()]
                 if value == inData.GetRasterBand(1).GetNoDataValue():
                     ret[i][1] = None
-                #applying netCDF scaling for raw data
-                elif img.endswith(".nc"):
-                    ret[i][1] =  np.round(scaleValue(inData.GetMetadata(), ret[i][1], dataRow[1]), 4)
+
                 i += 1
         except FileExistsError:
             print("The specified file does not exist: ", issueImg )
