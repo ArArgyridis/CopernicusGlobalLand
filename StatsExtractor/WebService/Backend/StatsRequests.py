@@ -72,8 +72,7 @@ class StatsRequests(GenericRequest):
     def __fetchProductInfo(self):
         activeCategoriesStr = "TRUE"
         if self._config.enabledProductIds is not None:
-            activeCategoriesStr = "p.id IN ({0})".format(",".join(self._config.enabledProductIds))
-
+            activeCategoriesStr = "p.id IN ({0})".format(",".join([str(i) for i in self._config.enabledProductIds]))
 
         query = """
              WITH dt AS(
