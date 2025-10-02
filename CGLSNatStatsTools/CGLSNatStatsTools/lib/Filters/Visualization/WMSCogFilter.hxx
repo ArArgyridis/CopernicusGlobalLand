@@ -62,14 +62,6 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::ThreadedGenerateData(const In
 
     typename TOutputImage::PixelType pxl(nOutputBands);
     for(outIt.GoToBegin(), inIt.GoToBegin(); !outIt.IsAtEnd(); ++outIt, ++inIt){
-       /*
-        auto val = inIt.Get();
-        if (val == variable->getNoData()) {
-            outIt.Set(nullPxl);
-            continue;
-        }
-        */
-
         pxl.SetData(variable->styleColors[inIt.Get()].data());
         outIt.Set(pxl);
     }

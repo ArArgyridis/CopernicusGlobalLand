@@ -14,12 +14,14 @@ endif(OTB_FOUND)
 
 SET (PQXX_DIR .)
 SET (POSTGRES_DIR .)
+find_package(PostgreSQL REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
 find_package(OpenMP)
 find_package(LibZip REQUIRED)
-
+#find_library(PQXX_LIBRARY pqxx)
+find_package(PQXX REQUIRED)
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
@@ -29,7 +31,7 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-find_package(PQXX REQUIRED)
+
 
 find_package(LibXml2 REQUIRED)
 if (LIBXML2_FOUND)
@@ -126,7 +128,7 @@ foreach(sourceFile IN LISTS PROCESSORS)
     get_filename_component(fileName ${sourceFile} NAME_WE)
     message("creating: ${fileName}")
     add_executable(${fileName} ${sourceFile})
-    target_include_directories(${fileName} PRIVATE ${LIBZIP_INCLUDE_DIR})
+    target_include_directories(${fileName} PRIVATE ${LIBZIP_INCLUDE_DIR} ${PQXX_INCLUDE_DIRS})
     target_link_libraries(${fileName} ${PROJECT_NAME} ${LIBZIP_LIBRARY} ${PQXX_LIBRARIES} ${OTB_LIBRARIES}
             ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only OpenMP::OpenMP_CXX CURL::libcurl )
 endforeach()

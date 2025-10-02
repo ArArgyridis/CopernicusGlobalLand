@@ -48,10 +48,12 @@ class ProductInfo:
         self._dateptr = row[5]
         self.fileNameCreationPattern = row[6]
         self.rtFlag = row[7]
-        self.firstProductPath = row[8]
+        self.satelliteSystemPattern = row[8]
+        self.versionPattern = row[9]
+        self.firstProductPath = row[10]
         self.variables = {}
-        if isinstance(row[9], list):
-            for ptrn in row[9]:
+        if isinstance(row[11], list):
+            for ptrn in row[11]:
                 self.variables[ptrn["variable"] ] = ProductVariable(ptrn)
 
 
@@ -96,10 +98,12 @@ class Constants:
                     LEFT JOIN anomalies anom ON pfv.id = anom.raw_product_variable_id
                     GROUP BY pfv.product_file_description_id,anom.anomalies
                 )
-                SELECT p.name, p.type, pfd.id, pfd.pattern, pfd."types", pfd.create_date, pfd.file_name_creation_pattern, pfd.rt_flag_pattern, productPath.rel_file_path,
+                SELECT p.name, p.type, pfd.id, pfd.pattern, pfd."types", pfd.create_date, pfd.file_name_creation_pattern, pfd.rt_flag_pattern, 
+                pfd.satellite_system_pattern, pfd.version_pattern,
+                productPath.rel_file_path,
                 pv.product_variables
                 FROM product p
-                LEFT JOIN product_file_description pfd on p.id = pfd.product_id
+                LEFT JOIN product_file_description pfd on p.id = pfd.product_id --AND pfd.id = 1
                 LEFT JOIN product_variables pv on pv.product_file_description_id = pfd.id
                 LEFT JOIN LATERAL (
                     SELECT rel_file_path

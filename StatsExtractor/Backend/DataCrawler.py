@@ -55,21 +55,10 @@ def validateFile(validateOptions):
     productParams = validateOptions.prodInfo.getFileNameInfo(chk)
     if productParams is None:
         return None
-    """
-    #pattern = re.compile(validateOptions.prodInfo.pattern)
-
-    #match = pattern.search(chk)
-    if not match:
-        return None
-
-    subStr = chk[match.start()::]
-    if not pattern.fullmatch(subStr):
-        return None
-    """
 
     if len(validateOptions.prodInfo.variables) > 0:  # try to open file with gdal
         tmpDt = gdal.Open(validateOptions.fl)
-        if tmpDt is None and os.path.splitext(validateOptions.fl)[1] in ('.tif', ".nc"):
+        if tmpDt is None and os.path.splitext(validateOptions.fl)[1] in ('.tiff', '.tif', ".nc"):
             return [chk, "INVALID FILE"]
 
         del tmpDt
@@ -94,9 +83,17 @@ def validateFile(validateOptions):
     if validateOptions.prodInfo.rtFlag is not None:
         rtFlag = validateOptions.prodInfo.rtFlag.format(*productParams)
 
+    satelliteSystem = 'NULL'
+    if validateOptions.prodInfo.satelliteSystemPattern is not None:
+        satelliteSystem = """'{0}'""".format(validateOptions.prodInfo.satelliteSystemPattern.format(*productParams))
+
+    version = 'NULL'
+    if validateOptions.prodInfo.versionPattern is not None:
+        version = """'{0}'""".format(validateOptions.prodInfo.versionPattern.format(*productParams))
+
     return "({0})".format(",".join([str(validateOptions.prodInfo.id), "'{0}'".format(relFilePath),
                                            "'{0}'".format(validateOptions.prodInfo._dateptr.format(*productParams)),
-                                           rtFlag]))
+                                           rtFlag, satelliteSystem, version]))
 
 
 
@@ -276,14 +273,15 @@ class DataCrawler:
 
     def _store(self, dbData):
         query = """
-            WITH tmp_data(product_file_description_id, rel_file_path, date, rt_flag) AS (
+            WITH tmp_data(product_file_description_id, rel_file_path, date, rt_flag, satellite_system, version) AS (
             VALUES {0}
             )
                     
-            INSERT INTO product_file(product_file_description_id, rel_file_path, date, rt_flag) 
-                SELECT product_file_description_id, max(rel_file_path), date::timestamp without time zone, rt_flag::smallint
+            INSERT INTO product_file(product_file_description_id, rel_file_path, date, rt_flag, satellite_system, version) 
+                SELECT product_file_description_id, max(rel_file_path), date::timestamp without time zone, rt_flag::smallint,
+                satellite_system, version
                 FROM tmp_data
-                GROUP BY product_file_description_id,date,rt_flag 
+                GROUP BY product_file_description_id,date,rt_flag, satellite_system, version
             
                 ON CONFLICT(product_file_description_id, "date", rt_flag) DO NOTHING;"""
         self._cn.pgConnections[self._cn.statsInfo.connectionId].executeQueries([query.format(",\n".join(dbData)), ])
@@ -306,6 +304,7 @@ class DataCrawler:
             ) for dp, dn, filenames in os.walk(inDir) for f in filenames]
 
         dbData = []
+
         with Pool() as pool:
             for result in pool.map(validateFile, files):
                 if isinstance(result, str):

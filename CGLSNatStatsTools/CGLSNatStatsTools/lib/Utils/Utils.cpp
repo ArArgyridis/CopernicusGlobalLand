@@ -96,6 +96,9 @@ MetadataDictPtr getMetadata(std::filesystem::__cxx11::path &dataPath, int forced
 
     (*bandMetadata)["MY_NO_DATA_VALUE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetNoDataValue());
     (*bandMetadata)["GDAL_RASTER_TYPE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetRasterDataType());
+    (*bandMetadata)["SCALE"] = std::to_string(tmpDataset->GetRasterBand(1)->GetScale());
+    (*bandMetadata)["OFFSET"] = std::to_string(tmpDataset->GetRasterBand(1)->GetOffset());
+
     meta = nullptr;
     return bandMetadata;
 }

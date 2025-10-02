@@ -113,9 +113,15 @@ void ProductVariable::loadMetadata() {
     scaler = &noScalerFunc;
     reverseScaler = &reverseNoScalerFunc;
     metadata = getMetadata(*firstProductVariablePath);
-    std::string s = (firstProductVariablePath->string()).substr(0,6);
+    if ( std::stod((*metadata)["SCALE"]) != 1.0 || std::stod((*metadata)["OFFSET"]) != 0.0) {
+        scaleFactor = std::stod((*metadata)["SCALE"]);
+        addOffset = std::stod((*metadata)["OFFSET"]);
+        scaler = &scalerFunc;
+    }
 
-    if ((firstProductVariablePath->string()).substr(0,6) == "NETCDF") {
+    /*
+    std::string s = (firstProductVariablePath->string()).substr(0,6);
+    if (firstProductVariablePath->extension() == ".nc") {
         if (metadata->find(variable+"#scale_factor") != metadata->end()) {
             scaleFactor = std::stod((*metadata)[variable+"#scale_factor"]);
             if((*metadata)[variable+"#add_offset"].length() > 0)
@@ -124,6 +130,12 @@ void ProductVariable::loadMetadata() {
                 reverseScaler = &reverseScalerFunc;
         }
     }
+    else if (firstProductVariablePath->extension() == ".tiff") {
+        for (const auto& key: *metadata)
+            std::cout << key.first << "\n";
+    }
+    */
+
 
     noData = stof((*metadata)["MY_NO_DATA_VALUE"]);
 
