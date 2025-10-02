@@ -70,12 +70,17 @@ class StatsRequests(GenericRequest):
         return self.__getResponseFromDB(query)
 
     def __fetchProductInfo(self):
+        activeCategoriesStr = "TRUE"
+        if self._config.enabledProductIds is not None:
+            activeCategoriesStr = "p.id IN ({0})".format(",".join(self._config.enabledProductIds))
+
+
         query = """
              WITH dt AS(
         	SELECT pfd.id,  p.name[1], p.description, product_file_description_id, CASE WHEN pfd.rt_flag_pattern IS NOT NULL THEN TRUE ELSE FALSE END has_rt,
         	ARRAY_TO_JSON(ARRAY_AGG(row_to_json(pfv.*)::jsonb || jsonb_build_object('anomaly_info', anomaly_info.anomaly_info) ORDER BY pfv.id)) variables
 	        FROM product p
-        	JOIN product_file_description pfd ON p.id = pfd.product_id
+        	JOIN product_file_description pfd ON p.id = pfd.product_id AND {0}
         	JOIN product_file_variable pfv ON pfd.id = pfv.product_file_description_id
         	JOIN LATERAL (
         		SELECT ARRAY_TO_JSON(ARRAY_AGG( jsonb_build_object( 'id', pfdanom.id, 'name', panom.name[1] , 'variable', row_to_json(anompfv.*)::jsonb)))  anomaly_info
@@ -86,7 +91,7 @@ class StatsRequests(GenericRequest):
         		WHERE ltai.raw_product_variable_id = pfv.id
         		ORDER BY pfv.id LIMIT 1
         	) anomaly_info ON TRUE
-        	WHERE p.category_id = {0} AND p."type"='raw'
+        	WHERE p.category_id = {1} AND p."type"='raw'
         	GROUP BY p.id,  p.name[1], p.description, pfd.id, pfv.product_file_description_id
         ),dates AS(
         	SELECT id, json_object_agg(rt_flag, dates)dates FROM (
@@ -94,7 +99,7 @@ class StatsRequests(GenericRequest):
         			SELECT dt.id, pf.date, CASE WHEN pf.rt_flag IS NULL THEN -1 ELSE pf.rt_flag END rt_flag
         			FROM dt
         			JOIN product_file pf ON dt.product_file_description_id = pf.product_file_description_id
-        			WHERE pf."date" BETWEEN '{1}' AND '{2}'
+        			WHERE pf."date" BETWEEN '{2}' AND '{3}'
         		)a
         		GROUP BY a.id, a.rt_flag
         	)b
@@ -103,7 +108,7 @@ class StatsRequests(GenericRequest):
         SELECT ARRAY_TO_JSON(ARRAY_AGG(json_build_object('id', dt.id, 'name', name, 'description', dt.description, 'rt', dt.has_rt, 'dates', dates.dates, 'variables', dt.variables) ORDER BY dt.description))
         FROM dt
         JOIN dates ON dt.id = dates.id
-       """.format(self._requestData["options"]["category_id"], self._requestData["options"]["dateStart"], self._requestData["options"]["dateEnd"])
+       """.format(activeCategoriesStr, self._requestData["options"]["category_id"], self._requestData["options"]["dateStart"], self._requestData["options"]["dateEnd"])
         return self.__getResponseFromDB(query)
 
     def densityStatsByPolygonAndDateRange(self):
