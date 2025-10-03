@@ -117,6 +117,7 @@ void ProductVariable::loadMetadata() {
         scaleFactor = std::stod((*metadata)["SCALE"]);
         addOffset = std::stod((*metadata)["OFFSET"]);
         scaler = &scalerFunc;
+        reverseScaler = &reverseScalerFunc;
     }
 
     /*
