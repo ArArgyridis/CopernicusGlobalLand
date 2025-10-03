@@ -46,29 +46,29 @@ def main():
 	os.makedirs(cfg.filesystem.tmpPath, exist_ok=True)
 
 	for pid in Constants.PRODUCT_INFO:
-        if Constants.PRODUCT_INFO[pid].productType in ["raw", "lts"]:
-            inDir = cfg.filesystem.imageryPath
-            if Constants.PRODUCT_INFO[pid].productType == "lts":
-                inDir = cfg.filesystem.ltsPath
+		if Constants.PRODUCT_INFO[pid].productType in ["raw", "lts"]:
+			inDir = cfg.filesystem.imageryPath
+			if Constants.PRODUCT_INFO[pid].productType == "lts":
+				inDir = cfg.filesystem.ltsPath
 
-            obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
-            obj.importProductFromLocalStorage(inDir)
-            # obj.fetchOrValidateAgainstVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
-        elif Constants.PRODUCT_INFO[pid].productType == "anomaly":
-            inDir = cfg.filesystem.anomalyProductsPath
-            tmpDir = os.path.join(inDir, Constants.PRODUCT_INFO[pid].productNames[0])
-            os.makedirs(tmpDir, exist_ok=True)
-            print("Computing anomalies!")
-            # runLongTermComparisonAnomalyDetector(pid, config)
-            cmd = """AnomalyExtractor "{0}" "{1}" """.format(config, pid)
-            os.system(cmd)
+			obj = DataCrawler(cfg, Constants.PRODUCT_INFO[pid], False)
+			obj.importProductFromLocalStorage(inDir)
+			# obj.fetchOrValidateAgainstVITO(dir="/home/argyros/Desktop/data/BIOPAR/", storageDir=cfg.filesystem.imageryPath)
+		elif Constants.PRODUCT_INFO[pid].productType == "anomaly":
+			inDir = cfg.filesystem.anomalyProductsPath
+			tmpDir = os.path.join(inDir, Constants.PRODUCT_INFO[pid].productNames[0])
+			os.makedirs(tmpDir, exist_ok=True)
+			print("Computing anomalies!")
+			# runLongTermComparisonAnomalyDetector(pid, config)
+			cmd = """AnomalyExtractor "{0}" "{1}" """.format(config, pid)
+			os.system(cmd)
 
 		print(Constants.PRODUCT_INFO[pid].productNames[0])
-        
+
 		cmd = "CogGenerator {0}".format(config)
 		os.system(cmd)
 
-			#fetching stratifications and compute stats for each strata
+	#fetching stratifications and compute stats for each strata
 
 	query = "SELECT id, description FROM stratification s ORDER BY id"
 
