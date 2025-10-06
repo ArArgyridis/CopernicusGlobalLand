@@ -36,8 +36,8 @@ public:
     itkTypeMacro(StreamedStatisticsExtractorFilter, PersistentFilterStreamingDecorator)
 
     void SetParams(const Configuration::SharedPtr config, const ProductVariable::SharedPtr variable, OGREnvelope &envlp, JsonValue &images,
-                           JsonDocumentSharedPtr polyIds, size_t polySRID) {
-        this->GetFilter()->SetParams(config, variable, envlp, images, polyIds, polySRID);
+                           JsonDocumentSharedPtr polyIds, size_t polySRID, const std::string& partitionTable="") {
+        this->GetFilter()->SetParams(config, variable, envlp, images, polyIds, polySRID, partitionTable);
     }
 
     void UpdateOutputInformation() override {

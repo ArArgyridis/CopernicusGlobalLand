@@ -77,7 +77,7 @@ public:
 
     virtual void Reset(void) override;
     virtual void SetParams(const Configuration::SharedPtr config, const ProductVariable::SharedPtr variable, OGREnvelope& envlp, JsonValue& images,
-                           JsonDocumentSharedPtr polyIds, size_t& polSRID);
+                           JsonDocumentSharedPtr polyIds, size_t& polSRID, const std::string& partitionTable="");
     virtual void Synthetize(void) override;
     bool ValidAOI();
 
@@ -109,7 +109,7 @@ private:
     OGREnvelope aoi;
     size_t polySRID, currentRegionId;    
     std::mutex readMtx;
-    std::string stratification, imageIdsStr;
+    std::string stratification, imageIdsStr, partitionTable;
     RegionData rasterizer(typename TInputImage::RegionType region, itk::ThreadIdType threadId);
     void prepareImageInfo(JsonValue& images);
     void processGeomIdsAndImages(JsonDocumentSharedPtr polyIds, JsonValue& images);

@@ -34,8 +34,8 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Reset(
 }
 
 template <class TInputImage, class TPolygonDataType>
-void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::SharedPtr config,const ProductVariable::SharedPtr variable, OGREnvelope &envlp,
-                                                                     JsonValue &images, JsonDocumentSharedPtr polyIds, size_t &polySRID) {
+void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::SetParams(const Configuration::SharedPtr config, const ProductVariable::SharedPtr variable, OGREnvelope &envlp,
+                                                                                    JsonValue &images, JsonDocumentSharedPtr polyIds, size_t &polySRID, const std::string &partitionTable) {
     this->config        = config;
     this->variable      = variable;
     this->polySRID      = polySRID;
@@ -48,6 +48,7 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::SetPar
     this->processGeomIdsAndImages(polyIds, images);
     this->aoi = alignAOIToImage<TInputImage>(envlp, this->GetReferenceImage());
     imageStats = PolygonStats::NewPolyStatsPerRegionMap(productImages, labels, variable);
+    this->partitionTable = partitionTable;
 }
 
 template <class TInputImage, class TPolygonDataType>
@@ -111,13 +112,16 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
             );
         )""",
         "INSERT INTO tmp_update VALUES " + stringstreamToString(data),
-        R"""(UPDATE poly_stats SET noval_color = tmp.noval_color, sparseval_color=tmp.sparseval_color, midval_color=tmp.midval_color, highval_color=tmp.highval_color, meanval_color = tmp.meanval_color
+        fmt::format(R"""(UPDATE {0} as poly_stats SET noval_color = tmp.noval_color, sparseval_color=tmp.sparseval_color, midval_color=tmp.midval_color, highval_color=tmp.highval_color, meanval_color = tmp.meanval_color
             FROM tmp_update tmp
             WHERE poly_stats.poly_id = tmp.poly_id AND poly_stats.product_file_id = tmp.product_file_id AND poly_stats.product_file_variable_id = tmp.product_file_variable_id
-        )"""
+        )""", this->partitionTable)
     };
 
-    cn->executeQueries(queries);
+    for (size_t i = 0; i < queries->size(); i++) {
+        cn->executeQuery(queries->at(i));
+        std::cout << "finished " <<i << "!\n";
+    }
 }
 
 template <class TInputImage, class TPolygonDataType>

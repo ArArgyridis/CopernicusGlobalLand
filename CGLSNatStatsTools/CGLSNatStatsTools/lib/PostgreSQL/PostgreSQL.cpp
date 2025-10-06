@@ -105,7 +105,7 @@ void PGConn::executeQueries(shared_ptr<vector<string> > args) {
 
 }
 
-void PGConn::executeQuery(string &query) {
+void PGConn::executeQuery(const string &query) {
     pqxx::work tmpWork(*getRawConnection(), "single query");
     try {
         tmpWork.exec(query);

@@ -88,7 +88,7 @@ public:
     PGRes fetchQueryResult(std::string& query, std::string workName="single query");
     CnTypePtr getRawConnection();
     void executeQueries(std::shared_ptr<std::vector<std::string>> args);
-    void executeQuery(std::string& query);
+    void executeQuery(const std::string &query);
     static size_t initConnectionPool(size_t cons, std::string& conStr);
     static UniquePtr New(size_t id =0);
     static void printConnectionStatus(size_t& id);

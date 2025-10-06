@@ -96,8 +96,8 @@ void StatsExtractor::process() {
                 continue;
 
             //Creating stats partition table if not exists
-            query = fmt::format(R"""(CREATE TABLE IF NOT EXISTS poly_stats_{0}_{1}_{2} PARTITION OF poly_stats FOR VALUES FROM ({0},{1}) TO ({0},{2});)""",
-                                variable.second->id, processInfo[0][7].as<size_t>(), processInfo[0][8].as<size_t>());
+            std::string partitionTable = fmt::format(R"""(poly_stats_{0}_{1}_{2})""", variable.second->id, processInfo[0][7].as<size_t>(), processInfo[0][8].as<size_t>());
+            query = fmt::format(R"""(CREATE TABLE IF NOT EXISTS {0} PARTITION OF poly_stats FOR VALUES FROM ({1},{2}) TO ({1},{3});)""", partitionTable, variable.second->id, processInfo[0][7].as<size_t>(), processInfo[0][8].as<size_t>());
             //std::cout << query <<"\n";
             cn->executeQuery(query);
 
@@ -121,7 +121,7 @@ void StatsExtractor::process() {
 
             for (auto &group: imageGroups->GetArray()){
                 StreamedSystemStratificationStatisticsFilter::Pointer processingChain = StreamedSystemStratificationStatisticsFilter::New();
-                processingChain->SetParams(config, variable.second, envelope, group, polyIds, srid);
+                processingChain->SetParams(config, variable.second, envelope, group, polyIds, srid, partitionTable);
                 processingChain->UpdateOutputInformation();
                 processingChain->GetStreamer()->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
                 processingChain->UpdateOutputInformation();
