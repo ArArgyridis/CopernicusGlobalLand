@@ -115,7 +115,8 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
         fmt::format(R"""(UPDATE {0} as poly_stats SET noval_color = tmp.noval_color, sparseval_color=tmp.sparseval_color, midval_color=tmp.midval_color, highval_color=tmp.highval_color, meanval_color = tmp.meanval_color
             FROM tmp_update tmp
             WHERE poly_stats.poly_id = tmp.poly_id AND poly_stats.product_file_id = tmp.product_file_id AND poly_stats.product_file_variable_id = tmp.product_file_variable_id
-        )""", this->partitionTable)
+        )""", this->partitionTable),
+        "DROP TABLE tmp_update"
     };
 
     for (size_t i = 0; i < queries->size(); i++) {
