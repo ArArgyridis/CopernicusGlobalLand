@@ -158,7 +158,7 @@ void PolygonStats::collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr de
     }
 }
 
-void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData){
+void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData, const std::string &table){
     std::stringstream data;
     for(auto & polyData:*polygonData) {
         data  <<"(" << polyData.first << ',' << productFileID << ',' << polyData.second->variable->id << ',' << polyData.second->getCSVLine(',') << "),";
@@ -169,7 +169,7 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPt
 
     std::string query = "WITH tmp_data(poly_id, product_file_id, product_file_variable_id, mean, sd, min_val,max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
                         " histogram, total_pixels, valid_pixels) AS( VALUES " + stringstreamToString(data) + ")" +
-                        " INSERT INTO poly_stats(poly_id, product_file_id, product_file_variable_id, mean, sd, min_val, max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
+                        " INSERT INTO " + table + "(poly_id, product_file_id, product_file_variable_id, mean, sd, min_val, max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
                         "  histogram, total_pixels, valid_pixels)"
                         " SELECT tdt.poly_id::bigint, tdt.product_file_id::bigint, tdt.product_file_variable_id::bigint, mean::double precision, sd::double precision, min_val::double precision, max_val::double precision, tdt.noval_area_ha::double precision,"
                         " tdt.sparse_area_ha::double precision, tdt.mid_area_ha::double precision, tdt.dense_area_ha::double precision,"

@@ -58,7 +58,7 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
 
     //std::map is ordered so the order remains the same...
     for (auto &image:productImages)
-        PolygonStats::updateDB(image.first, config, (*imageStats)[image.first]);
+        PolygonStats::updateDB(image.first, config, (*imageStats)[image.first], this->partitionTable);
 
 
     std::string query = fmt::format(R""""(SELECT poly_id, product_file_id, product_file_variable_id,
@@ -67,8 +67,8 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else mid_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END mid,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,
              mean
-             FROM poly_stats ps
-             WHERE ps.product_file_variable_id={0} AND ps.poly_id IN ({1}) AND ps.product_file_id IN ({2}) AND noval_color IS NULL;)"""", this->variable->id,  polyIdsStr, imageIdsStr);
+             FROM {0} ps
+             WHERE ps.product_file_variable_id={1} AND ps.poly_id IN ({2}) AND ps.product_file_id IN ({3}) AND noval_color IS NULL;)"""", this->partitionTable, this->variable->id,  polyIdsStr, imageIdsStr);
 
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
     std::stringstream data;

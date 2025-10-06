@@ -51,7 +51,7 @@ public:
     std::string getCSVLine(char separator=' ');
     static void collapseData(PolyStatsPerRegionPtr source, PolyStatsMapPtr destination);
     static std::string getCSVHeader();
-    static void updateDB(const size_t& productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData);
+    static void updateDB(const size_t& productFileID, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData, const std::string& table="poly_stats");
     static void updateDBTmp(const size_t& productFileID, size_t &regionId, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData);
     long double mean, sd;
     float min, max;
