@@ -96,13 +96,28 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
         return;
 
     std::cout <<"Updating colors....\n";
+    std::shared_ptr<std::vector<std::string>> queries = std::make_shared<std::vector<std::string>>();
+    *queries = {
+        R"""(
+            CREATE TEMP TABLE tmp_update (
+                poly_id BIGINT,
+                product_file_id BIGINT,
+                product_file_variable_id BIGINT,
+                noval_color TEXT,
+                sparseval_color TEXT,
+                midval_color TEXT,
+                highval_color TEXT,
+                meanval_color TEXT
+            );
+        )""",
+        "INSERT INTO tmp_update VALUES " + stringstreamToString(data),
+        R"""(UPDATE poly_stats SET noval_color = tmp.noval_color, sparseval_color=tmp.sparseval_color, midval_color=tmp.midval_color, highval_color=tmp.highval_color, meanval_color = tmp.meanval_color
+            FROM tmp_update tmp
+            WHERE poly_stats.poly_id = tmp.poly_id AND poly_stats.product_file_id = tmp.product_file_id AND poly_stats.product_file_variable_id = tmp.product_file_variable_id
+        )"""
+    };
 
-    query = "WITH tmp (poly_id, product_file_id, product_file_variable_id, noval_color, sparseval_color, midval_color, highval_color, meanval_color) AS (VALUES " + stringstreamToString(data)+ ")"
-    "UPDATE poly_stats SET noval_color = tmp.noval_color, sparseval_color=tmp.sparseval_color, midval_color=tmp.midval_color, highval_color=tmp.highval_color"
-    ", meanval_color = tmp.meanval_color "
-    "FROM tmp "
-    "WHERE poly_stats.poly_id = tmp.poly_id AND poly_stats.product_file_id = tmp.product_file_id AND poly_stats.product_file_variable_id = tmp.product_file_variable_id";
-    cn->executeQuery(query);
+    cn->executeQueries(queries);
 }
 
 template <class TInputImage, class TPolygonDataType>
