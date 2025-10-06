@@ -59,6 +59,7 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
     for (auto &image:productImages)
         PolygonStats::updateDB(image.first, config, (*imageStats)[image.first]);
 
+
     std::string query = fmt::format(R""""(SELECT poly_id, product_file_id, product_file_variable_id,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else noval_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END noval,
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else sparse_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END sparse,
@@ -66,7 +67,7 @@ void SystemStratificationStatisticsFilter<TInputImage, TPolygonDataType>::Synthe
              CASE WHEN noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha = 0 THEN 0 else dense_area_ha/(noval_area_ha+sparse_area_ha+mid_area_ha+dense_area_ha)*100.0 END dense,
              mean
              FROM poly_stats ps
-             WHERE ps.poly_id IN ({0}) AND ps.product_file_id IN ({1}) AND noval_color IS NULL;)"""", polyIdsStr, imageIdsStr);
+             WHERE ps.product_file_variable_id={0} AND ps.poly_id IN ({1}) AND ps.product_file_id IN ({2}) AND noval_color IS NULL;)"""", this->variable->id,  polyIdsStr, imageIdsStr);
 
     PGPool::PGConn::PGRes res = cn->fetchQueryResult(query);
     std::stringstream data;
