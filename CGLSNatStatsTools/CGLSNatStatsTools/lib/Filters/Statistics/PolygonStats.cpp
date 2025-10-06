@@ -11,6 +11,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <fmt/format.h>
 #include <limits>
 #include <memory>
 
@@ -167,6 +168,36 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPt
     if (data.tellp() == 0)
         return;
 
+
+    std::shared_ptr<std::vector<std::string>> queries = std::make_shared<std::vector<std::string>>();
+    *queries = {
+        R"""(
+            CREATE TEMP TABLE tmp_update (
+                poly_id BIGINT,
+                product_file_id BIGINT,
+                product_file_variable_id BIGINT,
+                mean FLOAT8,
+                sd FLOAT8,
+                min_val FLOAT8,
+                max_val FLOAT8,
+                noval_area_ha FLOAT8,
+                sparse_area_ha FLOAT8,
+                mid_area_ha FLOAT8,
+                dense_area_ha FLOAT8,
+                histogram JSONB,
+                total_pixels BIGINT,
+                valid_pixels BIGINT
+            );
+        )""",
+        "INSERT INTO tmp_update VALUES " + stringstreamToString(data),
+        fmt::format(R"""(INSERT INTO {0} (poly_id, product_file_id, product_file_variable_id, mean, sd, min_val, max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,
+        histogram, total_pixels, valid_pixels)
+        SELECT * FROM tmp_update tmp
+            ON CONFLICT(poly_id, product_file_id, product_file_variable_id) DO NOTHING;
+        )""", table),
+        "DROP TABLE tmp_update;"
+    };
+    /*
     std::string query = "WITH tmp_data(poly_id, product_file_id, product_file_variable_id, mean, sd, min_val,max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
                         " histogram, total_pixels, valid_pixels) AS( VALUES " + stringstreamToString(data) + ")" +
                         " INSERT INTO " + table + "(poly_id, product_file_id, product_file_variable_id, mean, sd, min_val, max_val, noval_area_ha, sparse_area_ha, mid_area_ha, dense_area_ha,"
@@ -176,9 +207,9 @@ void PolygonStats::updateDB(const size_t &productFileID, Configuration::SharedPt
                         " histogram::jsonb, total_pixels::bigint, valid_pixels::bigint"
                         " FROM tmp_data tdt"
                         " ON CONFLICT(poly_id, product_file_id, product_file_variable_id) DO NOTHING;";
-
+    */
     PGPool::PGConn::UniquePtr cn = PGPool::PGConn::New(cfg->connectionIds[cfg->statsInfo.connectionId]);
-    cn->executeQuery(query);
+    cn->executeQueries(queries);
 }
 
 void PolygonStats::updateDBTmp(const size_t &productFileID, size_t& regionId, Configuration::SharedPtr cfg, PolyStatsMapPtr polygonData) {
