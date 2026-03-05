@@ -263,42 +263,44 @@ class StatsRequests(GenericRequest):
 
 
         images = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
-        ret = {
-            "raw": [],
-            "mean": [],
-            "stdev": []
-        }
+        meanLookup = {}
+        stdevLookup = {}
+        rawResults = []
 
         with ProcessPoolExecutor(max_workers=20) as executor:
-            #processing computations
-            for result in executor.map(productStats, images, [self._requestData]*len(images)):
-                if result[0] in ["mean", "stdev"]:
-                    #convert date to doy
-                    result[1][0][0] = result[1][0][0].utctimetuple().tm_yday
+            for result in executor.map(productStats, imageList, [self._requestData]*len(imageList)):
+                statType = result[0]
+                dataPayload = result[1][0]
+                dateObj, pixelValue = dataPayload[0], dataPayload[1]
 
-                if result[1][0][1] is not None:
-                    ret[result[0]].append([result[1][0][0], np.round(result[1][0][1],6)])
-
-            ret["raw"].sort(key = lambda x: x[0])
-            #appending mean, sd to raw
-            for row in ret["raw"]:
-                #convert to doy:
-                rawDoy = row[0].utctimetuple().tm_yday
-                row[0] = row[0].isoformat()
-                stop = False
-
-                if len(ret["mean"]) == 0:
+                if pixelValue is None:
                     continue
 
-                tmpId = 0
-                while not stop:
-                    if abs(rawDoy - ret["mean"][tmpId][0]) < 4:
-                        stop =True
-                        row += list([ret["mean"][tmpId][1], ret["stdev"][tmpId][1]])
+                # Convert date once on the worker or right here
+                dayOfYear = dateObj.utctimetuple().tm_yday
+                roundedValue = np.round(pixelValue, 6)
 
-                    tmpId += 1
+                if statType == "mean":
+                    meanLookup[dayOfYear] = roundedValue
+                elif statType == "stdev":
+                    stdevLookup[dayOfYear] = roundedValue
+                elif statType == "raw":
+                    rawResults.append([dateObj, dayOfYear, roundedValue])
 
-        return ret["raw"]
+                rawResults.sort(key=lambda x: x[0])
+
+                finalOutput = []
+
+                for dateObj, currentDoy, rawVal in rawResults:
+                    window = range(currentDoy - 3, currentDoy + 4)
+                    matchDoy = next((d for d in window if d in meanLookup), None)
+                    currentRow = [dateObj.isoformat(), rawVal]
+
+                    if matchDoy is not None:
+                        currentRow.extend([meanLookup[matchDoy], stdevLookup.get(matchDoy)])
+
+                    finalOutput.append(currentRow)
+                return finalOutput
 
     def __histogramDataByProductAndPolygon(self):
         query = """
