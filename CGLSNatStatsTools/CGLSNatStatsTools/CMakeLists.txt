@@ -113,7 +113,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-add_library(${PROJECT_NAME} ${SOURCE} ${HEADERS})
+add_library(${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS})
 
 set (PROCESSORS
     processors/CogGenerator.cpp

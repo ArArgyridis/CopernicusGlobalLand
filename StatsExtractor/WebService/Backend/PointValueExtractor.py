@@ -12,7 +12,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys, re, os, numpy as np, pandas as pd
+import struct, sys, re, os, numpy as np, pandas as pd
 sys.path.extend(['../../../'])
 
 from osgeo import gdal, osr
@@ -46,9 +46,6 @@ class PointValueExtractor():
             transformed = False
             for dataRow in self._data:
                 img = dataRow[2]
-                if not os.path.isfile(img):
-                    issueImg  = img
-                    raise FileExistsError
 
                 inData = None
                 if img.endswith(".nc"):
@@ -75,20 +72,25 @@ class PointValueExtractor():
                     transformed = True
 
                 gt = inData.GetGeoTransform()
+                band = inData.GetRasterBand(1)
                 col,row = xyToColRow(self._xCoord, self._yCoord, gt)
-                value = inData.GetRasterBand(1).ReadAsArray(col, row, 1, 1)[0,0].astype(float)
+                binValue = band.ReadRaster(col, row, 1, 1, buf_type=gdal.GDT_Byte)
 
-                if value == inData.GetRasterBand(1).GetNoDataValue():
+                value = struct.unpack('B', binValue)[0]
+                """
+                value = band.ReadAsArray(col, row, 1, 1)[0,0].astype(float)
+                """
+
+                if value == band.GetNoDataValue():
                     value = None
                 else:
                     scale = 1.0
                     offset = 0
+                    if band.GetScale() is not None:
+                        scale = band.GetScale()
 
-                    if inData.GetRasterBand(1).GetScale() is not None:
-                        scale = inData.GetRasterBand(1).GetScale()
-
-                    if inData.GetRasterBand(1).GetOffset() is not None:
-                        offset = inData.GetRasterBand(1).GetOffset()
+                    if band.GetOffset() is not None:
+                        offset = band.GetOffset()
 
                     value = scale*value + offset
 
