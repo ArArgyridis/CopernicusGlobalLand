@@ -24,6 +24,10 @@ import numpy as np
 from osgeo import osr
 from operator import itemgetter
 
+#hack for python 3.14 and uwsgi
+import multiprocessing
+multiprocessing.set_start_method("fork", force=True)
+
 def productStats(imageInfo, requestData):
     obj = PointValueExtractor([imageInfo],
                                   requestData["options"]["coordinate"][0], requestData["options"]["coordinate"][1],
@@ -362,7 +366,7 @@ class StatsRequests(GenericRequest):
         print(ret)
         if(not ret[0][0] and not ret[0][1]):
             return {"result": "Error", "message": "Unable to process. You need to wait at least 2 minutes before submitting a new data request"}
-        
+
         insertQuery = """
             WITH tmp AS (
                 SELECT '{0}'::json AS dt
@@ -376,7 +380,7 @@ class StatsRequests(GenericRequest):
             ),insert_order AS(
                 INSERT INTO product_order (email, aoi, request_data)
                 SELECT '{1}'::TEXT, ST_Envelope(st_Extent(geom)), '{2}'::JSONB
-                FROM polys 
+                FROM polys
                 RETURNING id
             )
             INSERT INTO product_order_geom(product_order_id, poly_id, geom)
