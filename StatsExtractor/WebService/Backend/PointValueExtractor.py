@@ -42,6 +42,7 @@ class PointValueExtractor():
         ret = [None]*len(self._data)
         i = 0
         issueImg = None
+
         try:
             transformed = False
             for dataRow in self._data:

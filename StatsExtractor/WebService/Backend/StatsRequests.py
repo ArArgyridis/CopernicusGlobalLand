@@ -18,7 +18,7 @@ from Libs.ConfigurationParser import ConfigurationParser
 from Libs.GenericRequest import GenericRequest
 from PointValueExtractor import PointValueExtractor
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 import numpy as np
 from osgeo import osr
@@ -260,47 +260,61 @@ class StatsRequests(GenericRequest):
         if  self._requestData["options"]["rt_flag"] >= 0:
             query += " AND pf.rt_flag = {0}".format(self._requestData["options"]["rt_flag"])
 
-
-
-        images = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
+        imageList = self._config.pgConnections[self._config.statsInfo.connectionId].fetchQueryResult(query)
         meanLookup = {}
         stdevLookup = {}
         rawResults = []
 
         with ProcessPoolExecutor(max_workers=20) as executor:
-            for result in executor.map(productStats, imageList, [self._requestData]*len(imageList)):
-                statType = result[0]
-                dataPayload = result[1][0]
-                dateObj, pixelValue = dataPayload[0], dataPayload[1]
+            # Submit all tasks immediately. This returns a dict of Future objects.
+            # This keeps the workers saturated even if some images are slow.
+            futureToImage = {
+                executor.submit(productStats, img, self._requestData): img
+                for img in imageList
+            }
 
-                if pixelValue is None:
-                    continue
+            for future in as_completed(futureToImage):
+                try:
+                    result = future.result()
 
-                # Convert date once on the worker or right here
-                dayOfYear = dateObj.utctimetuple().tm_yday
-                roundedValue = np.round(pixelValue, 6)
+                    # Validation check: Ensure we have data to process
+                    if not result or not result[1] or result[1][0][1] is None:
+                        continue
 
-                if statType == "mean":
-                    meanLookup[dayOfYear] = roundedValue
-                elif statType == "stdev":
-                    stdevLookup[dayOfYear] = roundedValue
-                elif statType == "raw":
-                    rawResults.append([dateObj, dayOfYear, roundedValue])
+                    statType = result[0]
 
-                rawResults.sort(key=lambda x: x[0])
+                    dataPayload = result[1][0] # Assuming [dateObj, pixelValue]
+                    dateObj, pixelValue = dataPayload[0], dataPayload[1]
 
-                finalOutput = []
+                    # Convert date to Day of Year (DOY) once per image
+                    dayOfYear = dateObj.utctimetuple().tm_yday
+                    roundedValue = np.round(pixelValue, 6)
 
-                for dateObj, currentDoy, rawVal in rawResults:
-                    window = range(currentDoy - 3, currentDoy + 4)
-                    matchDoy = next((d for d in window if d in meanLookup), None)
-                    currentRow = [dateObj.isoformat(), rawVal]
+                    if statType == "mean":
+                        meanLookup[dayOfYear] = roundedValue
+                    elif statType == "stdev":
+                        stdevLookup[dayOfYear] = roundedValue
+                    elif statType == "raw":
+                        # Store as a list so we can sort it by date later
+                        rawResults.append([dateObj, dayOfYear, roundedValue])
+                except Exception as exc:
+                    imgName = futureToImage[future]
+                    print(f"Image {imgName} generated an exception: {exc}")
 
-                    if matchDoy is not None:
-                        currentRow.extend([meanLookup[matchDoy], stdevLookup.get(matchDoy)])
+        rawResults.sort(key=lambda x: x[0])
 
-                    finalOutput.append(currentRow)
-                return finalOutput
+        finalOutput = []
+
+        for dateObj, currentDoy, rawVal in rawResults:
+            window = range(currentDoy - 3, currentDoy + 4)
+            matchDoy = next((d for d in window if d in meanLookup), None)
+            currentRow = [dateObj.isoformat(), rawVal]
+
+            if matchDoy is not None:
+                currentRow.extend([meanLookup[matchDoy], stdevLookup.get(matchDoy)])
+
+            finalOutput.append(currentRow)
+        return finalOutput
 
     def __histogramDataByProductAndPolygon(self):
         query = """
