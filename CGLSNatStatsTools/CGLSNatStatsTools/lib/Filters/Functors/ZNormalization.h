@@ -29,7 +29,7 @@ public:
     TOutput operator()(const TInput1& mean, const TInput2 &stdev, const TInput3 &prdVal) {
         bool isNull = (mean == meanNull || stdev == stdevNull || prdVal == prodNull);
 
-        return isNull*prdVal + !(isNull)*(mean-prdVal)/stdev;
+        return isNull*prdVal + !(isNull)*(prdVal - mean)/stdev;
     }
 };
 
@@ -40,7 +40,7 @@ public:
 
     unsigned char operator()(const TInput1& mean, const TInput2 &stdev, const TInput3 &prdVal) {
         bool isNull = (mean == this->meanNull || stdev == this->stdevNull || prdVal == this->prodNull);
-        TInput1 val = (mean - prdVal)/stdev;
+        TInput1 val = (prdVal - mean)/stdev;
         return isNull*255 + (!isNull)*(((val < -3)*0 + (val >= -3 && val < -2)*1 + (val >= -2 && val < -1)*2 + (val >= -1 && val < 1)*3 + (val >=1 && val < 2)*4 + (val >=2 && val < 3)*5 + (val >= 3)*6));
     }
 
