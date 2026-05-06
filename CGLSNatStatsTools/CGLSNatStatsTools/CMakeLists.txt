@@ -1,50 +1,36 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(CGLSNatStatsTools LANGUAGES CXX)
-#add_definitions("-DRAPIDJSON_SCHEMA_USE_INTERNALREGEX=0")
-add_definitions("-DRAPIDJSON_HAS_STDSTRING=1")
 
-
-find_package(OTB REQUIRED)
-if(OTB_FOUND)
-  include(${OTB_USE_FILE})
-else(OTB_FOUND)
-  message(FATAL_ERROR "Cannot build OTB project without OTB. Please set OTB_DIR.")
-endif(OTB_FOUND)
-
+#add_definitions("-DRAPIDJSON_HAS_STDSTRING=1")
 
 SET (PQXX_DIR .)
 SET (POSTGRES_DIR .)
+
+find_package(OTB REQUIRED)
 find_package(PostgreSQL REQUIRED)
 find_package(CURL REQUIRED)
 find_package(Threads REQUIRED)
 find_package(fmt REQUIRED)
 find_package(OpenMP)
 find_package(LibZip REQUIRED)
-#find_library(PQXX_LIBRARY pqxx)
 find_package(PQXX REQUIRED)
-
+find_package(LibXml2 REQUIRED)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS serialization filesystem date_time)
+find_package(OpenMP REQUIRED)
+
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
+if(OTB_FOUND)
+  include(${OTB_USE_FILE})
+else(OTB_FOUND)
+  message(FATAL_ERROR "Cannot build OTB project without OTB. Please set OTB_DIR.")
+endif(OTB_FOUND)
 
-
-find_package(LibXml2 REQUIRED)
-if (LIBXML2_FOUND)
-    include_directories(${LIBXML2_INCLUDE_DIR})
-endif()
-
-
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif()
 set(SOURCE
     lib/Anomalies/Utils.cpp
     lib/Anomalies/ZScoreProcessor/ZScoreProcessor.cpp
@@ -99,21 +85,37 @@ set (HEADERS
     lib/Utils/Utils.hxx
 )
 
-#add_compile_options(-fsanitize=address)
-#add_link_options(-fsanitize=address)
-
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
-if(COMPILER_SUPPORTS_MARCH_NATIVE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-endif()
-
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE} ${HEADERS})
+
+target_compile_definitions(${PROJECT_NAME}
+    PUBLIC
+        RAPIDJSON_HAS_STDSTRING=1
+)
+
+target_include_directories(${PROJECT_NAME}
+    PUBLIC
+        ${Boost_INCLUDE_DIRS}
+        ${LIBXML2_INCLUDE_DIR}
+)
+
+target_link_libraries(${PROJECT_NAME}
+    PUBLIC
+        ${OTB_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${LIBXML2_LIBRARIES}
+        fmt::fmt
+        OpenMP::OpenMP_CXX
+        CURL::libcurl
+        ${PostgreSQL_LIBRARIES}
+        ${PQXX_LIBRARIES}
+        ${LIBZIP_LIBRARY}
+)
+
 
 set (PROCESSORS
     processors/CogGenerator.cpp
@@ -126,11 +128,9 @@ set (PROCESSORS
 
 foreach(sourceFile IN LISTS PROCESSORS)
     get_filename_component(fileName ${sourceFile} NAME_WE)
-    message("creating: ${fileName}")
+    message("creating: ${fileName} ${sourceFile}")
     add_executable(${fileName} ${sourceFile})
-    target_include_directories(${fileName} PRIVATE ${LIBZIP_INCLUDE_DIR} ${PQXX_INCLUDE_DIRS})
-    target_link_libraries(${fileName} ${PROJECT_NAME} ${LIBZIP_LIBRARY} ${PQXX_LIBRARIES} ${OTB_LIBRARIES}
-            ${Boost_LIBRARIES} ${LIBXML2_LIBRARIES} fmt::fmt-header-only OpenMP::OpenMP_CXX CURL::libcurl )
+    target_link_libraries(${fileName} PRIVATE  ${PROJECT_NAME})
 endforeach()
 
 
