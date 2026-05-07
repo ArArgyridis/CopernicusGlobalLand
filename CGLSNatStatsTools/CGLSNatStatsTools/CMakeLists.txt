@@ -20,6 +20,7 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED COMPONENTS serialization filesystem date_time)
 find_package(OpenMP REQUIRED)
+find_package(GDAL REQUIRED)
 
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
@@ -101,21 +102,23 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${Boost_INCLUDE_DIRS}
         ${LIBXML2_INCLUDE_DIR}
+	${LIBZIP_INCLUDE_DIR} ${PQXX_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC
+    PRIVATE
         ${OTB_LIBRARIES}
         ${Boost_LIBRARIES}
         ${LIBXML2_LIBRARIES}
-        fmt::fmt
-        OpenMP::OpenMP_CXX
         CURL::libcurl
         ${PostgreSQL_LIBRARIES}
         ${PQXX_LIBRARIES}
         ${LIBZIP_LIBRARY}
+        GDAL::GDAL 
+    PUBLIC
+        fmt::fmt
+        OpenMP::OpenMP_CXX
 )
-
 
 set (PROCESSORS
     processors/CogGenerator.cpp
@@ -130,7 +133,7 @@ foreach(sourceFile IN LISTS PROCESSORS)
     get_filename_component(fileName ${sourceFile} NAME_WE)
     message("creating: ${fileName} ${sourceFile}")
     add_executable(${fileName} ${sourceFile})
-    target_link_libraries(${fileName} PRIVATE  ${PROJECT_NAME})
+    target_link_libraries(${fileName} PRIVATE  ${PROJECT_NAME} GDAL::GDAL ${PQXX_LIBRARIES} ${OTB_LIBRARIES})
 endforeach()
 
 
