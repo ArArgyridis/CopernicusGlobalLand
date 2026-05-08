@@ -49,6 +49,10 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
     this->GetOutput()->SetProjectionRef(this->GetInput()->GetProjectionRef());
 
     std::array<typename TOutputImage::PixelType::ValueType, 3> pxl = {0, 0, 0};
+
+    if (variable->styleColors.size() < variable->getNoData()+1)
+        variable->styleColors.resize(variable->getNoData()+1);
+
     variable->styleColors[variable->getNoData()] = pxl;
 }
 
