@@ -34,7 +34,6 @@
 #include "ColorInterpolation.h"
 #include "itkVariableLengthVector.h"
 
-
 using MetadataDict      = std::map<std::string, std::string>;
 using MetadataDictPtr   = std::unique_ptr<MetadataDict>;
 
@@ -128,7 +127,8 @@ std::string jsonToString(JSONType& json, size_t decimalPlaces=2) {
 }
 
 std::string stringstreamToString(std::stringstream &stream);
-std::vector<RGBVal> styleColorParser(std::string& style);
+
+std::map<int, RGBVal> styleColorParser(std::string& style, const int &minVal, const int &maxVal);
 
 template <class TImage>
 GDALDatasetUniquePtr createGDALMemoryDatasetFromOTBImageRegion(TImage* image, typename TImage::RegionType region) {

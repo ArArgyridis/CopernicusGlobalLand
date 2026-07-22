@@ -30,8 +30,8 @@ class FileValidateOptions:
 def scanDir(dirList, product, found=False):
     #examineList = []
     for dir in dirList:
+        print(dir)
         lst = os.listdir(dir)
-
         for subDir in lst:
             tmpPath = os.path.join(dir, subDir)
             if not os.path.isdir(tmpPath):
@@ -39,6 +39,7 @@ def scanDir(dirList, product, found=False):
 
             if subDir in product:
                 found = True
+                print("found")
                 return os.path.join(dir, tmpPath)
             else:
                 dirList.append(tmpPath)
@@ -209,6 +210,7 @@ class DataCrawler:
         listFiles = sorted(listFiles)
 
         for fl in listFiles:
+            print(fl)
             flName = os.path.split(fl)[1]
             productParams = self._prodInfo.getFileNameInfo(flName)
 
@@ -291,7 +293,7 @@ class DataCrawler:
         inDir = None
         while inDir is None:
             inDir = scanDir([storageDir, ], self._prodInfo.productNames)
-
+        print(inDir)
         if inDir is None:
             return
         #fl, storageDir, prodInfo, cn

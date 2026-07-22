@@ -21,16 +21,16 @@ ColorInterpolation::ColorInterpolation() {}
 
 ColorInterpolation::ColorInterpolation(rapidjson::Value &palette) {
     //getting all values
-
     for (auto it = palette.MemberBegin(); it != palette.MemberEnd(); it++) {
-        keys.emplace_back(std::stoi(it->name.GetString()));
+        double val = std::stod(it->name.GetString());
+        keys.emplace_back(val);
 
         auto valArray = it->value.GetArray();
         RGBVal tmp;
         for (size_t i = 0; i < 3; i++)
             tmp[i] = valArray[i].GetInt();
 
-        values.insert(std::pair<size_t, RGBVal>(std::stoi(it->name.GetString()), tmp));
+        values.insert(std::pair<double, RGBVal>(val, tmp));
     }
     std::sort(keys.begin(), keys.end());
 }
@@ -57,4 +57,24 @@ RGBVal ColorInterpolation::interpolateColor(long double areaPerc) {
         return ret;
     }
     return ret;
+}
+
+RGBVal ColorInterpolation::interpolateColor2(int val, int minProdVal, int maxProdVal) {
+    RGBVal ret;
+
+    double perc = (val-minProdVal)*1.0/(maxProdVal-minProdVal);
+
+    if (perc <= keys.front()) return values.at(keys.front());
+    if (perc >= keys.back())  return values.at(keys.back());
+
+    auto it = std::lower_bound(keys.begin(), keys.end(), perc);
+
+    double mx = *it;
+    double mn = *(--it);
+
+    for (size_t i = 0; i < 3; i++)
+        ret[i] = static_cast<unsigned char>( (values[mx][i] - values[mn][i])*(perc-mn)/100 +values[mn][i]);
+
+    return ret;
+
 }

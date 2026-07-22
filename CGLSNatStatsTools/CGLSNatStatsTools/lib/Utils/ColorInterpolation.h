@@ -24,14 +24,16 @@
 using RGBVal = std::array<unsigned char, 3>;
 
 class ColorInterpolation {
-    std::vector<size_t> keys;
-    std::map<size_t, RGBVal> values;
+    std::vector<double> keys;
+    std::map<double, RGBVal> values;
 
 public:
     ColorInterpolation();
     ColorInterpolation(rapidjson::Value& palette);
 
     RGBVal interpolateColor(long double areaPerc);
+    RGBVal interpolateColor2(int val, int minProdVal, int maxProdVal);
+
 };
 
 

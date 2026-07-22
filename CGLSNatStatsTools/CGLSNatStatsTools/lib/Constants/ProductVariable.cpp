@@ -23,7 +23,7 @@ ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathShar
     variable        = params["variable"].GetString();
     if(!params["style"].IsNull())
         style       = params["style"].GetString();
-    styleColors     = styleColorParser(style);
+
     if(!params["description"].IsNull())
         description = params["description"].GetString();
     histogramBins   = params["histogram_bins"].GetInt64();
@@ -37,6 +37,8 @@ ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathShar
     minMaxValues[0]     = params["min_value"].GetDouble();
     minMaxValues[1]     = params["max_value"].GetDouble();
     computeStatistics   = params["compute_statistics"].GetBool();
+    bandCount   = params["band_count"].GetInt();
+
     if(params.FindMember("anomalies") != params.MemberEnd() && params["anomalies"].IsArray() ) {
         for(auto &id : params["anomalies"].GetArray())
             anomalyVariableIds.emplace_back(id.GetInt64());
@@ -52,6 +54,8 @@ ProductVariable::ProductVariable(JsonValue &params, StringPtr prdType , PathShar
             firstProductVariablePath = std::make_shared<std::filesystem::path>(std::string("NETCDF:") + firstProductPath->string() + ":" + variable);
 
         loadMetadata();
+        styleColors     = styleColorParser(style, this->reverseValue(minMaxValues[0]), this->reverseValue(minMaxValues[1])+1);
+
     }
 }
 
@@ -84,7 +88,7 @@ std::shared_ptr<ProductInfo> ProductVariable::getProductInfo() {
     return nullptr;
 }
 
-size_t ProductVariable::reverseValue(float value) {
+int ProductVariable::reverseValue(float value) {
     return reverseScaler(value, scaleFactor, addOffset);
 }
 
@@ -102,7 +106,7 @@ long double ProductVariable::convertPixelsToArea(long double pixels) {
     return pixelsToArea(pixels, pixelSize);
 }
 
-float ProductVariable::getNoData() {
+const float ProductVariable::getNoData() const {
     return noData;
 }
 

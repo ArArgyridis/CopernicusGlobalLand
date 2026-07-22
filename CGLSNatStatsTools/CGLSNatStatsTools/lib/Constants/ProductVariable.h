@@ -40,9 +40,10 @@ public:
     using WeakPtr = std::weak_ptr<ProductVariable>;
     StringPtr productType;
     PathSharedPtr rootPath, firstProductPath, firstProductVariablePath;
-    std::vector<RGBVal> styleColors;
+    std::map<int, RGBVal> styleColors;
     rapidjson::Document novalColorRamp, sparsevalColorRamp, midvalColorRamp, highvalColorRamp;
     size_t id;
+    short bandCount;
     std::string variable, style, description;
     unsigned short histogramBins;
     ValueRange valueRange;
@@ -54,11 +55,11 @@ public:
     std::vector<std::size_t> anomalyVariableIds;
 
     long double convertPixelsToArea(long double pixels);
-    float getNoData();
+    const float getNoData() const;
     float getOffset();
     float getScaleFactor();
     std::filesystem::path productAbsPath(std::filesystem::path relPath);
-    size_t reverseValue(float value);
+    int reverseValue(float value);
     void setProductRef(std::weak_ptr<ProductInfo> prd);
     float scaleValue(float value);
     static SharedPtr New(JsonValue& params, StringPtr prdType, PathSharedPtr rootPath, PathSharedPtr firstProductPath);

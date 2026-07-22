@@ -61,20 +61,20 @@ unsigned long long getFolderSizeOnDisk(std::filesystem::path &dataPath) {
 
 MetadataDictPtr getMetadata(std::filesystem::__cxx11::path &dataPath, int forcedEPSG) {
     GDALDatasetUniquePtr tmpDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen( dataPath.c_str(), GA_ReadOnly)));
-    char **meta = tmpDataset->GetMetadata();
+    CSLConstList meta = tmpDataset->GetMetadata();
 
     MetadataDictPtr bandMetadata = std::make_unique<MetadataDict>();
 
-    for (char** i = meta; *i; i++) {
+    for (auto i = meta; *i; i++) {
         std::stringstream s;
         std::string key;
-        for (char *j = *i; *j !='\0'; j++) {
+        for (auto j = *i; *j !='\0'; j++) {
             if(*j == '=') {
                 key = s.str();
                 s.str("");
             }
             else {
-                s << *j;
+                s << j;
             }
         }
         (*bandMetadata)[key] = s.str();
@@ -191,34 +191,46 @@ std::string stringstreamToString(std::stringstream &stream) {
         return stream.str();
 }
 
-std::vector<RGBVal> styleColorParser(std::string &style) {
-    std::vector<RGBVal> styleColors;
 
-    if (style.size() < 5)
-        return styleColors;
+std::map<int, RGBVal> styleColorParser(std::string &style, const int& minVal, const int& maxVal) {
 
-    XmlDocPtr doc = XmlDocPtr(xmlReadMemory(style.c_str(), style.size(), "tmp.xml", nullptr, 0), xmlFreeDoc);
+    std::map<int, RGBVal> styleColors;
 
-    XmlXPathContextPtr ctx = XmlXPathContextPtr(xmlXPathNewContext(doc.get()), xmlXPathFreeContext);
-    xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>(""), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
-    xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("sld"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
-    xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("gml"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/gml"));
-
-    XmlXpathObjectPtr res = XmlXpathObjectPtr(xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>("//sld:ColorMapEntry"), ctx.get()), xmlXPathFreeObject);
-    if (res->nodesetval) {
-
-        styleColors.resize(res->nodesetval->nodeNr);
-        styleColors.reserve(res->nodesetval->nodeNr);
-
-        for (size_t i = 0; i < res->nodesetval->nodeNr; i++) {
-            if(res->nodesetval->nodeTab[i]->type == XML_ELEMENT_NODE) {
-                xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
-                sscanf(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))), "#%2x%2x%2x", &styleColors[i][0], &styleColors[i][1], &styleColors[i][2]);
-            }
-        }
+    if(style[0] == '{') { //a pallette as json
+        rapidjson::Document doc;
+        doc.Parse(style);
+        ColorInterpolation interpolator(doc);
+        for(int val = minVal; val <=maxVal; val++)
+            styleColors[val] = interpolator.interpolateColor2(val, minVal, maxVal);
     }
+    else if (style[0] == '<') { //an SLD XML
+        XmlDocPtr doc = XmlDocPtr(xmlReadMemory(style.c_str(), style.size(), "tmp.xml", nullptr, 0), xmlFreeDoc);
+
+           XmlXPathContextPtr ctx = XmlXPathContextPtr(xmlXPathNewContext(doc.get()), xmlXPathFreeContext);
+           xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>(""), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
+           xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("sld"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/sld"));
+           xmlXPathRegisterNs(ctx.get(), reinterpret_cast<const unsigned char *>("gml"), reinterpret_cast<const unsigned char *>("http://www.opengis.net/gml"));
+
+           XmlXpathObjectPtr res = XmlXpathObjectPtr(xmlXPathEvalExpression(reinterpret_cast<const unsigned char *>("//sld:ColorMapEntry"), ctx.get()), xmlXPathFreeObject);
+           if (res->nodesetval) {
+               for (size_t i = 0; i < res->nodesetval->nodeNr; i++) {
+                   if(res->nodesetval->nodeTab[i]->type == XML_ELEMENT_NODE) {
+                       xmlNodePtr tmpNode = res->nodesetval->nodeTab[i];
+                       int quantity = atoi(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("quantity"))));
+                       styleColors[quantity] = RGBVal();
+                       sscanf(reinterpret_cast<const char*>(xmlGetProp(tmpNode, reinterpret_cast<const unsigned char *>("color"))), "#%2hhx%2hhx%2hhx", &styleColors[quantity][0], &styleColors[quantity][1], &styleColors[quantity][2]);
+                   }
+               }
+           }
+    }
+
+
+
+
+
     return styleColors;
 }
+
 
 boost::posix_time::ptime iso8601ToUTCTimestamp(std::string date) {
     boost::posix_time::ptime dateTime = boost::posix_time::time_from_string(date);

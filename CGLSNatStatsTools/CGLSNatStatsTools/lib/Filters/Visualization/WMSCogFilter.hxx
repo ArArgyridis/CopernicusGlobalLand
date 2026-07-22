@@ -20,7 +20,7 @@
 
 template <class TInputImage, class TOutputImage>
 otb::WMSCogFilter<TInputImage, TOutputImage>::WMSCogFilter(): itk::ImageToImageFilter<TInputImage, TOutputImage>(),nOutputBands(3), noDataFlags({true}),
-    noDataValues({0, 0, 0}) {
+    noDataValues({0, 0, 0}), noDataPxl({0,0,0}) {
     this->SetNumberOfRequiredInputs(1);
     this->SetNumberOfRequiredOutputs(1);
 }
@@ -50,10 +50,11 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::GenerateOutputInformation(){
 
     std::array<typename TOutputImage::PixelType::ValueType, 3> pxl = {0, 0, 0};
 
-    if (variable->styleColors.size() < variable->getNoData()+1)
-        variable->styleColors.resize(variable->getNoData()+1);
+    //if (variable->styleColors.size() < variable->getNoData()+1)
+    //    variable->styleColors.resize(variable->getNoData()+1);
 
     variable->styleColors[variable->getNoData()] = pxl;
+
 }
 
 template <class TInputImage, class TOutputImage>
@@ -66,9 +67,25 @@ void otb::WMSCogFilter<TInputImage, TOutputImage>::ThreadedGenerateData(const In
 
     typename TOutputImage::PixelType pxl(nOutputBands);
     for(outIt.GoToBegin(), inIt.GoToBegin(); !outIt.IsAtEnd(); ++outIt, ++inIt){
+
+        /*
+        if (inIt.Get() == variable->getNoData())
+            pxl.SetData(noDataPxl.data());
+        else
+            try{
+             pxl.SetData(variable->styleColors[inIt.Get()].data());
+            }
+        catch(std::exception &e){
+            std::cout << e.what() << "\n";
+        }
+        */
         pxl.SetData(variable->styleColors[inIt.Get()].data());
+
         outIt.Set(pxl);
     }
 }
+
+
+
 
 #endif // WMSCOGFILTER_HXX

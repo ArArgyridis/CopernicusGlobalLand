@@ -59,6 +59,7 @@ protected:
     size_t                      nOutputBands;
     ProductInfo::SharedPtr        product;
     ProductVariable::SharedPtr    variable;
+    std::array<typename TOutputImage::PixelType::ValueType, 3> noDataPxl;
 
 };
 }

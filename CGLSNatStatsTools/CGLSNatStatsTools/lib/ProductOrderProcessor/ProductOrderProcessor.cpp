@@ -72,7 +72,7 @@ void ProductOrderProcessor::createRasterOutput(std::filesystem::path inRelFile, 
     std::filesystem::path inFile  = *Constants::variableInfo[variableId]->getProductInfo()->rootPath/inRelFile;
     if (inFile.extension() == ".nc") {
         GDALDatasetUniquePtr inDataset =  GDALDatasetUniquePtr(GDALDataset::FromHandle(GDALOpen(inFile.c_str(), GA_ReadOnly)));
-        char **meta = inDataset->GetMetadata("SUBDATASETS");
+        CSLConstList meta = inDataset->GetMetadata("SUBDATASETS");
         for (size_t i = 0; meta[i] != nullptr; i+=2) {
             std::string subDatasetPath(meta[i]);
             auto splitPath = split(subDatasetPath, ":");

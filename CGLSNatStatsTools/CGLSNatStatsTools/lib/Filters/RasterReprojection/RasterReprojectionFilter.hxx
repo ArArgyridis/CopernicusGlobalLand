@@ -248,8 +248,8 @@ typename RasterReprojectionFilter<TInputImage>::InputRegionType RasterReprojecti
 
     //working in pixels, so no need to divide with spacing...
     typename InputRegionType::SizeType inSize;
-    inSize[0] = static_cast<size_t>((inEnvelope.MaxX - inEnvelope.MinX));
-    inSize[1] = static_cast<size_t>((inEnvelope.MaxY - inEnvelope.MinY));
+    inSize[0] = static_cast<size_t>((inEnvelope.MaxX - inEnvelope.MinX))+1;
+    inSize[1] = static_cast<size_t>((inEnvelope.MaxY - inEnvelope.MinY))+1;
 
     InputRegionType inImgRegion;
     inImgRegion.SetIndex(inIdx);
