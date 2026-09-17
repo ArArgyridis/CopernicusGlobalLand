@@ -19,9 +19,8 @@
     } from "../../../store/ProductParameters";
     import requests from "../../base/requests";
     import Highcharts from "highcharts";
-    import highchartsMore from "highcharts/highcharts-more";
+    import "highcharts/highcharts-more";
     import { onMount } from "svelte";
-    highchartsMore(Highcharts);
 
     let chart = null;
     let noData = [];
@@ -207,6 +206,9 @@
     }
 
     export function toShow() {
+        if ($currentProduct == null)
+            return;
+        
         return $currentProduct.currentVariable.anomaly_info != null;
     }
 

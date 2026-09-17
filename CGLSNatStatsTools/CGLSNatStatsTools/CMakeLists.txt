@@ -67,6 +67,7 @@ set (HEADERS
     lib/Filters/Reductors/MeanReductor.hxx
     lib/Filters/Reductors/SquareRootReductor.h
     lib/Filters/Reductors/SquareRootReductor.hxx
+    lib/Filters/Statistics/LongTermStatisticsFilter.hpp
     lib/Filters/Statistics/PolygonStats.h
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.h
     lib/Filters/Statistics/StatisticsFromLabelImageFilter.hxx
@@ -127,6 +128,7 @@ set (PROCESSORS
     processors/AnomalyExtractor.cpp
     processors/GLCReclassifier.cpp
     processors/GLCSimplifier.cpp
+    processors/LongTermStatisticsExtractor.cpp
 )
 
 foreach(sourceFile IN LISTS PROCESSORS)

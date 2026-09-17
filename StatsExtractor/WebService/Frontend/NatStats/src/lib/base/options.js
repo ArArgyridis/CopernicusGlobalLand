@@ -18,7 +18,6 @@ export default {
 	fetchRawDataURL: "https://natstats-demo.cgls.dev/eodata",
 	fetchAnomaliesDataURL: "https://natstats-demo.cgls.dev/eodataanomalies",
 	s3CogURL: "https://s3.waw3-1.cloudferro.com/swift/v1/CGLSWMS/projects/natstats/mapserver/",
-	bingKey: "Aiq5aNY4e4kv_7oWzzn9m2zdnfBjabNG8Lc39kAnE-SuAYaeDWruOiRrk1RhIGYl",
 	maxAOIBounds3857URL: "assets/bounds3857.geojson",
 	cogZIndex: 1,
 	vectorTileZIndex: 2,

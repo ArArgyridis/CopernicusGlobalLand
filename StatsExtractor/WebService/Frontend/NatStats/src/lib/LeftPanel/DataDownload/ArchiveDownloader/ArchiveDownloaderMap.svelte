@@ -136,7 +136,7 @@
     }
 
     onMount(() => {
-        let layerId = refs.map.addBingLayerToMap("aerial", options.bingKey);
+        let layerId = refs.map.addXYZLayer("https://gisco-services.ec.europa.eu/maps/tiles/OSMPositronComposite/EPSG3857/{z}/{x}/{y}.png");
         refs.map.setVisibility(layerId, true);
         aoiOLOptions = refs.map.addDrawInteraction({
             type: "Polygon",

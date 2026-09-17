@@ -32,16 +32,16 @@
     activeCategoryProduct[$currentCategory.id] = $currentProduct;
 
     function updateLocals() {
+        console.log("pipes")
         prods = $products[$currentCategory.id];
         activeCategoryProduct[$currentCategory.id] = $currentProduct;
     }
 
-    $: if($products && prods != $products[$currentCategory.id]) updateLocals();    
+    $: if(($products && prods != $products[$currentCategory.id]) || $currentCategory) updateLocals();    
 
 </script>
-
 <div class="accordion-item">
-    <h2 class="accordion-header">
+{#if $currentCategory != null && $currentProduct != null}    <h2 class="accordion-header">
         <button
             class="accordion-button"
             type="button"
@@ -79,6 +79,7 @@
             </select>
         </div>
     </div>
+{/if}
 </div>
 
 <style>

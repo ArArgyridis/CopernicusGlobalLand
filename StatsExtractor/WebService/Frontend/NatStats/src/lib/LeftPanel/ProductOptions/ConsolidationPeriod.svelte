@@ -26,10 +26,11 @@
         currentRT = $currentProduct.currentVariable.rtFlag;
     }
 
-    $: $currentProduct, updateConsolidationPeriods();
+    $: if($currentProduct != null) updateConsolidationPeriods();
 </script>
 
 <div class="accordion-item">
+{#if $currentProduct != null}
     <h2 class="accordion-header">
         <button
             class="accordion-button collapsed"
@@ -67,6 +68,7 @@
             </select>
         </div>
     </div>
+{/if}
 </div>
 
 <style>

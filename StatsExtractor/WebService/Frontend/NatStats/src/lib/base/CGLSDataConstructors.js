@@ -13,7 +13,7 @@
 */
 
 import options from "./options.js";
-import {computeDensityDescription, dateFromUTCDateString} from "./utils.js";
+import {computeDensityDescription, dateFromUTCDateString, rgbToHex} from "./utils.js";
 
 export function AreaDensityOptions(variable) {
 	let description = variable.variable;
@@ -182,27 +182,39 @@ export class VariableInfo {
 		let colorsArr = [];
 		if (style == null)
 			return colorsArr;
+		console.log("pipes");
+		if(style[0] == '<') {
+			let parser = new DOMParser();
+			let xmlDoc = parser.parseFromString(style, "text/xml");
+			let colors = xmlDoc.getElementsByTagName("sld:ColorMapEntry");
 
-		let parser = new DOMParser();
-		let xmlDoc = parser.parseFromString(style, "text/xml");
-		let colors = xmlDoc.getElementsByTagName("sld:ColorMapEntry");
-
-		if (maxValue < 10) {
-			for (let i = 0; i <= maxValue; i++) {
-				let tmp = colors[i];
-				colorsArr.push(tmp.getAttribute("color"));
+			if (maxValue < 10) {
+				for (let i = 0; i <= maxValue; i++) {
+					let tmp = colors[i];
+					colorsArr.push(tmp.getAttribute("color"));
+				}
+			}
+			else {
+				let step = Math.floor((maxValue - 3) / 4);
+				colorsArr = [
+					colors[0].getAttribute("color"),
+					colors[step].getAttribute("color"),
+					colors[2 * step].getAttribute("color"),
+					colors[3 * step].getAttribute("color"),
+					colors[maxValue - 1].getAttribute("color")
+				];
 			}
 		}
 		else {
-			let step = Math.floor((maxValue - 3) / 4);
-			colorsArr = [
-				colors[0].getAttribute("color"),
-				colors[step].getAttribute("color"),
-				colors[2 * step].getAttribute("color"),
-				colors[3 * step].getAttribute("color"),
-				colors[maxValue - 1].getAttribute("color")
-			];
+			let vals = JSON.parse(style)
+			let keys = Object.keys(vals)
+			keys.sort()
+			keys.forEach(key =>{
+				let clr = "#"+rgbToHex(vals[key][0], vals[key][1], vals[key][2]);
+				colorsArr.push(clr);
+			});
 		}
+		console.log(colorsArr);
 		return colorsArr;
 	}
 }

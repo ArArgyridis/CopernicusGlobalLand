@@ -496,7 +496,7 @@
                                 <input
                                     class="form-check-input"
                                     type="checkbox"
-                                    bind:value={validated}
+                                    bind:checked={validated}
                                     disabled={!submitVerification}
                                     bind:this={refs.submitVerification}
                                 />

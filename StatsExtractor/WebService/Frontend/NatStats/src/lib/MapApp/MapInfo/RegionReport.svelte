@@ -172,10 +172,7 @@
     onMount(() => {
         //refs.maps.productMap.getMap().once("rendercomplete", (evt)=>{console.log((evt))} )
         mapIterator.forEach((pair) => {
-            backgroundIDs[pair.key] = refs.maps[pair.key].addBingLayerToMap(
-                    "aerial",
-                    options.bingKey,
-                );
+            backgroundIDs[pair.key] = refs.maps[pair.key].addXYZLayer("https://gisco-services.ec.europa.eu/maps/tiles/OSMPositronComposite/EPSG3857/{z}/{x}/{y}.png")
 
                 refs.maps[pair.key].setVisibility(
                     backgroundIDs[pair.key],
@@ -192,7 +189,7 @@
     class:d-none={hidePrintableArea}
 >
 <!--<button on:click={printReport}>forceTest</button>-->
-
+{#if $currentProduct != null}
     <div class="dashboardPrintInnerArea">
         <div class="container">
             <div class="row">
@@ -307,6 +304,7 @@
             </div>
         </div>
     </div>
+    {/if}
 </div>
 
 <style>

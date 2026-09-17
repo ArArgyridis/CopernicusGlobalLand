@@ -17,11 +17,13 @@
     import StratifiedOrRawViewMode from "./StratifiedOrRawViewMode.svelte";
     import AnalysisMode from "./AnalysisMode.svelte";
     import PolygonValuesType from "./PolygonValuesType.svelte";
+    import { currentProduct } from "../../../store/ProductParameters";
 
     let accordionId = "displayOptions";
 </script>
 
 <div class="mt-2 row d-flex align-items-center text-center">
+{#if $currentProduct != null}
     <h5>Variable Display Options</h5>
     <div class="accordion accordion-flush overflow-auto mb-2" id={accordionId}>
         <AnalysisMode bindToId={accordionId} propIdx="1" />
@@ -29,4 +31,5 @@
         <PolygonValuesType bindToId={accordionId} propIdx="3" />
         
     </div>
+{/if}
 </div>

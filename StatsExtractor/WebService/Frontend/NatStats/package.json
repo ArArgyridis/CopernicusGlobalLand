@@ -9,24 +9,23 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^3.0.1",
-    "svelte": "^4.2.8",
-    "svelte-fa": "^4.0.2",
-    "vite": "^5.0.8"
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "svelte": "^5.56.7",
+    "svelte-fa": "^4.0.4",
+    "vite": "^8.1.5"
   },
   "dependencies": {
-    "@fontsource/ubuntu": "^5.0.8",
-    "@fortawesome/free-solid-svg-icons": "^6.5.1",
-    "axios": "^1.6.2",
-    "bootstrap": "^5.3.2",
-    "cesium": "^1.116.0",
-    "date-picker-svelte": "^2.11.0",
-    "highcharts": "^11.2.0",
+    "@fontsource/ubuntu": "^5.3.0",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
+    "axios": "^1.18.1",
+    "bootstrap": "^5.3.8",
+    "cesium": "^1.143.0",
+    "date-picker-svelte": "^3.0.0",
+    "highcharts": "^13.0.0",
     "html2canvas": "^1.4.1",
     "mc-datepicker": "^0.6.5",
-    "ol": "^9.0.0",
-    "ol-ext": "^4.0.13",
-    "olcs": "^2.19.3",
-    "proj4": "^2.9.2"
+    "ol": "^10.9.0",
+    "ol-ext": "^4.0.38",
+    "proj4": "^2.20.9"
   }
 }

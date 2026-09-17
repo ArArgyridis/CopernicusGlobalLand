@@ -20,9 +20,8 @@
     } from "../../../store/ProductParameters";
     import requests from "../../base/requests";
     import Highcharts from "highcharts";
-    import highchartsMore from "highcharts/highcharts-more";
+    import "highcharts/highcharts-more";
     import { onMount } from "svelte";
-    highchartsMore(Highcharts);
 
     export let chartId = "histogram";
     export let mode = "raw";
@@ -129,6 +128,9 @@
     }
 
     export function toShow() {
+        if ($currentProduct == null)
+            return;
+        
         let ret = false;
         if (mode == "raw") ret = $currentProduct.currentVariable != null;
         else if (mode == "anomalies")

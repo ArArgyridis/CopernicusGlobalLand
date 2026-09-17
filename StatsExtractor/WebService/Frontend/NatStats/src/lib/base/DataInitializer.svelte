@@ -10,12 +10,19 @@
 
     let dtStart = $dateStart;
     let dtEnd = $dateEnd;
+    let curCategory = structuredClone($currentCategory);
+    let curProduct = structuredClone($currentProduct);
 
+    console.log("pipes", curCategory);
     function fetchCategories() {
         console.log("fetching categories");
         requests.categories().then((response) => {
             response.data.data.forEach((category) => {
-                if (category.active) $currentCategory = category;
+                if (category.active) {
+                    $currentCategory = category;
+                    curCategory = structuredClone($currentCategory);
+                    console.log($currentCategory.id == curCategory.id);
+                } 
                 $products[category.id] = [];
             });
             $categories = response.data.data;
@@ -56,6 +63,7 @@
                  
                     $products[$currentCategory.id] = tmpProducts;
                     $currentProduct = $products[$currentCategory.id][0];
+                    console.log($currentProduct);
                 }
             });   
     }
@@ -109,8 +117,9 @@
         });
     }
     $: if($currentCategory == null) fetchCategories();
-    $: if($currentCategory != null && ($currentProduct == null || dtStart != $dateStart || dtEnd != $dateEnd) ) fetchProducts();
-    $: if($currentProduct != null && !(fetchedVariableData.has($currentProduct.currentVariable.id)) ) updateCogInfo();
+    $: if(($currentCategory != null && ($currentProduct == null || dtStart != $dateStart || dtEnd != $dateEnd) ) || (curCategory != null && $currentCategory != null && curCategory.id !=$currentCategory.id) ) {fetchProducts(); curCategory = structuredClone($currentCategory)};
+
+    $: if(($currentProduct != null && !(fetchedVariableData.has($currentProduct.currentVariable.id)) ) || (curProduct != null && $currentProduct != null && curProduct.id != $currentProduct.id)) {updateCogInfo() , curProduct = structuredClone($currentProduct)};
     $: if($currentBoundary == null) fetchBoundaries();
     $: if(countCogDownloads >=2) finishedLoading = true;
 

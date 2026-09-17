@@ -23,7 +23,6 @@
     import highchartsMore from "highcharts/highcharts-more";
     import { updateButtons } from "mc-datepicker/src/js/handlers";
     import { onMount } from "svelte";
-    highchartsMore(Highcharts);
 
     export let chartId = "polygonTimeSeriesraw";
     export let mode = "raw";
@@ -196,6 +195,8 @@
     }
 
     export function toShow() {
+        if ($currentProduct == null)
+            return;
         let ret = false;
         if (mode == "raw") ret = polygonId != null && $currentProduct.currentVariable != null;
         else if (mode == "anomalies")

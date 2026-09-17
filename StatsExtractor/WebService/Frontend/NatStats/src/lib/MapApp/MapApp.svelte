@@ -18,6 +18,7 @@
     import { currentBoundary, boundaries } from "../../store/Boundaries.js";
     import {
         currentProduct,
+        nullId,
         styleCache,
     } from "../../store/ProductParameters.js";
     import {
@@ -288,7 +289,7 @@
     //reactivity
     $: if ($boundaries && "map" in refs) refreshBoundaries();
     $: $currentBoundary, changeVisibleBoundary();
-    $: if (!viewOptions.equals(new ViewOptions($currentProduct, $currentBoundary))  && "map" in refs) setViewOptions();
+    $: if ($currentProduct != null && !viewOptions.equals(new ViewOptions($currentProduct, $currentBoundary))  && "map" in refs) setViewOptions();
     $: mapInfoLoading, toggleSpinner();
     $: clickedCoordinates, refreshMarker();
 

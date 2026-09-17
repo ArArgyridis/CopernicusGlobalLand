@@ -27,6 +27,7 @@
         $currentCategory.active = false;
         $categories[id].active = true;
         $currentCategory = $categories[id];
+        console.log($categories)
     }
 </script>
 
@@ -40,6 +41,7 @@
                 href={"#" + category.id}
                 on:click={() => {
                     setCurentCategory(idx);
+                    console.log(idx);
                 }}>{category.title}</a
             >
         </li>

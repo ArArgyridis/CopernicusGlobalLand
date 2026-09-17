@@ -67,10 +67,6 @@
 					Math.round((valueRange[0]+valueRange[valueRange.length-1])/4*300)/100,
 					valueRange[valueRange.length-1]
 				];
-
-
-
-
 			}
 			settings.title = variable.mapViewOptions.displayPolygonValue.title;
 			console.log(variable);
