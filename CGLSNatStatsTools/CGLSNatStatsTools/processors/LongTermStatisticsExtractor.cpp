@@ -36,6 +36,12 @@ int main(int argc, char *argv[]) {
     if (Constants::load(config) != 0)
         return 1;
 
+    //clean up tmp directory before starting
+    if(std::filesystem::exists(config->filesystem.tmpPath))
+        std::filesystem::remove_all(config->filesystem.tmpPath);
+
+    std::filesystem::create_directories(config->filesystem.tmpPath);
+
 
     PGPool::PGConn::UniquePtr cn  = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
 
@@ -73,6 +79,15 @@ int main(int argc, char *argv[]) {
 
     auto variable = Constants::variableInfo[std::stoi(argv[2])];
 
+    std::filesystem::path dstPath = config->filesystem.ltsPath/variable->getProductInfo()->productNames[0];
+    if (variable->variable.size() > 1)
+        dstPath /= variable->variable;
+
+    std::filesystem::create_directories(dstPath);
+
+    std::cout << dstPath <<"\n";
+
+
     auto res = cn->fetchQueryResult(query);
 
     for(const auto& row: res) {
@@ -93,29 +108,39 @@ int main(int argc, char *argv[]) {
 
         }
 
-        //ltsFilter->Update();
-
         std::vector<std::string> filenames = {
-            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_NUMS_GLOBE.tif?&gdal:co:COMPRESS=ZSTD&gdal:co:PREDICTOR=3&gdal:co:BIGTIFF=YES)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
-            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_MEDIAN_GLOBE.tif?&gdal:co:COMPRESS=ZSTD&gdal:co:PREDICTOR=3&gdal:co:BIGTIFF=YES)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
-            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_MEAN_GLOBE.tif?&gdal:co:COMPRESS=ZSTD&gdal:co:PREDICTOR=3&gdal:co:BIGTIFF=YES)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
-            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_STD_GLOBE.tif?&gdal:co:COMPRESS=ZSTD&gdal:co:PREDICTOR=3&gdal:co:BIGTIFF=YES)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
+            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_NUMS_GLOBE.tif)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
+            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_MEDIAN_GLOBE.tif)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
+            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_MEAN_GLOBE.tif)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
+            fmt::format(R"(c_gls_FAPAR300-RT{}-LTS_{:02d}{:02d}_{}_{}_STD_GLOBE.tif)", argv[3], row[0].as<int>(), row[1].as<int>(), row[4].as<int>(), row[5].as<int>()),
         };
+
+        std::vector<std::filesystem::path> tmpFiles(filenames.size());
 
         otb::MultiImageFileWriter::Pointer writer = otb::MultiImageFileWriter::New();
 
         for(size_t idx = 0; idx < filenames.size(); idx++) {
             FloatWriter::Pointer tmpWriter = FloatWriter::New();
-                   writer->AddInputImage(ltsFilter->GetOutput(idx), filenames[idx]);
+
+            tmpFiles[idx] = config->filesystem.tmpPath/filenames[idx];
+            if(std::filesystem::exists(tmpFiles[idx]))
+                std::filesystem::remove(tmpFiles[idx]);
+
+            writer->AddInputImage(ltsFilter->GetOutput(idx), std::string(std::string(tmpFiles[idx])+"?&gdal:co:COMPRESS=ZSTD&gdal:co:PREDICTOR=3&gdal:co:BIGTIFF=YES").c_str());
         }
         writer->SetAutomaticStrippedStreaming(config->statsInfo.memoryMB);
         writer->SetNumberOfLinesStrippedStreaming(10000);
         writer->Update();
+
+        //copying files to destination
+
+        for(size_t idx = 0; idx < tmpFiles.size(); idx++) {
+            std::filesystem::path dstFileName = dstPath/filenames[idx];
+            std::filesystem::copy(tmpFiles[idx], dstFileName);
+            //delete tmp file
+            std::filesystem::remove(tmpFiles[idx]);
+        }
     }
-
-
-
-
 
     return 0;
 }
