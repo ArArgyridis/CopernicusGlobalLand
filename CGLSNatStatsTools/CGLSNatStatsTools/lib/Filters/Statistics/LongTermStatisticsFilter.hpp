@@ -112,7 +112,7 @@ protected:
             //sorting values
             size_t medianIdx = validObservations/2;
             std::sort(tmpDt.begin(), tmpDt.begin()+validObservations, std::greater<>());
-            outputIterators[1].Set(m_Variable->scaleValue(tmpDt[medianIdx]));
+            outputIterators[1].Set(tmpDt[medianIdx]);
             //statsPxl[1] = tmpDt[medianIdx];
 
             typename TOutputImage::IOPixelType mn = 0, sd = 0;
@@ -123,11 +123,11 @@ protected:
             }
 
             //statsPxl[2] = mn;
-            outputIterators[2].Set(m_Variable->scaleValue(mn));
+            outputIterators[2].Set(mn);
 
             if (validObservations > 1) {
                 sd = sqrt(sd - mn*mn);
-                outputIterators[3].Set(m_Variable->scaleValue(sd));
+                outputIterators[3].Set(sd);
                 //statsPxl[3] = sd;
             }
             else {

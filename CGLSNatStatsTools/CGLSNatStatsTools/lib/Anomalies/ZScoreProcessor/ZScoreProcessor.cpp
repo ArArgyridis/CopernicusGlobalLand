@@ -16,20 +16,18 @@
 #include "../../Filters/Functors/LinearScaler.h"
 #include "../../Filters/Functors/ZNormalization.h"
 
-using FloatImageType = otb::Image<float, 2>;
-using UCharImageType = otb::Image<unsigned char, 2>;
-using UCharVectorImageType = otb::VectorImage<unsigned char, 2>;
+using FloatImageType = otb::Image<unsigned char, 2>;
+using FloatVectorImageType = otb::VectorImage<unsigned char, 2>;
 
-using UCharImageReader = otb::ImageFileReader<UCharImageType>;
-using UCharImageWriter = otb::ImageFileWriter<UCharImageType>;
+using VectorImageReader = otb::ImageFileReader<FloatImageType>;
+using UCharImageWriter = otb::ImageFileWriter<FloatImageType>;
 
-using FloatImageWriter = otb::ImageFileWriter<FloatImageType>;
 
-using ComposeUCharImageFilter = itk::ComposeImageFilter<UCharImageType, UCharVectorImageType>;
-using MeanReductorFilter = otb::MeanReductor<UCharVectorImageType, FloatImageType::PixelType>;
-using SquareRootReductorFilter = otb::SquareRootReductor<UCharVectorImageType, FloatImageType::PixelType>;
-using UCharImageReprojectionFilter = otb::RasterReprojectionFilter<UCharImageType>;
-using UCharVectorImageWriter = otb::ImageFileWriter<UCharVectorImageType>;
+using ComposeFloatImageFilter = itk::ComposeImageFilter<FloatImageType, FloatVectorImageType>;
+using MeanReductorFilter = otb::MeanReductor<FloatVectorImageType, FloatImageType::PixelType>;
+using SquareRootReductorFilter = otb::SquareRootReductor<FloatVectorImageType, FloatImageType::PixelType>;
+using FloatImageReprojectionFilter = otb::RasterReprojectionFilter<FloatImageType>;
+using UCharVectorImageWriter = otb::ImageFileWriter<FloatVectorImageType>;
 
 ZScoreProcessor::ZScoreProcessor():product(nullptr), anomalyVariable(nullptr) {}
 
@@ -99,8 +97,8 @@ void ZScoreProcessor::process() {
         rapidjson::Document statsFilesDBJson;
         statsFilesDBJson.Parse(statsFilesDB);
 
-        ComposeUCharImageFilter::Pointer ltsMeanComposer = ComposeUCharImageFilter::New(), ltsStdevComposer = ComposeUCharImageFilter::New();
-        std::vector<UCharImageReader::Pointer> ltsMeanReaders, ltsStdevReaders;
+        ComposeFloatImageFilter::Pointer ltsMeanComposer = ComposeFloatImageFilter::New(), ltsStdevComposer = ComposeFloatImageFilter::New();
+        std::vector<VectorImageReader::Pointer> ltsMeanReaders, ltsStdevReaders;
         MeanReductorFilter::Pointer ltsMeanReductor;
         SquareRootReductorFilter::Pointer ltsStdevReductor;
         size_t ltsFileId = 0;
@@ -110,21 +108,21 @@ void ZScoreProcessor::process() {
         auto meanVar = Constants::productInfo[batch[6].as<size_t>()]->variables[meanField];
         auto stdevVar = Constants::productInfo[batch[6].as<size_t>()]->variables[stdevField];
 
-        auto meanScaler     = otb::NewFunctorFilter(LinearScaler<UCharImageType::PixelType, FloatImageType::PixelType>(meanVar->getScaleFactor(),meanVar->getOffset(), stod((*meanVar->metadata)["MY_NO_DATA_VALUE"])));
-        auto stdevScaler    = otb::NewFunctorFilter(LinearScaler<UCharImageType::PixelType, FloatImageType::PixelType>(stdevVar->getScaleFactor(),stdevVar->getOffset(), stod((*stdevVar->metadata)["MY_NO_DATA_VALUE"])));
+        auto meanScaler     = otb::NewFunctorFilter(LinearScaler<FloatImageType::PixelType, FloatImageType::PixelType>(meanVar->getScaleFactor(),meanVar->getOffset(), stod((*meanVar->metadata)["MY_NO_DATA_VALUE"])));
+        auto stdevScaler    = otb::NewFunctorFilter(LinearScaler<FloatImageType::PixelType, FloatImageType::PixelType>(stdevVar->getScaleFactor(),stdevVar->getOffset(), stod((*stdevVar->metadata)["MY_NO_DATA_VALUE"])));
 
         for(auto& statsFileGroup: statsFilesDBJson.GetArray()) {
             std::filesystem::path ltsMean = meanVar->productAbsPath(statsFileGroup.GetArray()[0].GetString());
             std::filesystem::path ltsStdev = stdevVar->productAbsPath(config->filesystem.ltsPath / statsFileGroup.GetArray()[2].GetString());
 
             //mean values
-            ltsMeanReaders.push_back( UCharImageReader::New());
+            ltsMeanReaders.push_back( VectorImageReader::New());
             ltsMeanReaders.back()->SetFileName(ltsMean);
             ltsMeanReaders.back()->UpdateOutputInformation();
             ltsMeanComposer->SetInput(ltsFileId, ltsMeanReaders.back()->GetOutput());
 
             //stdev valus
-            ltsStdevReaders.push_back(UCharImageReader::New());
+            ltsStdevReaders.push_back(VectorImageReader::New());
             ltsStdevReaders.back()->SetFileName(ltsStdev);
             ltsStdevReaders.back()->UpdateOutputInformation();
             ltsStdevComposer->SetInput(ltsFileId, ltsStdevReaders.back()->GetOutput());
@@ -158,7 +156,7 @@ void ZScoreProcessor::process() {
         }
 
         //all mean, stdev, and products must occupy the same physical space
-        UCharImageReader::Pointer firstProductRearder = UCharImageReader::New();
+        VectorImageReader::Pointer firstProductRearder = VectorImageReader::New();
         firstProductRearder->SetFileName(productVariable->firstProductVariablePath->c_str());
         firstProductRearder->UpdateOutputInformation();
 
@@ -185,11 +183,11 @@ void ZScoreProcessor::process() {
         rapidjson::Document prodFilesDBJson;
         prodFilesDBJson.Parse(prodFilesDB);
         for(auto& prodFile: prodFilesDBJson.GetArray()) {
-            UCharImageReader::Pointer prodReader = UCharImageReader::New();
+            VectorImageReader::Pointer prodReader = VectorImageReader::New();
             prodReader->SetFileName(productVariable->productAbsPath(prodFile.GetString()));
-            UCharImageType::Pointer inProdImg = prodReader->GetOutput();
+            FloatImageType::Pointer inProdImg = prodReader->GetOutput();
 
-            UCharImageReprojectionFilter::Pointer reproject = UCharImageReprojectionFilter::New();
+            FloatImageReprojectionFilter::Pointer reproject = FloatImageReprojectionFilter::New();
             if(!matchedSpace && ltsMeanReaders.size() == 1) { //warp product image so it matches the lts ones
                 reproject->SetInput(prodReader->GetOutput());
                 reproject->SetInputProjection(4326);
@@ -204,7 +202,7 @@ void ZScoreProcessor::process() {
             }
 
             //scale product
-            auto prodScaler = otb::NewFunctorFilter(LinearScaler<UCharImageType::PixelType, FloatImageType::PixelType>(productVariable->getScaleFactor(),productVariable->getOffset(), stod((*productVariable->metadata)["MY_NO_DATA_VALUE"])));
+            auto prodScaler = otb::NewFunctorFilter(LinearScaler<FloatImageType::PixelType, FloatImageType::PixelType>(productVariable->getScaleFactor(),productVariable->getOffset(), stod((*productVariable->metadata)["MY_NO_DATA_VALUE"])));
             prodScaler->SetInput(inProdImg);
             //now we can finally compute the anomaly
 

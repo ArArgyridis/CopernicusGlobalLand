@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    //std::cout << res[0][1].as<std::string>() << "\n";
+    std::cout << res[0][1].as<std::string>() << "\n";
 
     auto timeStart = iso8601ToUTCTimestamp(res[0][0].as<std::string>());
     auto p = boost::posix_time::to_tm(timeStart);
