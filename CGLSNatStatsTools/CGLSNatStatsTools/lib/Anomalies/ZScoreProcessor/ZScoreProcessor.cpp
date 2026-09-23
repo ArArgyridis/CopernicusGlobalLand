@@ -16,11 +16,15 @@
 #include "../../Filters/Functors/LinearScaler.h"
 #include "../../Filters/Functors/ZNormalization.h"
 
-using FloatImageType = otb::Image<unsigned char, 2>;
-using FloatVectorImageType = otb::VectorImage<unsigned char, 2>;
+using FloatImageType = otb::Image<float, 2>;
+using UCharImageType = otb::Image<unsigned char, 2>;
+
+using FloatVectorImageType = otb::VectorImage<float, 2>;
 
 using VectorImageReader = otb::ImageFileReader<FloatImageType>;
-using UCharImageWriter = otb::ImageFileWriter<FloatImageType>;
+using UCharImageWriter = otb::ImageFileWriter<UCharImageType>;
+using FloatImageWriter = otb::ImageFileWriter<FloatImageType>;
+
 
 
 using ComposeFloatImageFilter = itk::ComposeImageFilter<FloatImageType, FloatVectorImageType>;
