@@ -75,7 +75,7 @@ protected:
         for (size_t idx = 0; idx < this->GetNumberOfInputs(); idx++)
              inputIterators[idx] = TInputLabelImageConstIterator(this->GetInput(idx), outputRegionForThread);
 
-        std::vector<typename TInputImage::IOPixelType> tmpDt(this->GetNumberOfInputs());
+        std::vector<typename TOutputImage::IOPixelType> tmpDt(this->GetNumberOfInputs());
 
         for (size_t idx = 0; idx < nOutputs; idx++) outputIterators[idx].GoToBegin();
         for (size_t idx = 0; idx < this->GetNumberOfInputs(); idx++) inputIterators[idx].GoToBegin();
@@ -93,7 +93,7 @@ protected:
                 inputIterators[idx].SetIndex(outputIterators[0].GetIndex());
                 auto val = inputIterators[idx].Get();
                 if (val != noDataValues[0]) {
-                    tmpDt[validObservations] = val;
+                    tmpDt[validObservations] =  this->m_Variable->scaleValue(val);
                     validObservations++;
                 }
             }
@@ -128,10 +128,8 @@ protected:
             if (validObservations > 1) {
                 sd = sqrt(sd - mn*mn);
                 outputIterators[3].Set(sd);
-                //statsPxl[3] = sd;
             }
             else {
-                //statsPxl[3] = noDataValues[0];
                 outputIterators[3].Set(noDataValues[0]);
             }
 

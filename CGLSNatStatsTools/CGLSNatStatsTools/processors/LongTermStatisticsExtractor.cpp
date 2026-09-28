@@ -127,8 +127,6 @@ int main(int argc, char *argv[]) {
                 std::filesystem::remove(tmpFiles[idx]);
 
             std::string outFl = std::string(tmpFiles[idx])+"?&gdal:co:COMPRESS=ZSTD&gdal:co:PREDICTOR=3&gdal:co:BIGTIFF=YES";
-            //if (idx > 0)
-            //    outFl += "&gdal:co:scale=0.004&gdal:co:bias=0";
 
             writer->AddInputImage(ltsFilter->GetOutput(idx), outFl);
         }
