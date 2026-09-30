@@ -104,6 +104,8 @@ protected:
                 outputIterators[idx].Set(noDataValues[0]);
                 continue;
             }
+
+
             //statsPxl[0] = static_cast<typename TOutputImage::IOPixelType>(validObservations);
 
             outputIterators[0].Set(static_cast<typename TOutputImage::PixelType>(validObservations));

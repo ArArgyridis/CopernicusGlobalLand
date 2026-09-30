@@ -106,11 +106,13 @@ void ZScoreProcessor::process() {
         MeanReductorFilter::Pointer ltsMeanReductor;
         SquareRootReductorFilter::Pointer ltsStdevReductor;
         size_t ltsFileId = 0;
-        std::string meanField = statsFilesDBJson.GetArray()[0].GetArray()[1].GetString();
-        std::string stdevField = statsFilesDBJson.GetArray()[0].GetArray()[3].GetString();
+        std::string meanField = statsFilesDBJson.GetArray()[0].GetArray()[1].GetString(); //1 not 0
+        std::string stdevField = statsFilesDBJson.GetArray()[0].GetArray()[3].GetString(); //3 not 2
+
+        auto k = Constants::productInfo;
 
         auto meanVar = Constants::productInfo[batch[6].as<size_t>()]->variables[meanField];
-        auto stdevVar = Constants::productInfo[batch[6].as<size_t>()]->variables[stdevField];
+        auto stdevVar = Constants::productInfo[batch[7].as<size_t>()]->variables[stdevField];
 
         auto meanScaler     = otb::NewFunctorFilter(LinearScaler<FloatImageType::PixelType, FloatImageType::PixelType>(meanVar->getScaleFactor(),meanVar->getOffset(), stod((*meanVar->metadata)["MY_NO_DATA_VALUE"])));
         auto stdevScaler    = otb::NewFunctorFilter(LinearScaler<FloatImageType::PixelType, FloatImageType::PixelType>(stdevVar->getScaleFactor(),stdevVar->getOffset(), stod((*stdevVar->metadata)["MY_NO_DATA_VALUE"])));
@@ -120,12 +122,12 @@ void ZScoreProcessor::process() {
             std::filesystem::path ltsStdev = stdevVar->productAbsPath(config->filesystem.ltsPath / statsFileGroup.GetArray()[2].GetString());
 
             //mean values
-            ltsMeanReaders.push_back( VectorImageReader::New());
+            ltsMeanReaders.push_back(VectorImageReader::New());
             ltsMeanReaders.back()->SetFileName(ltsMean);
             ltsMeanReaders.back()->UpdateOutputInformation();
             ltsMeanComposer->SetInput(ltsFileId, ltsMeanReaders.back()->GetOutput());
 
-            //stdev valus
+            //stdev values
             ltsStdevReaders.push_back(VectorImageReader::New());
             ltsStdevReaders.back()->SetFileName(ltsStdev);
             ltsStdevReaders.back()->UpdateOutputInformation();
