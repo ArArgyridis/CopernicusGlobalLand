@@ -229,7 +229,7 @@ void ZScoreProcessor::process() {
             createDirectoryForFile(tmpImg);
 
             FloatImageWriter::Pointer tmpImgWriter = FloatImageWriter::New();
-            tmpImgWriter->SetFileName(tmpImg.string()+"?&gdal:co:BIGTIFF=IF_NEEDED&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512&gdal:co:COMPRESS=ZSTD");
+            tmpImgWriter->SetFileName(tmpImg.string()+"?&gdal:co:BIGTIFF=YES&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512&gdal:co:COMPRESS=ZSTD");
             tmpImgWriter->SetInput(zNormalizer->GetOutput());
             tmpImgWriter->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
             tmpImgWriter->Update();
