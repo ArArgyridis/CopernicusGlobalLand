@@ -31,7 +31,7 @@ using ComposeFloatImageFilter = itk::ComposeImageFilter<FloatImageType, FloatVec
 using MeanReductorFilter = otb::MeanReductor<FloatVectorImageType, FloatImageType::PixelType>;
 using SquareRootReductorFilter = otb::SquareRootReductor<FloatVectorImageType, FloatImageType::PixelType>;
 using FloatImageReprojectionFilter = otb::RasterReprojectionFilter<FloatImageType>;
-using UCharVectorImageWriter = otb::ImageFileWriter<FloatVectorImageType>;
+//using UCharVectorImageWriter = otb::ImageFileWriter<FloatVectorImageType>;
 
 ZScoreProcessor::ZScoreProcessor():product(nullptr), anomalyVariable(nullptr) {}
 
@@ -212,7 +212,7 @@ void ZScoreProcessor::process() {
             prodScaler->SetInput(inProdImg);
             //now we can finally compute the anomaly
 
-            auto zNormalizer = otb::NewFunctorFilter(ZNormalizationQ<FloatImageType::PixelType, FloatImageType::PixelType, FloatImageType::PixelType>(
+            auto zNormalizer = otb::NewFunctorFilter(ZNormalization<FloatImageType::PixelType, FloatImageType::PixelType, FloatImageType::PixelType, FloatImageType::PixelType>(
                 stof((*meanVar->metadata)["MY_NO_DATA_VALUE"]), stof((*stdevVar->metadata)["MY_NO_DATA_VALUE"]),  stof((*productVariable->metadata)["MY_NO_DATA_VALUE"])));
             zNormalizer->SetInputs(mean, stdev, prodScaler->GetOutput());
 
@@ -228,8 +228,8 @@ void ZScoreProcessor::process() {
             std::filesystem::path tmpImg = tmpFolder / outFile;
             createDirectoryForFile(tmpImg);
 
-            UCharImageWriter::Pointer tmpImgWriter = UCharImageWriter::New();
-            tmpImgWriter->SetFileName(tmpImg.string()+"?&gdal:co:BIGTIFF=IF_NEEDED&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512&gdal:co:COMPRESS=LZW");
+            FloatImageWriter::Pointer tmpImgWriter = FloatImageWriter::New();
+            tmpImgWriter->SetFileName(tmpImg.string()+"?&gdal:co:BIGTIFF=IF_NEEDED&gdal:co:TILED=YES&gdal:co:BLOCKXSIZE=512&gdal:co:BLOCKYSIZE=512&gdal:co:COMPRESS=ZSTD");
             tmpImgWriter->SetInput(zNormalizer->GetOutput());
             tmpImgWriter->GetStreamingManager()->SetDefaultRAM(config->statsInfo.memoryMB);
             tmpImgWriter->Update();
@@ -253,7 +253,7 @@ void ZScoreProcessor::process() {
 
             std::string anomalyInfoQuery = fmt::format(R"""(INSERT INTO product_file(product_file_description_id, rel_file_path, date, rt_flag) VALUES ({0},'{1}','{2}',{3})
                         ON CONFLICT(product_file_description_id, "date", rt_flag) DO UPDATE set rel_file_path=EXCLUDED.rel_file_path)""",anomalyVariable->getProductInfo()->id,
-                                                       std::filesystem::relative(outImg, config->filesystem.anomalyProductsPath).string(), batch[5].as<std::string>(), rtFlag);
+                        std::filesystem::relative(outImg, config->filesystem.anomalyProductsPath).string(), batch[5].as<std::string>(), rtFlag);
             cn->executeQuery(anomalyInfoQuery);
         }
     }

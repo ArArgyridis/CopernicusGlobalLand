@@ -28,8 +28,7 @@ public:
 
     TOutput operator()(const TInput1& mean, const TInput2 &stdev, const TInput3 &prdVal) {
         bool isNull = (mean == meanNull || stdev == stdevNull || prdVal == prodNull);
-
-        return isNull*prdVal + !(isNull)*(prdVal - mean)/stdev;
+        return isNull*prdVal + !(isNull)*(prdVal - mean)*1.0/stdev;
     }
 };
 
