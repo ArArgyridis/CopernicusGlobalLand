@@ -82,12 +82,12 @@ void ZScoreProcessor::process() {
                 WHERE to_char(pfmean."date", 'mmdd') = ANY(ap.daymonths) and to_char(pfstdev."date", 'mmdd') = ANY(ap.daymonths)
                 GROUP BY pfmean.rt_flag, pfdmean.id, pfdstdev.id
             )
-            SELECT ap.rel_file_path, statsfiles, ap.prodfiles, ap.variable,  statsfiles.rt_flag, ap.reference_date, statsfiles.meanid, statsfiles.stdevid
+            SELECT ap.rel_file_path, statsfiles, ap.prodfiles, ap.variable,  ap.rt_flag, ap.reference_date, statsfiles.meanid, statsfiles.stdevid
             FROM anom_product ap
-            JOIN statsfiles ON CASE WHEN statsfiles.rt_flag IS NULL THEN TRUE
-            ELSE statsfiles.rt_flag = ap.rt_flag END)""", boost::posix_time::to_iso_extended_string(dateStart),
+            JOIN statsfiles ON TRUE /*CASE WHEN statsfiles.rt_flag IS NULL THEN TRUE
+            ELSE statsfiles.rt_flag = ap.rt_flag END*/)""", boost::posix_time::to_iso_extended_string(dateStart),
                                              boost::posix_time::to_iso_extended_string(dateEnd), anomalyVariable->id);
-    //std::cout << fileFetchQuery <<"\n";
+    std::cout << fileFetchQuery <<"\n";
     PGPool::PGConn::UniquePtr cn              = PGPool::PGConn::New(Configuration::connectionIds[config->statsInfo.connectionId]);
     PGPool::PGConn::PGRes processFiles      = cn->fetchQueryResult(fileFetchQuery);
     if(processFiles.empty())
